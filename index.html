@@ -288,25 +288,25 @@ footer{text-align:center;color:var(--muted);font-size:0.72rem;padding:20px 28px;
     <div class="panel">
       <div class="form-grid">
         <div class="form-group">
-          <label>Your Name *</label>
+          <label for="d-name">Your Name *</label>
           <input type="text" id="d-name" placeholder="e.g. Raj Kumar"/>
         </div>
         <div class="form-group">
-          <label>Donor ID (if registered)</label>
+          <label for="d-id">Donor ID (if registered)</label>
           <input type="text" id="d-id" placeholder="e.g. DON001 — leave blank if new"/>
         </div>
         <div class="form-group">
-          <label>Item *</label>
+          <label for="d-item">Item *</label>
           <select id="d-item">
             <option value="">Select an item…</option>
           </select>
         </div>
         <div class="form-group">
-          <label>Quantity *</label>
+          <label for="d-qty">Quantity *</label>
           <input type="number" id="d-qty" placeholder="e.g. 2" min="1"/>
         </div>
         <div class="form-group full">
-          <label>Custom Item (if not in list)</label>
+          <label for="d-custom">Custom Item (if not in list)</label>
           <input type="text" id="d-custom" placeholder="Type item name if not listed above"/>
         </div>
       </div>
@@ -330,21 +330,26 @@ footer{text-align:center;color:var(--muted);font-size:0.72rem;padding:20px 28px;
     <div class="panel">
       <div class="form-grid">
         <div class="form-group">
-          <label>Your Name *</label>
+          <label for="r-name">Your Name *</label>
           <input type="text" id="r-name" placeholder="e.g. Anita Sharma"/>
         </div>
         <div class="form-group">
-          <label>Recipient ID (if registered)</label>
+          <label for="r-id">Recipient ID (if registered)</label>
           <input type="text" id="r-id" placeholder="e.g. RCP001 — leave blank if new"/>
         </div>
         <div class="form-group">
-          <label>Item Requested *</label>
-          <select id="r-item">
+          <label for="r-item">Item Requested *</label>
+          <select id="r-item" onchange="toggleCustomRequest(this.value)">
             <option value="">Select an item…</option>
+            <option value="__custom__">— Type a custom item →</option>
           </select>
         </div>
+        <div class="form-group" id="r-custom-wrap" style="display:none">
+          <label for="r-custom">Custom Item Name *</label>
+          <input type="text" id="r-custom" placeholder="Type the item you need…"/>
+        </div>
         <div class="form-group">
-          <label>Quantity *</label>
+          <label for="r-qty">Quantity *</label>
           <input type="number" id="r-qty" placeholder="e.g. 1" min="1"/>
         </div>
       </div>
@@ -619,20 +624,36 @@ function renderReqInventory(inventory) {
 //  FORM DROPDOWNS
 // ═══════════════════════════════════════════
 function populateFormDropdowns(data) {
-  const items = [...new Set((data.donations||[]).map(r => r['Item']).filter(Boolean))];
-  const invItems = (data.inventory||[]).filter(i => (parseInt(i['Balance Available'])||0) > 0).map(i => i['Item']);
+  // Donate form: all items ever donated
+  const donateItems = [...new Set((data.donations||[]).map(r => r['Item']).filter(Boolean))];
+  const dSel = document.getElementById('d-item');
+  const dCur = dSel.value;
+  dSel.innerHTML = '<option value="">Select an item…</option>' +
+    donateItems.map(i => `<option value="${i}">${i}</option>`).join('');
+  if (dCur) dSel.value = dCur;
 
-  ['d-item'].forEach(id => {
-    const sel = document.getElementById(id);
-    const cur = sel.value;
-    sel.innerHTML = '<option value="">Select an item…</option>' +
-      items.map(i => `<option value="${i}">${i}</option>`).join('');
-    if (cur) sel.value = cur;
-  });
+  // Request form: ALL inventory items with stock label, plus custom option
+  const inv = data.inventory || [];
+  // Also include items from donations that may not be in inventory yet
+  const allItems = [...new Set([
+    ...inv.map(i => i.item || i['Item']),
+    ...(data.donations||[]).map(r => r['Item'])
+  ].filter(Boolean))];
+
+  const invMap = {};
+  inv.forEach(i => { invMap[i.item || i['Item']] = parseInt(i.balance ?? i['Balance Available']) || 0; });
 
   const rSel = document.getElementById('r-item');
-  rSel.innerHTML = '<option value="">Select an item…</option>' +
-    invItems.map(i => `<option value="${i}">${i}</option>`).join('');
+  const rCur = rSel.value;
+  rSel.innerHTML =
+    '<option value="">Select an item…</option>' +
+    allItems.map(item => {
+      const bal = invMap[item] ?? null;
+      const label = bal === null ? item : bal > 0 ? `${item} (${bal} available)` : `${item} (out of stock)`;
+      return `<option value="${item}">${label}</option>`;
+    }).join('') +
+    '<option value="__custom__">— Type a custom item →</option>';
+  if (rCur) rSel.value = rCur;
 }
 
 // ═══════════════════════════════════════════
@@ -656,11 +677,13 @@ async function submitDonation() {
 
   try {
     const res  = await fetch(SCRIPT_URL, {
-      method:'POST', body: JSON.stringify({ action:'addDonation', data:{ donorName:name, donorId, item, quantity:qty } })
+      method:'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action:'addDonation', donorName:name, donorId: donorId||'', item, quantity: qty, notes:'' })
     });
     const data = await res.json();
     if (data.success) {
-      showFormMsg('donateMsg', `✅ ${data.message} Your Donor ID: ${data.donorId}`, 'success');
+      showFormMsg('donateMsg', `✅ ${data.message}${data.donorId ? ' Your Donor ID: ' + data.donorId : ''}`, 'success');
       showAlert('Donation recorded!', 'green');
       ['d-name','d-id','d-qty','d-custom'].forEach(id => document.getElementById(id).value='');
       document.getElementById('d-item').value='';
@@ -675,19 +698,25 @@ async function submitDonation() {
   btn.innerHTML = '<span>Submit Donation</span>';
 }
 
+function toggleCustomRequest(val) {
+  document.getElementById('r-custom-wrap').style.display = val === '__custom__' ? 'block' : 'none';
+  if (val !== '__custom__') document.getElementById('r-custom').value = '';
+}
+
 // ═══════════════════════════════════════════
 //  SUBMIT REQUEST
 // ═══════════════════════════════════════════
 async function submitRequest() {
-  const name = document.getElementById('r-name').value.trim();
-  const recipId = document.getElementById('r-id').value.trim();
-  const item    = document.getElementById('r-item').value;
-  const qty     = document.getElementById('r-qty').value;
+  const name      = document.getElementById('r-name').value.trim();
+  const recipId   = document.getElementById('r-id').value.trim();
+  const selected  = document.getElementById('r-item').value;
+  const custom    = document.getElementById('r-custom').value.trim();
+  const item      = selected === '__custom__' ? custom : selected;
+  const qty       = document.getElementById('r-qty').value;
 
-  if (!name || !item || !qty) {
-    showFormMsg('requestMsg', 'Please fill in Name, Item, and Quantity.', 'error');
-    return;
-  }
+  if (!name)  { showFormMsg('requestMsg', 'Please enter your name.', 'error'); return; }
+  if (!item)  { showFormMsg('requestMsg', 'Please select or type an item.', 'error'); return; }
+  if (!qty)   { showFormMsg('requestMsg', 'Please enter a quantity.', 'error'); return; }
   if (!SCRIPT_URL) { showFormMsg('requestMsg', 'Not connected to Google Sheet yet.', 'error'); return; }
 
   const btn = document.getElementById('requestBtn');
@@ -696,14 +725,17 @@ async function submitRequest() {
 
   try {
     const res  = await fetch(SCRIPT_URL, {
-      method:'POST', body: JSON.stringify({ action:'addRequest', data:{ recipientName:name, recipientId:recipId, item, quantity:qty } })
+      method:'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action:'addRequest', recipientName:name, recipientId: recipId||'', itemRequested:item, qtyRequested: qty, notes:'' })
     });
     const data = await res.json();
     if (data.success) {
       showFormMsg('requestMsg', `✅ ${data.message}`, 'success');
       showAlert('Request submitted!', 'amber');
-      ['r-name','r-id','r-qty'].forEach(id => document.getElementById(id).value='');
+      ['r-name','r-id','r-qty','r-custom'].forEach(id => document.getElementById(id).value='');
       document.getElementById('r-item').value='';
+      document.getElementById('r-custom-wrap').style.display='none';
       setTimeout(loadData, 1500);
     } else {
       showFormMsg('requestMsg', '❌ ' + (data.message||'Error'), 'error');
