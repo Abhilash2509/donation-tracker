@@ -733,10 +733,10 @@ async function submitDonation() {
   btn.innerHTML = '<span class="spinner"></span> Submitting…';
 
   try {
+    const payload = JSON.stringify({ action:'addDonation', donorName:name, donorId: donorId||'', item, quantity: qty, notes:'' });
     const res  = await fetch(SCRIPT_URL, {
       method:'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action:'addDonation', donorName:name, donorId: donorId||'', item, quantity: qty, notes:'' })
+      body: payload
     });
     const data = await res.json();
     if (data.success) {
@@ -781,10 +781,10 @@ async function submitRequest() {
   btn.innerHTML = '<span class="spinner"></span> Submitting…';
 
   try {
+    const payload = JSON.stringify({ action:'addRequest', recipientName:name, recipientId: recipId||'', itemRequested:item, qtyRequested: qty, notes:'' });
     const res  = await fetch(SCRIPT_URL, {
       method:'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action:'addRequest', recipientName:name, recipientId: recipId||'', itemRequested:item, qtyRequested: qty, notes:'' })
+      body: payload
     });
     const data = await res.json();
     if (data.success) {
