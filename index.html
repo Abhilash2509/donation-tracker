@@ -214,13 +214,28 @@ footer{text-align:center;color:var(--muted);font-size:0.72rem;padding:20px 28px;
 </head>
 <body>
 
-<!-- CONFIG BANNER -->
-<div id="configBanner">
-  <span>⚙️ <strong>Setup:</strong> Paste your Google Apps Script Web App URL below to connect live data</span>
-  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-    <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec" />
-    <button onclick="saveScriptUrl()">Connect</button>
-    <button onclick="document.getElementById('configBanner').style.display='none'" style="background:rgba(255,255,255,0.15)">Hide</button>
+<!-- SETTINGS MODAL -->
+<div id="settingsOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:500;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:28px;max-width:520px;width:90%;box-shadow:0 12px 40px rgba(0,0,0,0.2);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <div style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;">⚙️ Google Sheet Connection</div>
+      <button onclick="closeSettings()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#888;line-height:1;">✕</button>
+    </div>
+    <p style="font-size:0.83rem;color:#888;margin-bottom:16px;line-height:1.6;">
+      Paste your Google Apps Script Web App URL below. The dashboard will sync with your Sheet every 30 seconds automatically.
+    </p>
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Web App URL</label>
+      <input type="text" id="scriptUrlInput"
+        placeholder="https://script.google.com/macros/s/…/exec"
+        style="width:100%;padding:10px 13px;border:1.5px solid #e2ddd4;border-radius:9px;font-size:0.85rem;font-family:inherit;outline:none;"/>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button onclick="saveScriptUrl()" style="background:#2d5a27;color:white;border:none;padding:10px 22px;border-radius:9px;font-size:0.86rem;font-weight:600;cursor:pointer;font-family:inherit;">Connect →</button>
+      <button onclick="disconnectSheet()" style="background:#fdeaea;color:#b83232;border:1px solid #f5c0c0;padding:10px 18px;border-radius:9px;font-size:0.86rem;font-weight:500;cursor:pointer;font-family:inherit;">Disconnect</button>
+      <button onclick="closeSettings()" style="background:#f4f1eb;color:#888;border:1px solid #e2ddd4;padding:10px 18px;border-radius:9px;font-size:0.86rem;cursor:pointer;font-family:inherit;margin-left:auto;">Cancel</button>
+    </div>
+    <div id="settingsMsg" style="margin-top:12px;font-size:0.82rem;display:none;"></div>
   </div>
 </div>
 
@@ -233,9 +248,12 @@ footer{text-align:center;color:var(--muted);font-size:0.72rem;padding:20px 28px;
     <button class="nav-tab" onclick="showPage('request')">🤲 Request</button>
     <button class="nav-tab" onclick="showPage('history')">🕓 History</button>
   </div>
-  <div class="sync-status">
-    <div class="sync-dot" id="syncDot" style="background:#aaa"></div>
-    <span id="syncLabel">Not connected</span>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="sync-status" onclick="openSettings()" title="Click to configure connection" style="cursor:pointer;">
+      <div class="sync-dot" id="syncDot" style="background:#aaa"></div>
+      <span id="syncLabel">Not connected</span>
+    </div>
+    <button onclick="openSettings()" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:white;padding:5px 12px;border-radius:7px;font-size:0.78rem;cursor:pointer;font-family:inherit;white-space:nowrap;">⚙ Settings</button>
   </div>
 </nav>
 
@@ -430,18 +448,61 @@ let histTab    = 'donor';
 const PALETTE  = ['#2d5a27','#c07c2e','#1f5f8b','#b83232','#6c3483','#117a65'];
 
 if (SCRIPT_URL) {
-  document.getElementById('scriptUrlInput').value = SCRIPT_URL;
-  document.getElementById('configBanner').style.display = 'none';
+  // Already connected — load silently, no banner to show
+  loadData();
+} else {
+  // First visit — open settings automatically
+  renderOffline();
 }
+
+function openSettings() {
+  const input = document.getElementById('scriptUrlInput');
+  input.value = SCRIPT_URL || '';
+  document.getElementById('settingsOverlay').style.display = 'flex';
+  document.getElementById('settingsMsg').style.display = 'none';
+  setTimeout(() => input.focus(), 100);
+}
+
+function closeSettings() {
+  document.getElementById('settingsOverlay').style.display = 'none';
+}
+
+// Close modal on overlay click
+document.getElementById('settingsOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeSettings();
+});
 
 function saveScriptUrl() {
   const val = document.getElementById('scriptUrlInput').value.trim();
-  if (!val) return;
+  if (!val || !val.startsWith('https://script.google.com')) {
+    showSettingsMsg('⚠️ Please paste a valid Google Apps Script URL.', 'error');
+    return;
+  }
   SCRIPT_URL = val;
   localStorage.setItem('donationScriptUrl', val);
-  document.getElementById('configBanner').style.display = 'none';
-  showAlert('Connected! Loading data…', 'green');
+  showSettingsMsg('✅ Connected! Loading data…', 'success');
+  setTimeout(closeSettings, 1000);
   loadData();
+}
+
+function disconnectSheet() {
+  SCRIPT_URL = '';
+  localStorage.removeItem('donationScriptUrl');
+  document.getElementById('scriptUrlInput').value = '';
+  setSyncStatus('error');
+  document.getElementById('syncLabel').textContent = 'Not connected';
+  showSettingsMsg('Disconnected. Paste a new URL to reconnect.', 'error');
+  renderOffline();
+}
+
+function showSettingsMsg(msg, type) {
+  const el = document.getElementById('settingsMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.style.color = type === 'success' ? '#2d5a27' : '#b83232';
+  el.style.background = type === 'success' ? '#eaf3e8' : '#fdeaea';
+  el.style.padding = '8px 12px';
+  el.style.borderRadius = '7px';
 }
 
 // ═══════════════════════════════════════════
@@ -483,10 +544,6 @@ async function loadData() {
 
 // Auto-refresh every 30 seconds
 setInterval(() => { if (SCRIPT_URL) loadData(); }, 30000);
-
-// Load on startup
-if (SCRIPT_URL) loadData();
-else renderOffline();
 
 function setSyncStatus(state) {
   const dot   = document.getElementById('syncDot');
