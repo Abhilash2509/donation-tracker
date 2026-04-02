@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Grocery Donation Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg:       #f4f1eb;
+  --surface:  #ffffff;
+  --border:   #e2ddd4;
+  --accent:   #2d5a27;
+  --a-light:  #eaf3e8;
+  --amber:    #c07c2e;
+  --am-light: #fdf3e3;
+  --red:      #b83232;
+  --red-light:#fdeaea;
+  --blue:     #1f5f8b;
+  --bl-light: #e5f0f8;
+  --text:     #1c1c1c;
+  --muted:    #888078;
+  --radius:   14px;
+  --sh:       0 2px 14px rgba(0,0,0,0.07);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── CONFIG BANNER ── */
+#configBanner{
+  background:#1c1c1c;color:#f0e8d8;
+  padding:10px 24px;font-size:0.82rem;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+}
+#configBanner a{color:#f5c842;text-decoration:underline;cursor:pointer}
+#configBanner input{
+  background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);
+  color:white;padding:5px 10px;border-radius:6px;font-size:0.8rem;width:460px;max-width:100%;
+  font-family:'DM Sans',sans-serif;outline:none;
+}
+#configBanner button{
+  background:var(--accent);color:white;border:none;padding:5px 14px;
+  border-radius:6px;font-size:0.8rem;cursor:pointer;font-family:'DM Sans',sans-serif;
+  white-space:nowrap;
+}
+
+/* ── NAV ── */
+nav{
+  background:var(--accent);color:white;
+  padding:14px 32px;display:flex;align-items:center;
+  justify-content:space-between;flex-wrap:wrap;gap:10px;
+}
+.brand{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;display:flex;align-items:center;gap:8px}
+.nav-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.nav-tab{
+  background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);
+  color:white;padding:6px 16px;border-radius:999px;font-size:0.8rem;font-weight:500;
+  cursor:pointer;transition:all 0.15s;font-family:'DM Sans',sans-serif;
+}
+.nav-tab:hover,.nav-tab.active{background:white;color:var(--accent)}
+.sync-status{font-size:0.75rem;opacity:0.85;display:flex;align-items:center;gap:5px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#a8e6a0;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* ── MAIN ── */
+.main{max-width:1320px;margin:0 auto;padding:28px 28px}
+
+/* ── PAGES ── */
+.page{display:none}.page.active{display:block}
+
+/* ── STAT CARDS ── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:14px;margin-bottom:24px}
+.sc{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:18px 18px 16px;box-shadow:var(--sh);position:relative;overflow:hidden;
+  transition:transform 0.18s,box-shadow 0.18s;cursor:default;
+}
+.sc:hover{transform:translateY(-2px);box-shadow:0 6px 22px rgba(0,0,0,0.1)}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.sc.g::before{background:var(--accent)}.sc.o::before{background:var(--amber)}
+.sc.b::before{background:var(--blue)}.sc.r::before{background:var(--red)}
+.sc-ico{font-size:1.3rem;margin-bottom:8px}
+.sc-lbl{font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px}
+.sc-val{font-family:'Syne',sans-serif;font-size:1.9rem;font-weight:800;line-height:1}
+.sc.g .sc-val{color:var(--accent)}.sc.o .sc-val{color:var(--amber)}
+.sc.b .sc-val{color:var(--blue)}.sc.r .sc-val{color:var(--red)}
+.sc-sub{font-size:0.73rem;color:var(--muted);margin-top:4px}
+
+/* ── PANELS ── */
+.row{display:grid;gap:18px;margin-bottom:18px}
+.row.c2{grid-template-columns:1fr 1.4fr}
+.row.c3{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:860px){.row.c2,.row.c3{grid-template-columns:1fr}.main{padding:16px}}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:var(--sh)}
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.pt{font-family:'Syne',sans-serif;font-size:0.95rem;font-weight:700;display:flex;align-items:center;gap:7px}
+.pc{font-size:0.72rem;background:var(--bg);border:1px solid var(--border);border-radius:999px;padding:2px 10px;color:var(--muted)}
+
+/* ── CHART ── */
+.chart-wrap{position:relative;height:200px}
+
+/* ── INVENTORY ── */
+.inv-item{margin-bottom:14px}.inv-item:last-child{margin-bottom:0}
+.inv-top{display:flex;justify-content:space-between;margin-bottom:5px;align-items:baseline}
+.inv-name{font-size:0.86rem;font-weight:600}
+.inv-nums{font-size:0.74rem;color:var(--muted)}
+.bar-track{height:7px;background:var(--bg);border-radius:4px;overflow:hidden;border:1px solid var(--border)}
+.bar-fill{height:100%;border-radius:4px;transition:width 0.8s cubic-bezier(.4,0,.2,1)}
+.low-stock{color:var(--red);font-size:0.7rem;font-weight:600;margin-left:6px}
+
+/* ── TABLES ── */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:0.83rem}
+th{text-align:left;font-size:0.69rem;color:var(--muted);font-weight:600;text-transform:uppercase;
+   letter-spacing:0.07em;padding:0 8px 10px 0;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:10px 8px 10px 0;border-bottom:1px solid var(--bg);color:var(--text);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--bg)}
+
+.pill{display:inline-block;font-size:0.67rem;font-weight:600;padding:3px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:0.04em}
+.pill.approved{background:var(--a-light);color:var(--accent)}
+.pill.pending{background:var(--am-light);color:var(--amber)}
+.pill.rejected{background:var(--red-light);color:var(--red)}
+
+.ava{display:inline-flex;width:26px;height:26px;border-radius:50%;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;margin-right:6px;vertical-align:middle;flex-shrink:0}
+.av0{background:var(--a-light);color:var(--accent)}
+.av1{background:var(--am-light);color:var(--amber)}
+.av2{background:var(--bl-light);color:var(--blue)}
+.av3{background:var(--red-light);color:var(--red)}
+
+/* ── FORMS ── */
+.form-hero{
+  background:linear-gradient(135deg,var(--accent) 0%,#1a3d16 100%);
+  color:white;border-radius:var(--radius);padding:28px 28px 22px;margin-bottom:22px;
+}
+.form-hero.amber{background:linear-gradient(135deg,var(--amber) 0%,#7a4e1a 100%)}
+.form-hero h2{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;margin-bottom:4px}
+.form-hero p{font-size:0.85rem;opacity:0.85}
+
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr}}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.full{grid-column:1/-1}
+label{font-size:0.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em}
+input,select,textarea{
+  padding:10px 13px;border:1px solid var(--border);border-radius:9px;
+  font-family:'DM Sans',sans-serif;font-size:0.87rem;background:var(--bg);color:var(--text);
+  outline:none;transition:border-color 0.15s,box-shadow 0.15s;width:100%;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--a-light)}
+textarea{resize:vertical;min-height:70px}
+
+.btn{
+  display:inline-flex;align-items:center;gap:7px;padding:11px 24px;border:none;border-radius:9px;
+  font-family:'DM Sans',sans-serif;font-size:0.88rem;font-weight:600;cursor:pointer;
+  transition:all 0.18s;text-decoration:none;
+}
+.btn-green{background:var(--accent);color:white}.btn-green:hover{background:#1d3e19}
+.btn-amber{background:var(--amber);color:white}.btn-amber:hover{background:#9a621f}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+
+.form-msg{padding:10px 14px;border-radius:8px;font-size:0.83rem;font-weight:500;margin-top:10px;display:none}
+.form-msg.success{background:var(--a-light);color:var(--accent);display:block}
+.form-msg.error{background:var(--red-light);color:var(--red);display:block}
+
+/* ── HISTORY PAGE ── */
+.hist-tabs{display:flex;gap:8px;margin-bottom:18px}
+.hist-tab{padding:7px 18px;border-radius:999px;border:1px solid var(--border);
+  background:transparent;color:var(--muted);font-size:0.82rem;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all 0.15s}
+.hist-tab.active{background:var(--accent);border-color:var(--accent);color:white;font-weight:600}
+
+.search-box{width:100%;padding:9px 13px;border:1px solid var(--border);border-radius:8px;
+  font-family:'DM Sans',sans-serif;font-size:0.84rem;background:var(--bg);color:var(--text);
+  outline:none;margin-bottom:13px;transition:border-color 0.15s}
+.search-box:focus{border-color:var(--accent)}
+
+.id-lookup{display:flex;gap:8px;margin-bottom:16px}
+.id-lookup input{flex:1}
+
+.hist-card{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:10px}
+.hist-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.hist-card-name{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem}
+.hist-card-id{font-size:0.75rem;color:var(--muted)}
+.hist-stats{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+.hstat{text-align:center}
+.hstat-val{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--accent)}
+.hstat-lbl{font-size:0.68rem;color:var(--muted);text-transform:uppercase}
+
+.no-data{color:var(--muted);font-size:0.83rem;text-align:center;padding:20px 0}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);
+  border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.alert{
+  position:fixed;top:20px;right:20px;
+  padding:12px 20px;border-radius:var(--radius);
+  font-size:0.83rem;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,0.18);
+  z-index:999;transform:translateX(140%);transition:transform 0.3s ease;max-width:320px;
+}
+.alert.show{transform:translateX(0)}
+.alert.green{background:var(--accent);color:white}
+.alert.red{background:var(--red);color:white}
+.alert.amber{background:var(--amber);color:white}
+
+footer{text-align:center;color:var(--muted);font-size:0.72rem;padding:20px 28px;border-top:1px solid var(--border);margin-top:10px}
+</style>
+</head>
+<body>
+
+<!-- CONFIG BANNER -->
+<div id="configBanner">
+  <span>⚙️ <strong>Setup:</strong> Paste your Google Apps Script Web App URL below to connect live data</span>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec" />
+    <button onclick="saveScriptUrl()">Connect</button>
+    <button onclick="document.getElementById('configBanner').style.display='none'" style="background:rgba(255,255,255,0.15)">Hide</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="brand">🛒 Grocery Donation Tracker</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('dashboard')">📊 Dashboard</button>
+    <button class="nav-tab" onclick="showPage('donate')">🎁 Donate</button>
+    <button class="nav-tab" onclick="showPage('request')">🤲 Request</button>
+    <button class="nav-tab" onclick="showPage('history')">🕓 History</button>
+  </div>
+  <div class="sync-status">
+    <div class="sync-dot" id="syncDot" style="background:#aaa"></div>
+    <span id="syncLabel">Not connected</span>
+  </div>
+</nav>
+
+<!-- ALERT -->
+<div class="alert" id="alert"></div>
+
+<div class="main">
+
+  <!-- ═══════════════════════════════ DASHBOARD ═══ -->
+  <div class="page active" id="page-dashboard">
+    <div class="stats" id="statsRow"></div>
+    <div class="row c2">
+      <div class="panel">
+        <div class="ph"><div class="pt">🥫 Donations by Item</div></div>
+        <div class="chart-wrap"><canvas id="pieChart"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="ph"><div class="pt">📦 Live Inventory</div></div>
+        <div id="inventoryBars"><div class="no-data">Loading…</div></div>
+      </div>
+    </div>
+    <div class="panel" style="margin-bottom:18px">
+      <div class="ph">
+        <div class="pt">📝 Recent Donations</div>
+        <div class="pc" id="donCount">—</div>
+      </div>
+      <div class="tbl-wrap">
+        <table><thead><tr><th>Date</th><th>Donor</th><th>Item</th><th>Qty</th></tr></thead>
+        <tbody id="donBody"></tbody></table>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph">
+        <div class="pt">🤲 Recipient Requests</div>
+        <div class="pc" id="reqCount">—</div>
+      </div>
+      <div class="tbl-wrap">
+        <table><thead><tr><th>Date</th><th>Recipient</th><th>Item</th><th>Qty</th><th>Status</th></tr></thead>
+        <tbody id="reqBody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ DONATE ═══════ -->
+  <div class="page" id="page-donate">
+    <div class="form-hero">
+      <h2>🎁 Make a Donation</h2>
+      <p>Your donation goes directly to students in need. Fill in the details below.</p>
+    </div>
+    <div class="panel">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Your Name *</label>
+          <input type="text" id="d-name" placeholder="e.g. Raj Kumar"/>
+        </div>
+        <div class="form-group">
+          <label>Donor ID (if registered)</label>
+          <input type="text" id="d-id" placeholder="e.g. DON001 — leave blank if new"/>
+        </div>
+        <div class="form-group">
+          <label>Item *</label>
+          <select id="d-item">
+            <option value="">Select an item…</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Quantity *</label>
+          <input type="number" id="d-qty" placeholder="e.g. 2" min="1"/>
+        </div>
+        <div class="form-group full">
+          <label>Custom Item (if not in list)</label>
+          <input type="text" id="d-custom" placeholder="Type item name if not listed above"/>
+        </div>
+      </div>
+      <button class="btn btn-green" id="donateBtn" onclick="submitDonation()">
+        <span>Submit Donation</span>
+      </button>
+      <div class="form-msg" id="donateMsg"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ REQUEST ══════ -->
+  <div class="page" id="page-request">
+    <div class="form-hero amber">
+      <h2>🤲 Request Groceries</h2>
+      <p>Request items from available inventory. Requests are reviewed and fulfilled based on stock.</p>
+    </div>
+    <div class="panel" style="margin-bottom:18px">
+      <div class="ph"><div class="pt">📦 Currently Available</div></div>
+      <div id="reqInventory"><div class="no-data">Loading inventory…</div></div>
+    </div>
+    <div class="panel">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Your Name *</label>
+          <input type="text" id="r-name" placeholder="e.g. Anita Sharma"/>
+        </div>
+        <div class="form-group">
+          <label>Recipient ID (if registered)</label>
+          <input type="text" id="r-id" placeholder="e.g. RCP001 — leave blank if new"/>
+        </div>
+        <div class="form-group">
+          <label>Item Requested *</label>
+          <select id="r-item">
+            <option value="">Select an item…</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Quantity *</label>
+          <input type="number" id="r-qty" placeholder="e.g. 1" min="1"/>
+        </div>
+      </div>
+      <button class="btn btn-amber" id="requestBtn" onclick="submitRequest()">
+        <span>Submit Request</span>
+      </button>
+      <div class="form-msg" id="requestMsg"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ HISTORY ══════ -->
+  <div class="page" id="page-history">
+    <div class="hist-tabs">
+      <button class="hist-tab active" onclick="switchHistTab('donor')">🧑 Donor History</button>
+      <button class="hist-tab" onclick="switchHistTab('recipient')">🤲 Recipient History</button>
+      <button class="hist-tab" onclick="switchHistTab('all')">📋 All Activity</button>
+    </div>
+
+    <!-- Donor History -->
+    <div id="hist-donor">
+      <div class="id-lookup">
+        <input type="text" id="histDonorId" placeholder="Enter Donor ID (e.g. DON001) or name…" class="search-box" style="margin-bottom:0"/>
+        <button class="btn btn-green" onclick="lookupDonor()">Look Up</button>
+      </div>
+      <div id="donorHistResult"></div>
+      <div class="panel" style="margin-top:16px">
+        <div class="ph"><div class="pt">All Donors</div></div>
+        <div class="tbl-wrap">
+          <table><thead><tr><th>ID</th><th>Name</th><th>Donations</th><th>Units</th></tr></thead>
+          <tbody id="allDonorsBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recipient History -->
+    <div id="hist-recipient" style="display:none">
+      <div class="id-lookup">
+        <input type="text" id="histRecipientId" placeholder="Enter Recipient ID (e.g. RCP001) or name…" class="search-box" style="margin-bottom:0"/>
+        <button class="btn btn-amber" onclick="lookupRecipient()">Look Up</button>
+      </div>
+      <div id="recipientHistResult"></div>
+      <div class="panel" style="margin-top:16px">
+        <div class="ph"><div class="pt">All Recipients</div></div>
+        <div class="tbl-wrap">
+          <table><thead><tr><th>ID</th><th>Name</th><th>Requests</th><th>Approved</th><th>Units Received</th></tr></thead>
+          <tbody id="allRecipientsBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- All Activity -->
+    <div id="hist-all" style="display:none">
+      <input class="search-box" type="text" id="activitySearch" placeholder="Search activity log…" oninput="filterActivity()"/>
+      <div class="panel">
+        <div class="ph"><div class="pt">📋 Change History Log</div><div class="pc" id="histCount">—</div></div>
+        <div class="tbl-wrap">
+          <table><thead><tr><th>Timestamp</th><th>Type</th><th>Person ID</th><th>Description</th></tr></thead>
+          <tbody id="historyBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<footer>
+  Data syncs live from Google Sheets · All submissions update your sheet instantly · No external database 🔒
+</footer>
+
+<script>
+// ═══════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════
+let SCRIPT_URL = localStorage.getItem('donationScriptUrl') || '';
+let liveData   = null;
+let pieChart   = null;
+let histTab    = 'donor';
+const PALETTE  = ['#2d5a27','#c07c2e','#1f5f8b','#b83232','#6c3483','#117a65'];
+
+if (SCRIPT_URL) {
+  document.getElementById('scriptUrlInput').value = SCRIPT_URL;
+  document.getElementById('configBanner').style.display = 'none';
+}
+
+function saveScriptUrl() {
+  const val = document.getElementById('scriptUrlInput').value.trim();
+  if (!val) return;
+  SCRIPT_URL = val;
+  localStorage.setItem('donationScriptUrl', val);
+  document.getElementById('configBanner').style.display = 'none';
+  showAlert('Connected! Loading data…', 'green');
+  loadData();
+}
+
+// ═══════════════════════════════════════════
+//  NAV
+// ═══════════════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'history' && liveData) buildHistoryPage();
+}
+
+// ═══════════════════════════════════════════
+//  DATA LOADING
+// ═══════════════════════════════════════════
+async function loadData() {
+  if (!SCRIPT_URL) {
+    renderOffline();
+    return;
+  }
+  setSyncStatus('syncing');
+  try {
+    const res  = await fetch(SCRIPT_URL + '?action=getData&t=' + Date.now());
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    liveData = data;
+    renderDashboard(data);
+    populateFormDropdowns(data);
+    setSyncStatus('live');
+    document.getElementById('syncLabel').textContent =
+      'Live · ' + new Date().toLocaleTimeString();
+  } catch(e) {
+    setSyncStatus('error');
+    showAlert('Could not reach Google Sheet. Check your URL.', 'red');
+    console.error(e);
+  }
+}
+
+// Auto-refresh every 30 seconds
+setInterval(() => { if (SCRIPT_URL) loadData(); }, 30000);
+
+// Load on startup
+if (SCRIPT_URL) loadData();
+else renderOffline();
+
+function setSyncStatus(state) {
+  const dot   = document.getElementById('syncDot');
+  const label = document.getElementById('syncLabel');
+  if (state === 'live')    { dot.style.background = '#a8e6a0'; label.textContent = 'Live'; }
+  if (state === 'syncing') { dot.style.background = '#f5c842'; label.textContent = 'Syncing…'; }
+  if (state === 'error')   { dot.style.background = '#e57373'; label.textContent = 'Error'; }
+}
+
+function renderOffline() {
+  document.getElementById('statsRow').innerHTML = `
+    <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">
+      <div style="font-size:2.5rem;margin-bottom:12px">🔗</div>
+      <div style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:6px">Not connected yet</div>
+      <div style="font-size:0.85rem">Paste your Google Apps Script URL in the banner above to load live data.</div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════
+//  DASHBOARD RENDER
+// ═══════════════════════════════════════════
+function renderDashboard(data) {
+  const donations  = data.donations  || [];
+  const donors     = data.donors     || [];
+  const recipients = data.recipients || [];
+  const requests   = data.requests   || [];
+  const inventory  = data.inventory  || [];
+
+  // Donor lookup
+  const donorMap = {};
+  donors.forEach(d => donorMap[d['Donor ID']] = d['Donor Name']);
+  const recipMap = {};
+  recipients.forEach(r => recipMap[r['Recipient ID']] = r['Recipient Name']);
+
+  const approved = requests.filter(r => (r['Status']||'').toLowerCase() === 'approved').length;
+  const pending  = requests.filter(r => (r['Status']||'').toLowerCase() === 'pending').length;
+  const totalUnits = donations.reduce((s,r) => s + (parseInt(r['Quantity'])||0), 0);
+
+  // Stats
+  document.getElementById('statsRow').innerHTML = `
+    <div class="sc g"><div class="sc-ico">🧑‍🤝‍🧑</div><div class="sc-lbl">Donors</div><div class="sc-val">${donors.length}</div><div class="sc-sub">Registered</div></div>
+    <div class="sc o"><div class="sc-ico">🎁</div><div class="sc-lbl">Donations</div><div class="sc-val">${donations.length}</div><div class="sc-sub">${totalUnits} total units</div></div>
+    <div class="sc b"><div class="sc-ico">🤲</div><div class="sc-lbl">Recipients</div><div class="sc-val">${recipients.length}</div><div class="sc-sub">Registered</div></div>
+    <div class="sc r"><div class="sc-ico">📋</div><div class="sc-lbl">Requests</div><div class="sc-val">${requests.length}</div><div class="sc-sub">${approved} approved · ${pending} pending</div></div>
+  `;
+
+  // Pie chart
+  const itemTotals = {};
+  donations.forEach(r => {
+    const item = r['Item']||'';
+    itemTotals[item] = (itemTotals[item]||0) + (parseInt(r['Quantity'])||0);
+  });
+  const labels = Object.keys(itemTotals);
+  const values = Object.values(itemTotals);
+  if (pieChart) pieChart.destroy();
+  if (labels.length) {
+    pieChart = new Chart(document.getElementById('pieChart').getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{ data: values, backgroundColor: PALETTE.slice(0,labels.length), borderColor:'#fff', borderWidth:3, hoverOffset:6 }]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false, cutout:'62%',
+        plugins: {
+          legend:{ position:'bottom', labels:{ font:{family:'DM Sans',size:11}, padding:12, color:'#1c1c1c', boxWidth:11 } },
+          tooltip:{ callbacks:{ label: ctx => ` ${ctx.label}: ${ctx.parsed} units` } }
+        },
+        animation:{ duration:700 }
+      }
+    });
+  }
+
+  // Inventory bars
+  const maxDon = Math.max(...inventory.map(i => parseInt(i['Total Donated'])||0), 1);
+  document.getElementById('inventoryBars').innerHTML = inventory.length
+    ? inventory.map((inv,i) => {
+        const donated = parseInt(inv['Total Donated'])||0;
+        const dist    = parseInt(inv['Total Distributed'])||0;
+        const bal     = parseInt(inv['Balance Available'])||0;
+        const pct     = Math.round((bal/Math.max(donated,1))*100);
+        const low     = bal <= 1;
+        return `<div class="inv-item">
+          <div class="inv-top">
+            <span class="inv-name">${inv['Item']}${low?'<span class="low-stock">⚠ Low</span>':''}</span>
+            <span class="inv-nums">In: ${donated} · Out: ${dist} · <strong>Bal: ${bal}</strong></span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${PALETTE[i%PALETTE.length]}"></div></div>
+        </div>`;
+      }).join('')
+    : '<div class="no-data">No inventory data</div>';
+
+  // Donations table (last 10)
+  document.getElementById('donCount').textContent = donations.length + ' records';
+  document.getElementById('donBody').innerHTML = donations.slice(-10).reverse().map((r,i) => `
+    <tr>
+      <td>${fmtDate(r['Date'])}</td>
+      <td><span class="ava av${i%4}">${ini(donorMap[r['Donor ID']]||r['Donor ID'])}</span>${donorMap[r['Donor ID']]||r['Donor ID']||'—'}</td>
+      <td>${r['Item']||'—'}</td>
+      <td><strong>${r['Quantity']||0}</strong></td>
+    </tr>`).join('') || '<tr><td colspan="4" class="no-data">No donations yet</td></tr>';
+
+  // Requests table
+  document.getElementById('reqCount').textContent = requests.length + ' requests';
+  document.getElementById('reqBody').innerHTML = requests.slice(-10).reverse().map(r => `
+    <tr>
+      <td>${fmtDate(r['Request Date'])}</td>
+      <td>${recipMap[r['Recipient ID']]||r['Recipient ID']||'—'}</td>
+      <td>${r['Item Requested']||'—'}</td>
+      <td>${r['Qty Requested']||0}</td>
+      <td><span class="pill ${pillCls(r['Status'])}">${r['Status']||'—'}</span></td>
+    </tr>`).join('') || '<tr><td colspan="5" class="no-data">No requests yet</td></tr>';
+
+  // Inventory on request page
+  renderReqInventory(inventory);
+}
+
+function renderReqInventory(inventory) {
+  document.getElementById('reqInventory').innerHTML = inventory.length
+    ? `<div class="tbl-wrap"><table>
+        <thead><tr><th>Item</th><th>Available</th><th>Status</th></tr></thead>
+        <tbody>${inventory.map(inv => {
+          const bal = parseInt(inv['Balance Available'])||0;
+          return `<tr>
+            <td>${inv['Item']}</td>
+            <td><strong>${bal}</strong> unit(s)</td>
+            <td>${bal > 0 ? '<span class="pill approved">In Stock</span>' : '<span class="pill rejected">Out of Stock</span>'}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div>`
+    : '<div class="no-data">No inventory data</div>';
+}
+
+// ═══════════════════════════════════════════
+//  FORM DROPDOWNS
+// ═══════════════════════════════════════════
+function populateFormDropdowns(data) {
+  const items = [...new Set((data.donations||[]).map(r => r['Item']).filter(Boolean))];
+  const invItems = (data.inventory||[]).filter(i => (parseInt(i['Balance Available'])||0) > 0).map(i => i['Item']);
+
+  ['d-item'].forEach(id => {
+    const sel = document.getElementById(id);
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">Select an item…</option>' +
+      items.map(i => `<option value="${i}">${i}</option>`).join('');
+    if (cur) sel.value = cur;
+  });
+
+  const rSel = document.getElementById('r-item');
+  rSel.innerHTML = '<option value="">Select an item…</option>' +
+    invItems.map(i => `<option value="${i}">${i}</option>`).join('');
+}
+
+// ═══════════════════════════════════════════
+//  SUBMIT DONATION
+// ═══════════════════════════════════════════
+async function submitDonation() {
+  const name   = document.getElementById('d-name').value.trim();
+  const donorId= document.getElementById('d-id').value.trim();
+  const item   = document.getElementById('d-custom').value.trim() || document.getElementById('d-item').value;
+  const qty    = document.getElementById('d-qty').value;
+
+  if (!name || !item || !qty) {
+    showFormMsg('donateMsg', 'Please fill in Name, Item, and Quantity.', 'error');
+    return;
+  }
+  if (!SCRIPT_URL) { showFormMsg('donateMsg', 'Not connected to Google Sheet yet.', 'error'); return; }
+
+  const btn = document.getElementById('donateBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Submitting…';
+
+  try {
+    const res  = await fetch(SCRIPT_URL, {
+      method:'POST', body: JSON.stringify({ action:'addDonation', data:{ donorName:name, donorId, item, quantity:qty } })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showFormMsg('donateMsg', `✅ ${data.message} Your Donor ID: ${data.donorId}`, 'success');
+      showAlert('Donation recorded!', 'green');
+      ['d-name','d-id','d-qty','d-custom'].forEach(id => document.getElementById(id).value='');
+      document.getElementById('d-item').value='';
+      setTimeout(loadData, 1500);
+    } else {
+      showFormMsg('donateMsg', '❌ ' + data.message, 'error');
+    }
+  } catch(e) {
+    showFormMsg('donateMsg', '❌ Submission failed. Check connection.', 'error');
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<span>Submit Donation</span>';
+}
+
+// ═══════════════════════════════════════════
+//  SUBMIT REQUEST
+// ═══════════════════════════════════════════
+async function submitRequest() {
+  const name = document.getElementById('r-name').value.trim();
+  const recipId = document.getElementById('r-id').value.trim();
+  const item    = document.getElementById('r-item').value;
+  const qty     = document.getElementById('r-qty').value;
+
+  if (!name || !item || !qty) {
+    showFormMsg('requestMsg', 'Please fill in Name, Item, and Quantity.', 'error');
+    return;
+  }
+  if (!SCRIPT_URL) { showFormMsg('requestMsg', 'Not connected to Google Sheet yet.', 'error'); return; }
+
+  const btn = document.getElementById('requestBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Submitting…';
+
+  try {
+    const res  = await fetch(SCRIPT_URL, {
+      method:'POST', body: JSON.stringify({ action:'addRequest', data:{ recipientName:name, recipientId:recipId, item, quantity:qty } })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showFormMsg('requestMsg', `✅ ${data.message}`, 'success');
+      showAlert('Request submitted!', 'amber');
+      ['r-name','r-id','r-qty'].forEach(id => document.getElementById(id).value='');
+      document.getElementById('r-item').value='';
+      setTimeout(loadData, 1500);
+    } else {
+      showFormMsg('requestMsg', '❌ ' + (data.message||'Error'), 'error');
+    }
+  } catch(e) {
+    showFormMsg('requestMsg', '❌ Submission failed. Check connection.', 'error');
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<span>Submit Request</span>';
+}
+
+// ═══════════════════════════════════════════
+//  HISTORY PAGE
+// ═══════════════════════════════════════════
+function buildHistoryPage() {
+  if (!liveData) return;
+  const donations  = liveData.donations  || [];
+  const donors     = liveData.donors     || [];
+  const recipients = liveData.recipients || [];
+  const requests   = liveData.requests   || [];
+
+  // Donation counts per donor
+  const donMap = {};
+  donations.forEach(r => {
+    if (!donMap[r['Donor ID']]) donMap[r['Donor ID']] = { count:0, units:0 };
+    donMap[r['Donor ID']].count++;
+    donMap[r['Donor ID']].units += parseInt(r['Quantity'])||0;
+  });
+
+  document.getElementById('allDonorsBody').innerHTML = donors.map((d,i) => {
+    const stats = donMap[d['Donor ID']] || { count:0, units:0 };
+    return `<tr>
+      <td style="color:var(--muted);font-size:0.77rem">${d['Donor ID']}</td>
+      <td><span class="ava av${i%4}">${ini(d['Donor Name'])}</span>${d['Donor Name']||'—'}</td>
+      <td>${stats.count}</td>
+      <td><strong>${stats.units}</strong></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="4" class="no-data">No donors</td></tr>';
+
+  // Request counts per recipient
+  const recMap = {};
+  requests.forEach(r => {
+    if (!recMap[r['Recipient ID']]) recMap[r['Recipient ID']] = { total:0, approved:0, units:0 };
+    recMap[r['Recipient ID']].total++;
+    if ((r['Status']||'').toLowerCase()==='approved') {
+      recMap[r['Recipient ID']].approved++;
+      recMap[r['Recipient ID']].units += parseInt(r['Qty Requested'])||0;
+    }
+  });
+
+  document.getElementById('allRecipientsBody').innerHTML = recipients.map((r,i) => {
+    const s = recMap[r['Recipient ID']] || { total:0, approved:0, units:0 };
+    return `<tr>
+      <td style="color:var(--muted);font-size:0.77rem">${r['Recipient ID']}</td>
+      <td><span class="ava av${(i+1)%4}">${ini(r['Recipient Name'])}</span>${r['Recipient Name']||'—'}</td>
+      <td>${s.total}</td>
+      <td>${s.approved}</td>
+      <td><strong>${s.units}</strong></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="5" class="no-data">No recipients</td></tr>';
+
+  // Activity log
+  renderActivityLog(liveData.history || []);
+}
+
+function renderActivityLog(history) {
+  document.getElementById('histCount').textContent = history.length + ' entries';
+  document.getElementById('historyBody').innerHTML = [...history].reverse().map(h => `
+    <tr>
+      <td style="color:var(--muted);font-size:0.77rem;white-space:nowrap">${fmtDate(h['Timestamp'])}</td>
+      <td><span class="pill ${h['Type']==='DONATION'?'approved':h['Type']==='REQUEST'?'pending':'other'}" style="font-size:0.63rem">${h['Type']||'—'}</span></td>
+      <td style="color:var(--muted)">${h['Person ID']||'—'}</td>
+      <td>${h['Description']||'—'}</td>
+    </tr>`).join('') || '<tr><td colspan="4" class="no-data">No activity yet</td></tr>';
+}
+
+function filterActivity() {
+  if (!liveData) return;
+  const q = document.getElementById('activitySearch').value.toLowerCase();
+  const filtered = (liveData.history||[]).filter(h =>
+    JSON.stringify(h).toLowerCase().includes(q)
+  );
+  renderActivityLog(filtered);
+}
+
+async function lookupDonor() {
+  if (!SCRIPT_URL) return;
+  const query = document.getElementById('histDonorId').value.trim();
+  if (!query) return;
+
+  // Try to match by ID or name from liveData
+  const donor = (liveData?.donors||[]).find(d =>
+    d['Donor ID'].toLowerCase() === query.toLowerCase() ||
+    (d['Donor Name']||'').toLowerCase().includes(query.toLowerCase())
+  );
+  if (!donor) { document.getElementById('donorHistResult').innerHTML = '<div class="no-data">Donor not found.</div>'; return; }
+
+  const donorId   = donor['Donor ID'];
+  const donations = (liveData.donations||[]).filter(r => r['Donor ID'] === donorId);
+  const totalUnits= donations.reduce((s,r) => s+(parseInt(r['Quantity'])||0), 0);
+
+  document.getElementById('donorHistResult').innerHTML = `
+    <div class="hist-card">
+      <div class="hist-card-top">
+        <div>
+          <div class="hist-card-name">${donor['Donor Name']}</div>
+          <div class="hist-card-id">${donorId}</div>
+        </div>
+      </div>
+      <div class="hist-stats">
+        <div class="hstat"><div class="hstat-val">${donations.length}</div><div class="hstat-lbl">Donations</div></div>
+        <div class="hstat"><div class="hstat-val">${totalUnits}</div><div class="hstat-lbl">Total Units</div></div>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Date</th><th>Item</th><th>Qty</th></tr></thead>
+        <tbody>${donations.map(r => `<tr><td>${fmtDate(r['Date'])}</td><td>${r['Item']||'—'}</td><td>${r['Quantity']||0}</td></tr>`).join('')||'<tr><td colspan="3" class="no-data">No donations</td></tr>'}</tbody>
+      </table></div>
+    </div>`;
+}
+
+async function lookupRecipient() {
+  const query = document.getElementById('histRecipientId').value.trim();
+  if (!query) return;
+
+  const recip = (liveData?.recipients||[]).find(r =>
+    r['Recipient ID'].toLowerCase() === query.toLowerCase() ||
+    (r['Recipient Name']||'').toLowerCase().includes(query.toLowerCase())
+  );
+  if (!recip) { document.getElementById('recipientHistResult').innerHTML = '<div class="no-data">Recipient not found.</div>'; return; }
+
+  const recipId  = recip['Recipient ID'];
+  const requests = (liveData.requests||[]).filter(r => r['Recipient ID'] === recipId);
+  const approved = requests.filter(r => (r['Status']||'').toLowerCase() === 'approved');
+  const totalRec = approved.reduce((s,r) => s+(parseInt(r['Qty Requested'])||0), 0);
+
+  document.getElementById('recipientHistResult').innerHTML = `
+    <div class="hist-card">
+      <div class="hist-card-top">
+        <div>
+          <div class="hist-card-name">${recip['Recipient Name']}</div>
+          <div class="hist-card-id">${recipId}</div>
+        </div>
+      </div>
+      <div class="hist-stats">
+        <div class="hstat"><div class="hstat-val">${requests.length}</div><div class="hstat-lbl">Requests</div></div>
+        <div class="hstat"><div class="hstat-val" style="color:var(--accent)">${approved.length}</div><div class="hstat-lbl">Approved</div></div>
+        <div class="hstat"><div class="hstat-val" style="color:var(--blue)">${totalRec}</div><div class="hstat-lbl">Units Received</div></div>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Date</th><th>Item</th><th>Qty</th><th>Status</th></tr></thead>
+        <tbody>${requests.map(r => `
+          <tr>
+            <td>${fmtDate(r['Request Date'])}</td>
+            <td>${r['Item Requested']||'—'}</td>
+            <td>${r['Qty Requested']||0}</td>
+            <td><span class="pill ${pillCls(r['Status'])}">${r['Status']||'—'}</span></td>
+          </tr>`).join('')||'<tr><td colspan="4" class="no-data">No requests</td></tr>'}</tbody>
+      </table></div>
+    </div>`;
+}
+
+function switchHistTab(tab) {
+  histTab = tab;
+  document.querySelectorAll('.hist-tab').forEach((t,i) => t.classList.toggle('active', ['donor','recipient','all'][i] === tab));
+  document.getElementById('hist-donor').style.display     = tab === 'donor'     ? 'block' : 'none';
+  document.getElementById('hist-recipient').style.display = tab === 'recipient' ? 'block' : 'none';
+  document.getElementById('hist-all').style.display       = tab === 'all'       ? 'block' : 'none';
+  if (liveData) buildHistoryPage();
+}
+
+// ═══════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════
+function fmtDate(d) {
+  if (!d) return '—';
+  try { const dt = new Date(d); return isNaN(dt) ? d : dt.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
+  catch { return d; }
+}
+function ini(name) { if(!name)return'?'; return name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2); }
+function pillCls(s) { if(!s)return'other'; const l=s.toLowerCase(); return l==='approved'?'approved':l==='pending'?'pending':'rejected'; }
+function showFormMsg(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.className = 'form-msg ' + type;
+  setTimeout(() => el.style.display = 'none', 6000);
+}
+function showAlert(msg, type='green') {
+  const el = document.getElementById('alert');
+  el.textContent = msg; el.className = `alert ${type} show`;
+  setTimeout(() => el.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>
