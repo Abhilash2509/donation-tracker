@@ -733,11 +733,15 @@ async function submitDonation() {
   btn.innerHTML = '<span class="spinner"></span> Submitting…';
 
   try {
-    const payload = JSON.stringify({ action:'addDonation', donorName:name, donorId: donorId||'', item, quantity: qty, notes:'' });
-    const res  = await fetch(SCRIPT_URL, {
-      method:'POST',
-      body: payload
+    const params = new URLSearchParams({
+      action: 'addDonation',
+      donorName: name,
+      donorId: donorId || '',
+      item,
+      quantity: qty,
+      notes: ''
     });
+    const res  = await fetch(SCRIPT_URL + '?' + params.toString());
     const data = await res.json();
     if (data.success) {
       showFormMsg('donateMsg', `✅ ${data.message}${data.donorId ? ' Your Donor ID: ' + data.donorId : ''}`, 'success');
@@ -746,10 +750,10 @@ async function submitDonation() {
       document.getElementById('d-item').value='';
       setTimeout(loadData, 1500);
     } else {
-      showFormMsg('donateMsg', '❌ ' + data.message, 'error');
+      showFormMsg('donateMsg', '❌ ' + (data.error || data.message || 'Unknown error'), 'error');
     }
   } catch(e) {
-    showFormMsg('donateMsg', '❌ Submission failed. Check connection.', 'error');
+    showFormMsg('donateMsg', '❌ Submission failed: ' + e.message, 'error');
   }
   btn.disabled = false;
   btn.innerHTML = '<span>Submit Donation</span>';
@@ -781,11 +785,15 @@ async function submitRequest() {
   btn.innerHTML = '<span class="spinner"></span> Submitting…';
 
   try {
-    const payload = JSON.stringify({ action:'addRequest', recipientName:name, recipientId: recipId||'', itemRequested:item, qtyRequested: qty, notes:'' });
-    const res  = await fetch(SCRIPT_URL, {
-      method:'POST',
-      body: payload
+    const params = new URLSearchParams({
+      action: 'addRequest',
+      recipientName: name,
+      recipientId: recipId || '',
+      itemRequested: item,
+      qtyRequested: qty,
+      notes: ''
     });
+    const res  = await fetch(SCRIPT_URL + '?' + params.toString());
     const data = await res.json();
     if (data.success) {
       showFormMsg('requestMsg', `✅ ${data.message}`, 'success');
@@ -795,10 +803,10 @@ async function submitRequest() {
       document.getElementById('r-custom-wrap').style.display='none';
       setTimeout(loadData, 1500);
     } else {
-      showFormMsg('requestMsg', '❌ ' + (data.message||'Error'), 'error');
+      showFormMsg('requestMsg', '❌ ' + (data.error || data.message || 'Unknown error'), 'error');
     }
   } catch(e) {
-    showFormMsg('requestMsg', '❌ Submission failed. Check connection.', 'error');
+    showFormMsg('requestMsg', '❌ Submission failed: ' + e.message, 'error');
   }
   btn.disabled = false;
   btn.innerHTML = '<span>Submit Request</span>';
