@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin · Grocery Donation Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+:root{--bg:#f4f1eb;--surface:#fff;--border:#e2ddd4;--accent:#2d5a27;--a-light:#eaf3e8;--amber:#c07c2e;--am-light:#fdf3e3;--red:#b83232;--red-light:#fdeaea;--blue:#1f5f8b;--bl-light:#e5f0f8;--text:#1c1c1c;--muted:#888078;--radius:14px;--sh:0 2px 14px rgba(0,0,0,0.07)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+/* LOGIN */
+#LS{position:fixed;inset:0;background:linear-gradient(135deg,#1a3d16,var(--accent));display:flex;align-items:center;justify-content:center;z-index:9999}
+.lb{background:white;border-radius:20px;padding:38px;max-width:370px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center}
+.li{font-size:2.8rem;margin-bottom:14px}.lt{font-family:'Syne',sans-serif;font-size:1.45rem;font-weight:800;color:var(--accent);margin-bottom:5px}
+.ls{font-size:0.84rem;color:var(--muted);margin-bottom:22px}
+.lin{width:100%;padding:12px 15px;border:2px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:1rem;text-align:center;letter-spacing:0.1em;outline:none;transition:border-color .15s;margin-bottom:11px}
+.lin:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--a-light)}
+.lbtn{width:100%;padding:12px;background:var(--accent);color:white;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.93rem;font-weight:700;cursor:pointer}
+.lbtn:hover{background:#1d3e19}
+.lerr{color:var(--red);font-size:0.82rem;margin-top:9px;display:none}
+.lhint{font-size:0.73rem;color:var(--muted);margin-top:14px;line-height:1.65;background:var(--bg);border-radius:8px;padding:10px 12px;text-align:left}
+/* NAV */
+#AS{display:none}
+nav{background:#1c1c1c;padding:12px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,0.3)}
+.brand{font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:white;display:flex;align-items:center;gap:8px}
+.badge{background:var(--accent);color:white;font-size:0.62rem;padding:2px 7px;border-radius:999px;font-weight:600;letter-spacing:0.05em}
+.nav-tabs{display:flex;gap:5px;flex-wrap:wrap}
+.nav-tab{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.13);color:rgba(255,255,255,0.65);padding:5px 13px;border-radius:999px;font-size:0.77rem;font-weight:500;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.nav-tab:hover,.nav-tab.active{background:var(--accent);border-color:var(--accent);color:white}
+.nav-r{display:flex;align-items:center;gap:9px}
+.sync-chip{font-size:0.71rem;color:rgba(255,255,255,0.5);display:flex;align-items:center;gap:5px;cursor:pointer}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#aaa;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.btn-lo{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.13);color:rgba(255,255,255,0.55);padding:4px 11px;border-radius:7px;font-size:0.74rem;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-lo:hover{border-color:var(--red);color:var(--red)}
+/* SETTINGS MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:500;align-items:center;justify-content:center}
+.modal{background:#fff;border-radius:16px;padding:26px;max-width:500px;width:91%;box-shadow:0 12px 40px rgba(0,0,0,0.2)}
+.mhdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.mttl{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:700}
+.mcls{background:none;border:none;font-size:1.2rem;cursor:pointer;color:#888}
+/* LAYOUT */
+.main{max-width:1280px;margin:0 auto;padding:26px}
+.page{display:none}.page.active{display:block}
+@media(max-width:860px){.main{padding:14px}}
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:13px;margin-bottom:22px}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:17px;box-shadow:var(--sh);position:relative;overflow:hidden;transition:transform .18s}
+.sc:hover{transform:translateY(-2px)}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.sc.g::before{background:var(--accent)}.sc.o::before{background:var(--amber)}.sc.b::before{background:var(--blue)}.sc.r::before{background:var(--red)}
+.sc-ico{font-size:1.2rem;margin-bottom:7px}.sc-lbl{font-size:0.69rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px}
+.sc-val{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;line-height:1}
+.sc.g .sc-val{color:var(--accent)}.sc.o .sc-val{color:var(--amber)}.sc.b .sc-val{color:var(--blue)}.sc.r .sc-val{color:var(--red)}
+.sc-sub{font-size:0.71rem;color:var(--muted);margin-top:3px}
+.row{display:grid;gap:16px;margin-bottom:16px}.row.c2{grid-template-columns:1fr 1.35fr}
+@media(max-width:800px){.row.c2{grid-template-columns:1fr}}
+/* PANELS */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--sh);margin-bottom:16px}
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+.pt{font-family:'Syne',sans-serif;font-size:0.92rem;font-weight:700;display:flex;align-items:center;gap:6px}
+.pc{font-size:0.7rem;background:var(--bg);border:1px solid var(--border);border-radius:999px;padding:2px 9px;color:var(--muted)}
+.chart-wrap{position:relative;height:190px}
+.inv-item{margin-bottom:13px}.inv-item:last-child{margin-bottom:0}
+.inv-top{display:flex;justify-content:space-between;margin-bottom:5px;align-items:baseline}
+.inv-name{font-size:0.85rem;font-weight:600}.inv-nums{font-size:0.72rem;color:var(--muted)}
+.bar-track{height:7px;background:var(--bg);border-radius:4px;overflow:hidden;border:1px solid var(--border)}
+.bar-fill{height:100%;border-radius:4px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+.low-stock{color:var(--red);font-size:0.68rem;font-weight:600;margin-left:5px}
+/* TABLES */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:0.82rem}
+th{text-align:left;font-size:0.67rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.07em;padding:0 7px 9px 0;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:9px 7px 9px 0;border-bottom:1px solid var(--bg);vertical-align:middle}
+tr:last-child td{border-bottom:none}tbody tr:hover td{background:var(--bg)}
+.pill{display:inline-block;font-size:0.64rem;font-weight:600;padding:3px 8px;border-radius:999px;text-transform:uppercase}
+.pill.submitted,.pill.pending{background:var(--am-light);color:var(--amber)}
+.pill.collected,.pill.approved,.pill.delivered{background:var(--a-light);color:var(--accent)}
+.pill.delivery-pending{background:var(--bl-light);color:var(--blue)}
+.pill.rejected{background:var(--red-light);color:var(--red)}
+.ava{display:inline-flex;width:24px;height:24px;border-radius:50%;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;margin-right:5px;vertical-align:middle;flex-shrink:0}
+.av0{background:var(--a-light);color:var(--accent)}.av1{background:var(--am-light);color:var(--amber)}.av2{background:var(--bl-light);color:var(--blue)}.av3{background:var(--red-light);color:var(--red)}
+/* FORMS */
+input,select,textarea{padding:9px 12px;border:1px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--bg);color:var(--text);outline:none;transition:border-color .15s;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--a-light)}
+textarea{resize:vertical;min-height:60px}
+label{font-size:0.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.84rem;font-weight:600;cursor:pointer;transition:all .18s}
+.btn-green{background:var(--accent);color:white}.btn-green:hover{background:#1d3e19}
+.btn-amber{background:var(--amber);color:white}.btn-amber:hover{background:#9a621f}
+.btn-blue{background:var(--blue);color:white}.btn-blue:hover{background:#174a6e}
+.btn-red{background:var(--red-light);color:var(--red);border:1px solid #f5c0c0}.btn-red:hover{background:#fad4d4}
+.btn-dark{background:#1c1c1c;color:white}.btn-dark:hover{background:#333}
+.btn-sm{padding:5px 11px;font-size:0.76rem;border-radius:7px}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+/* ACTION ROWS */
+.arow{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--bg);flex-wrap:wrap}
+.arow:last-child{border-bottom:none}
+.ainfo{font-size:0.83rem;line-height:1.65}
+.abtns{display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap}
+/* WORKFLOW STEPS */
+.wf{display:flex;align-items:center;flex-wrap:wrap;gap:3px;margin-bottom:4px}
+.ws{font-size:0.67rem;font-weight:600;padding:3px 8px;border-radius:999px;border:1px solid var(--border);color:var(--muted);background:var(--bg)}
+.ws.done{background:var(--a-light);color:var(--accent);border-color:#b8d9b2}
+.ws.current{background:var(--accent);color:white;border-color:var(--accent)}
+.wa{font-size:0.65rem;color:var(--muted)}
+/* ITEM MASTER */
+.item-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:16px}
+.item-card{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.item-name{font-size:0.86rem;font-weight:600}
+.item-cat{font-size:0.7rem;color:var(--muted)}
+.add-item-row{display:flex;gap:8px;flex-wrap:wrap}
+.add-item-row input{flex:1;min-width:160px}
+/* HIST TABS */
+.htabs{display:flex;gap:7px;margin-bottom:16px;flex-wrap:wrap}
+.htab{padding:6px 16px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.81rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.htab.active{background:var(--accent);border-color:var(--accent);color:white;font-weight:600}
+/* REPORTS */
+.rep-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:580px;margin-bottom:18px}
+@media(max-width:560px){.rep-type-grid{grid-template-columns:1fr}}
+.rstat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:10px;margin-bottom:14px}
+.rstat{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.rstat-val{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--accent)}
+.rstat-lbl{font-size:0.68rem;color:var(--muted);text-transform:uppercase;margin-top:2px}
+/* MISC */
+.no-data{color:var(--muted);font-size:0.82rem;text-align:center;padding:18px 0}
+.tip{padding:12px 16px;background:var(--am-light);border:1px solid #e8c87a;border-radius:9px;font-size:0.8rem;color:#7a5010;line-height:1.6;margin-top:14px}
+.spinner{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.alert{position:fixed;top:18px;right:18px;padding:11px 18px;border-radius:var(--radius);font-size:0.82rem;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,0.2);z-index:9998;transform:translateX(140%);transition:transform .3s ease;max-width:300px}
+.alert.show{transform:translateX(0)}.alert.green{background:var(--accent);color:white}.alert.red{background:var(--red);color:white}.alert.amber{background:var(--amber);color:white}
+footer{text-align:center;color:var(--muted);font-size:0.7rem;padding:14px;border-top:1px solid var(--border);margin-top:8px}
+/* PRINT */
+@media print{
+  body *{visibility:hidden}
+  #printArea,#printArea *{visibility:visible}
+  #printArea{position:fixed;inset:0;background:white;padding:30px;font-family:'DM Sans',sans-serif;color:#1c1c1c;font-size:0.85rem}
+  .ph{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:#2d5a27;border-bottom:2px solid #2d5a27;padding-bottom:12px;margin-bottom:18px}
+  .pm{font-size:0.78rem;color:#888;margin-bottom:20px}
+  table{width:100%;border-collapse:collapse;font-size:0.78rem}
+  th{background:#eaf3e8;color:#2d5a27;padding:6px 8px;font-weight:700;font-size:0.66rem;text-transform:uppercase;letter-spacing:0.05em;text-align:left}
+  td{padding:7px 8px;border-bottom:1px solid #f0ede6}
+  .pf{margin-top:22px;font-size:0.7rem;color:#aaa;text-align:center;border-top:1px solid #e2ddd4;padding-top:10px}
+  nav,#LS,.alert,.overlay,footer,button{display:none!important}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="LS">
+  <div class="lb">
+    <div class="li">🔐</div>
+    <div class="lt">Admin Access</div>
+    <div class="ls">Grocery Donation Tracker · Admin Portal</div>
+    <input type="password" class="lin" id="pin" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')chk()"/>
+    <button class="lbtn" onclick="chk()">Unlock Dashboard →</button>
+    <div class="lerr" id="lerr">❌ Incorrect password. Please try again.</div>
+    <div class="lhint">
+      <strong>To change your password</strong>, run in browser console (F12):<br>
+      <code style="font-size:0.68rem;word-break:break-all">crypto.subtle.digest('SHA-256',new TextEncoder().encode('YourNewPass')).then(b=>console.log([...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')))</code><br>
+      Then replace <code>ADMIN_HASH</code> in this file.
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="overlay" id="sOv">
+  <div class="modal">
+    <div class="mhdr"><div class="mttl">⚙️ Google Sheet Connection</div><button class="mcls" onclick="cSett()">✕</button></div>
+    <p style="font-size:0.82rem;color:#888;margin-bottom:14px;line-height:1.6">Paste your Google Apps Script Web App URL. All three portals share this URL.</p>
+    <div style="margin-bottom:13px"><label style="display:block;margin-bottom:5px">Web App URL</label><input type="text" id="sui" placeholder="https://script.google.com/macros/s/…/exec"/></div>
+    <div style="display:flex;gap:9px;flex-wrap:wrap">
+      <button onclick="saveSU()" class="btn btn-green">Connect →</button>
+      <button onclick="discSU()" class="btn btn-red btn-sm" style="padding:8px 14px">Disconnect</button>
+      <button onclick="cSett()" style="background:var(--bg);color:#888;border:1px solid var(--border);padding:8px 14px;border-radius:9px;font-size:0.84rem;cursor:pointer;font-family:inherit;margin-left:auto">Cancel</button>
+    </div>
+    <div id="sm" style="margin-top:11px;font-size:0.8rem;display:none;padding:8px 12px;border-radius:7px"></div>
+  </div>
+</div>
+
+<!-- PRINT -->
+<div id="printArea" style="display:none"></div>
+
+<!-- APP -->
+<div id="AS">
+<nav>
+  <div class="brand">🛒 Grocery Donation Tracker <span class="badge">ADMIN</span></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="go('dashboard',this)">📊 Dashboard</button>
+    <button class="nav-tab" onclick="go('donations',this)">📦 Collections</button>
+    <button class="nav-tab" onclick="go('requests',this)">✅ Requests</button>
+    <button class="nav-tab" onclick="go('items',this)">🗂 Items</button>
+    <button class="nav-tab" onclick="go('history',this)">🕓 History</button>
+    <button class="nav-tab" onclick="go('reports',this)">📄 Reports</button>
+    <button class="nav-tab" onclick="go('masters',this)">👥 Masters</button>
+  </div>
+  <div class="nav-r">
+    <div class="sync-chip" onclick="oSett()"><div class="sync-dot" id="sd" style="background:#aaa"></div><span id="sl">Not connected</span></div>
+    <button onclick="oSett()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.13);color:rgba(255,255,255,0.55);padding:5px 11px;border-radius:7px;font-size:0.74rem;cursor:pointer;font-family:inherit">⚙ Settings</button>
+    <button class="btn-lo" onclick="logout()">Sign Out</button>
+  </div>
+</nav>
+<div class="alert" id="alert"></div>
+<div class="main">
+
+<!-- ══ DASHBOARD ══ -->
+<div class="page active" id="page-dashboard">
+  <div class="stats" id="statsRow"><div class="no-data" style="grid-column:1/-1">Click ⚙ Settings to connect your Google Sheet →</div></div>
+  <div class="row c2">
+    <div class="panel"><div class="ph"><div class="pt">🥫 Donations by Item</div></div><div class="chart-wrap"><canvas id="pie"></canvas></div></div>
+    <div class="panel"><div class="ph"><div class="pt">📦 Live Inventory</div></div><div id="invBars"><div class="no-data">—</div></div></div>
+  </div>
+  <div class="panel" style="margin-bottom:16px">
+    <div class="ph"><div class="pt">📦 Donations Awaiting Collection</div><div class="pc" id="pendDonCnt">—</div></div>
+    <div id="pendDonList"><div class="no-data">—</div></div>
+  </div>
+  <div class="panel">
+    <div class="ph"><div class="pt">⏳ Requests Awaiting Action</div><div class="pc" id="pendReqCnt">—</div></div>
+    <div id="pendReqList"><div class="no-data">—</div></div>
+  </div>
+</div>
+
+<!-- ══ DONATIONS COLLECTION ══ -->
+<div class="page" id="page-donations">
+  <div class="panel" style="margin-bottom:16px">
+    <div class="ph"><div class="pt">📬 Submitted — Awaiting Collection</div><div class="pc" id="subCnt">—</div></div>
+    <div id="subList"><div class="no-data">No pending collections</div></div>
+  </div>
+  <div class="panel">
+    <div class="ph"><div class="pt">✅ All Donations</div><div class="pc" id="allDonCnt">—</div></div>
+    <div class="tw"><table><thead><tr><th>Date</th><th>Donor</th><th>Item</th><th>Qty</th><th>Status</th><th>Action</th></tr></thead><tbody id="allDonBody"></tbody></table></div>
+  </div>
+  <div class="tip">💡 Once you've physically collected a donation, click <strong>Mark Collected</strong>. This updates the inventory balance and confirms receipt.</div>
+</div>
+
+<!-- ══ REQUESTS ══ -->
+<div class="page" id="page-requests">
+  <div class="panel" style="margin-bottom:16px">
+    <div class="ph"><div class="pt">⏳ Pending Requests</div><div class="pc" id="pendRCnt">—</div></div>
+    <div id="pendRList"><div class="no-data">No pending requests</div></div>
+  </div>
+  <div class="panel" style="margin-bottom:16px">
+    <div class="ph"><div class="pt">🚚 Approved — Delivery Pending</div><div class="pc" id="dpCnt">—</div></div>
+    <div id="dpList"><div class="no-data">None</div></div>
+  </div>
+  <div class="panel">
+    <div class="ph"><div class="pt">📋 All Requests</div><div class="pc" id="allRCnt">—</div></div>
+    <div class="tw"><table><thead><tr><th>Date</th><th>Recipient</th><th>Address</th><th>Item</th><th>Qty</th><th>Status</th><th>Next Action</th></tr></thead><tbody id="allRBody"></tbody></table></div>
+  </div>
+  <div class="tip">💡 <strong>Workflow:</strong> Pending → Approve → Delivery Pending → Mark Delivered &nbsp;·&nbsp; Or Reject at any stage.</div>
+</div>
+
+<!-- ══ ITEM MASTER ══ -->
+<div class="page" id="page-items">
+  <div class="panel">
+    <div class="ph"><div class="pt">🗂 Item Master List <span style="font-size:0.72rem;color:var(--muted);font-weight:400">(donors and recipients see only this list)</span></div><div class="pc" id="itemCnt">—</div></div>
+    <div class="add-item-row" style="margin-bottom:18px">
+      <input type="text" id="newItem" placeholder="Item name e.g. Rice 10kg"/>
+      <input type="text" id="newCat" placeholder="Category e.g. Grains" style="max-width:180px"/>
+      <button class="btn btn-green" onclick="addItem()">+ Add Item</button>
+    </div>
+    <div id="itemGrid" class="item-grid"><div class="no-data">No items yet</div></div>
+  </div>
+  <div class="tip">💡 Items deleted here are marked inactive — historical donation records remain intact. Donors and recipients will no longer see deleted items in their dropdowns.</div>
+</div>
+
+<!-- ══ HISTORY ══ -->
+<div class="page" id="page-history">
+  <div class="htabs">
+    <button class="htab active" onclick="sHTab('donors')">🧑 Donors</button>
+    <button class="htab" onclick="sHTab('recipients')">🤲 Recipients</button>
+    <button class="htab" onclick="sHTab('all')">📋 Full Log</button>
+  </div>
+  <div id="ht-donors">
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <input type="text" id="hdid" placeholder="Type Donor ID or name…" style="flex:1"/>
+      <button class="btn btn-green" onclick="lookupD()">Look Up</button>
+    </div>
+    <div id="hdres"></div>
+    <div class="panel" style="margin-top:14px">
+      <div class="ph"><div class="pt">All Donors</div></div>
+      <div class="tw"><table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Address</th><th>Donations</th><th>Collected</th><th>Units</th></tr></thead><tbody id="allDB"></tbody></table></div>
+    </div>
+  </div>
+  <div id="ht-recipients" style="display:none">
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <input type="text" id="hrid" placeholder="Type Recipient ID or name…" style="flex:1"/>
+      <button class="btn btn-green" onclick="lookupR()">Look Up</button>
+    </div>
+    <div id="hrres"></div>
+    <div class="panel" style="margin-top:14px">
+      <div class="ph"><div class="pt">All Recipients</div></div>
+      <div class="tw"><table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Address</th><th>Requests</th><th>Delivered</th><th>Units</th></tr></thead><tbody id="allRB"></tbody></table></div>
+    </div>
+  </div>
+  <div id="ht-all" style="display:none">
+    <input type="text" id="actS" placeholder="Search activity log…" oninput="filtAct()" style="margin-bottom:13px"/>
+    <div class="panel">
+      <div class="ph"><div class="pt">📋 Full Activity Log</div><div class="pc" id="logCnt">—</div></div>
+      <div class="tw"><table><thead><tr><th>Timestamp</th><th>Type</th><th>Person ID</th><th>Item</th><th>Qty</th><th>Status</th></tr></thead><tbody id="logBody"></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ REPORTS ══ -->
+<div class="page" id="page-reports">
+  <div class="panel">
+    <div class="ph"><div class="pt">📄 Generate PDF Report</div></div>
+    <div class="rep-type-grid">
+      <div><label style="display:block;margin-bottom:5px">Report Type</label>
+        <select id="rtype" onchange="onRType()">
+          <option value="">— Select type —</option>
+          <option value="donor">Individual Donor</option>
+          <option value="recipient">Individual Recipient</option>
+          <option value="all-donors">All Donors Summary</option>
+          <option value="all-recipients">All Recipients Summary</option>
+          <option value="inventory">Inventory Status</option>
+          <option value="collections">Collection Queue</option>
+          <option value="full">Full Activity Log</option>
+        </select>
+      </div>
+      <div id="personWrap" style="display:none">
+        <label id="personLbl" style="display:block;margin-bottom:5px">Select Person</label>
+        <select id="personSel" onchange="genReport()"></select>
+      </div>
+    </div>
+    <div id="repContent" style="display:none">
+      <div id="repBody" style="margin-bottom:14px"></div>
+      <button class="btn btn-dark" onclick="printRep()">🖨 Download as PDF</button>
+      <span style="font-size:0.77rem;color:var(--muted);margin-left:10px">Browser print dialog → Save as PDF</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MASTERS ══ -->
+<div class="page" id="page-masters">
+  <div class="panel" style="margin-bottom:16px">
+    <div class="ph"><div class="pt">🧑‍🤝‍🧑 Donor Master List</div><div class="pc" id="dmCnt">—</div></div>
+    <div class="tw"><table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Address</th><th>Registered</th><th>Donations</th><th>Units</th></tr></thead><tbody id="dmBody"></tbody></table></div>
+  </div>
+  <div class="panel">
+    <div class="ph"><div class="pt">🙋 Recipient Master List</div><div class="pc" id="rmCnt">—</div></div>
+    <div class="tw"><table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Address</th><th>Registered</th><th>Requests</th><th>Delivered</th><th>Units</th></tr></thead><tbody id="rmBody"></tbody></table></div>
+  </div>
+</div>
+
+</div>
+<footer>Admin Portal · Grocery Donation Tracker · Secure Session 🔐</footer>
+</div>
+
+<script>
+// ══ CONFIG ══
+// Default password: Admin@Grocery2025
+// To change: run in browser console:
+// crypto.subtle.digest('SHA-256',new TextEncoder().encode('YourNewPass'))
+//   .then(b=>console.log([...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')))
+// Replace ADMIN_HASH below with the output.
+const ADMIN_HASH='daa45e577d68b1d2e63bf2068f448c8f10bc6f6c4dee90efefdb5c9c07e46346';
+
+let SU=localStorage.getItem('donationScriptUrl')||'';
+let LD=null,pie=null,hTab='donors';
+const PAL=['#2d5a27','#c07c2e','#1f5f8b','#b83232','#6c3483','#117a65'];
+
+// ══ AUTH ══
+async function chk(){
+  const p=document.getElementById('pin').value; if(!p)return;
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(p));
+  const h=[...new Uint8Array(buf)].map(x=>x.toString(16).padStart(2,'0')).join('');
+  if(h===ADMIN_HASH){
+    document.getElementById('LS').style.display='none';
+    document.getElementById('AS').style.display='block';
+    sessionStorage.setItem('adm','1');
+    if(SU)loadData(); else oSett();
+  }else{
+    document.getElementById('lerr').style.display='block';
+    document.getElementById('pin').value='';
+    setTimeout(()=>document.getElementById('lerr').style.display='none',3000);
+  }
+}
+document.getElementById('pin').addEventListener('keydown',e=>{if(e.key==='Enter')chk();});
+function logout(){sessionStorage.removeItem('adm');document.getElementById('LS').style.display='flex';document.getElementById('AS').style.display='none';document.getElementById('pin').value='';}
+if(sessionStorage.getItem('adm')==='1'){document.getElementById('LS').style.display='none';document.getElementById('AS').style.display='block';if(SU)loadData();else oSett();}
+
+// ══ SETTINGS ══
+function oSett(){document.getElementById('sui').value=SU||'';document.getElementById('sOv').style.display='flex';document.getElementById('sm').style.display='none';setTimeout(()=>document.getElementById('sui').focus(),100);}
+function cSett(){document.getElementById('sOv').style.display='none';}
+document.getElementById('sOv').addEventListener('click',function(e){if(e.target===this)cSett();});
+function saveSU(){
+  const v=document.getElementById('sui').value.trim();
+  if(!v||!v.startsWith('https://script.google.com')){ssm('⚠️ Please paste a valid Google Apps Script URL.','err');return;}
+  SU=v;localStorage.setItem('donationScriptUrl',v);ssm('✅ Connected! Loading data…','ok');setTimeout(cSett,900);loadData();
+}
+function discSU(){SU='';localStorage.removeItem('donationScriptUrl');document.getElementById('sui').value='';setSS('error');ssm('Disconnected.','err');}
+function ssm(msg,type){const el=document.getElementById('sm');el.textContent=msg;el.style.display='block';el.style.color=type==='ok'?'#2d5a27':'#b83232';el.style.background=type==='ok'?'#eaf3e8':'#fdeaea';}
+
+// ══ NAV ══
+function go(n,b){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+n).classList.add('active');
+  if(b)b.classList.add('active');
+  if(n==='history'&&LD)buildHistory();
+  if(n==='reports')onRType();
+  if(n==='masters'&&LD)buildMasters();
+  if(n==='items'&&LD)buildItems();
+  if(n==='donations'&&LD)buildDonations();
+  if(n==='requests'&&LD)buildRequests();
+}
+
+// ══ DATA ══
+async function loadData(){
+  if(!SU)return; setSS('syncing');
+  try{
+    const r=await fetch(SU+'?action=getData&t='+Date.now());
+    const d=await r.json(); if(d.error)throw new Error(d.error);
+    LD=d; renderDash(d); setSS('live');
+    document.getElementById('sl').textContent='Live · '+new Date().toLocaleTimeString();
+    const ap=document.querySelector('.page.active')?.id;
+    if(ap==='page-donations')buildDonations();
+    if(ap==='page-requests')buildRequests();
+    if(ap==='page-history')buildHistory();
+    if(ap==='page-masters')buildMasters();
+    if(ap==='page-items')buildItems();
+  }catch(e){setSS('error');sa('Could not reach Google Sheet.','red');console.error(e);}
+}
+setInterval(()=>{if(SU&&sessionStorage.getItem('adm'))loadData();},30000);
+
+function setSS(s){
+  const dot=document.getElementById('sd'),lbl=document.getElementById('sl');
+  if(s==='live'){dot.style.background='#a8e6a0';}
+  if(s==='syncing'){dot.style.background='#f5c842';}
+  if(s==='error'){dot.style.background='#e57373';lbl.textContent='Error';}
+}
+
+function compInv(donations,requests){
+  const m={};
+  (donations||[]).forEach(r=>{if((r['Status']||'').toLowerCase()==='collected'){const it=String(r['Item']||'').trim();if(!it)return;if(!m[it])m[it]={d:0,di:0};m[it].d+=(parseInt(r['Quantity'])||0);}});
+  (requests||[]).forEach(r=>{if((r['Status']||'').toLowerCase()==='delivered'){const it=String(r['Item Requested']||'').trim();if(!it)return;if(!m[it])m[it]={d:0,di:0};m[it].di+=(parseInt(r['Qty Requested'])||0);}});
+  return Object.entries(m).map(([item,v])=>({item,donated:v.d,distributed:v.di,balance:v.d-v.di}));
+}
+
+// ══ DASHBOARD ══
+function renderDash(data){
+  const don=data.donations||[],donors=data.donors||[],rec=data.recipients||[],req=data.requests||[];
+  const dm={},rm={};
+  donors.forEach(d=>dm[d['Donor ID']]=d['Donor Name']);
+  rec.forEach(r=>rm[r['Recipient ID']]=r['Recipient Name']);
+  const totalUnits=don.reduce((s,r)=>s+(parseInt(r['Quantity'])||0),0);
+  const pendReq=req.filter(r=>(r['Status']||'').toLowerCase()==='pending').length;
+  const submitted=don.filter(r=>(r['Status']||'submitted').toLowerCase()==='submitted').length;
+
+  document.getElementById('statsRow').innerHTML=`
+    <div class="sc g"><div class="sc-ico">🧑‍🤝‍🧑</div><div class="sc-lbl">Donors</div><div class="sc-val">${donors.length}</div><div class="sc-sub">Registered</div></div>
+    <div class="sc o"><div class="sc-ico">🎁</div><div class="sc-lbl">Donations</div><div class="sc-val">${don.length}</div><div class="sc-sub">${totalUnits} total units</div></div>
+    <div class="sc b"><div class="sc-ico">🤲</div><div class="sc-lbl">Recipients</div><div class="sc-val">${rec.length}</div><div class="sc-sub">Registered</div></div>
+    <div class="sc r"><div class="sc-ico">⏳</div><div class="sc-lbl">Action Needed</div><div class="sc-val">${submitted+pendReq}</div><div class="sc-sub">${submitted} to collect · ${pendReq} to approve</div></div>`;
+
+  // Pie
+  const it={};don.forEach(r=>{const k=r['Item']||'';it[k]=(it[k]||0)+(parseInt(r['Quantity'])||0);});
+  const labels=Object.keys(it),vals=Object.values(it);
+  if(pie)pie.destroy();
+  if(labels.length)pie=new Chart(document.getElementById('pie').getContext('2d'),{type:'doughnut',data:{labels,datasets:[{data:vals,backgroundColor:PAL.slice(0,labels.length),borderColor:'#fff',borderWidth:3,hoverOffset:5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{font:{family:'DM Sans',size:11},padding:10,color:'#1c1c1c',boxWidth:10}},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.parsed} units`}}},animation:{duration:700}}});
+
+  // Inventory
+  const inv=compInv(don,req);
+  const maxD=Math.max(...inv.map(i=>i.donated),1);
+  document.getElementById('invBars').innerHTML=inv.length
+    ?inv.map((i,idx)=>`<div class="inv-item"><div class="inv-top"><span class="inv-name">${i.item}${i.balance<=1?'<span class="low-stock">⚠ Low</span>':''}</span><span class="inv-nums">In: ${i.donated} · Out: ${i.distributed} · <strong>Bal: ${i.balance}</strong></span></div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(2,Math.round(i.balance/maxD*100))}%;background:${PAL[idx%PAL.length]}"></div></div></div>`).join('')
+    :'<div class="no-data">No collected donations yet</div>';
+
+  // Quick lists on dashboard
+  const subDons=don.filter(r=>(r['Status']||'submitted').toLowerCase()==='submitted').slice(0,5);
+  document.getElementById('pendDonCnt').textContent=submitted+' to collect';
+  document.getElementById('pendDonList').innerHTML=subDons.length
+    ?subDons.map(r=>`<div class="arow"><div class="ainfo"><strong>${dm[r['Donor ID']]||r['Donor ID']}</strong> · ${r['Item']} · Qty: <strong>${r['Quantity']}</strong><br><span style="font-size:0.74rem;color:var(--muted)">${fd(r['Date'])}</span></div><div class="abtns"><button class="btn btn-green btn-sm" onclick="updDon(${r._row},'Collected')">✓ Mark Collected</button></div></div>`).join('')
+    :'<div class="no-data">🎉 No donations awaiting collection</div>';
+
+  const pendReqs=req.filter(r=>(r['Status']||'').toLowerCase()==='pending').slice(0,5);
+  document.getElementById('pendReqCnt').textContent=pendReq+' pending';
+  document.getElementById('pendReqList').innerHTML=pendReqs.length
+    ?pendReqs.map(r=>`<div class="arow"><div class="ainfo"><strong>${rm[r['Recipient ID']]||r['Recipient ID']}</strong> · ${r['Item Requested']} · Qty: <strong>${r['Qty Requested']}</strong><br><span style="font-size:0.74rem;color:var(--muted)">${fd(r['Request Date'])}</span></div><div class="abtns"><button class="btn btn-green btn-sm" onclick="updReq(${r._row},'Approved')">✓ Approve</button><button class="btn btn-red btn-sm" onclick="updReq(${r._row},'Rejected')">✗ Reject</button></div></div>`).join('')
+    :'<div class="no-data">🎉 No pending requests</div>';
+}
+
+// ══ DONATIONS PAGE ══
+function buildDonations(){
+  if(!LD)return;
+  const don=LD.donations||[],donors=LD.donors||[];
+  const dm={};donors.forEach(d=>dm[d['Donor ID']]=d);
+  const submitted=don.filter(r=>(r['Status']||'submitted').toLowerCase()==='submitted');
+  document.getElementById('subCnt').textContent=submitted.length+' pending';
+  document.getElementById('subList').innerHTML=submitted.length
+    ?submitted.map(r=>{const d=dm[r['Donor ID']]||{};return`<div class="arow"><div class="ainfo"><strong>${d['Donor Name']||r['Donor ID']}</strong><br>${d['Address']?`<span style="font-size:0.74rem;color:var(--muted)">📍 ${d['Address']}</span><br>`:''}<span style="font-size:0.74rem;color:var(--muted)">${d['Phone']?'📞 '+d['Phone']+' · ':''} Item: <strong>${r['Item']}</strong> · Qty: <strong>${r['Quantity']}</strong> · ${fd(r['Date'])}</span></div><div class="abtns"><button class="btn btn-green btn-sm" onclick="updDon(${r._row},'Collected')">✓ Mark Collected</button></div></div>`;}).join('')
+    :'<div class="no-data">🎉 No donations awaiting collection</div>';
+  document.getElementById('allDonCnt').textContent=don.length+' total';
+  document.getElementById('allDonBody').innerHTML=don.map(r=>{
+    const d=dm[r['Donor ID']]||{};
+    const s=(r['Status']||'submitted').toLowerCase();
+    const nxt=s==='submitted'?`<button class="btn btn-green btn-sm" onclick="updDon(${r._row},'Collected')">Mark Collected</button>`:`<span style="font-size:0.76rem;color:var(--muted)">${r['Status']}</span>`;
+    return`<tr><td>${fd(r['Date'])}</td><td>${d['Donor Name']||r['Donor ID']||'—'}</td><td>${r['Item']||'—'}</td><td>${r['Quantity']||0}</td><td><span class="pill ${s}">${r['Status']||'Submitted'}</span></td><td>${nxt}</td></tr>`;}).join()||'<tr><td colspan="6" class="no-data">No donations</td></tr>';
+}
+
+// ══ REQUESTS PAGE ══
+function buildRequests(){
+  if(!LD)return;
+  const req=LD.requests||[],rec=LD.recipients||[];
+  const rm={};rec.forEach(r=>rm[r['Recipient ID']]=r);
+
+  const pending=req.filter(r=>(r['Status']||'').toLowerCase()==='pending');
+  const dp=req.filter(r=>(r['Status']||'').toLowerCase()==='delivery pending');
+
+  document.getElementById('pendRCnt').textContent=pending.length+' pending';
+  document.getElementById('pendRList').innerHTML=pending.length
+    ?pending.map(r=>{const rc=rm[r['Recipient ID']]||{};return`<div class="arow"><div class="ainfo"><strong>${rc['Recipient Name']||r['Recipient ID']}</strong>${rc['Address']?`<br><span style="font-size:0.74rem;color:var(--muted)">📍 ${rc['Address']}</span>`:''}<br><span style="font-size:0.74rem;color:var(--muted)">Item: <strong>${r['Item Requested']}</strong> · Qty: <strong>${r['Qty Requested']}</strong> · ${fd(r['Request Date'])}</span></div><div class="abtns"><button class="btn btn-green btn-sm" onclick="updReq(${r._row},'Approved')">✓ Approve</button><button class="btn btn-red btn-sm" onclick="updReq(${r._row},'Rejected')">✗ Reject</button></div></div>`;}).join('')
+    :'<div class="no-data">🎉 No pending requests</div>';
+
+  document.getElementById('dpCnt').textContent=dp.length+' to deliver';
+  document.getElementById('dpList').innerHTML=dp.length
+    ?dp.map(r=>{const rc=rm[r['Recipient ID']]||{};return`<div class="arow"><div class="ainfo"><strong>${rc['Recipient Name']||r['Recipient ID']}</strong>${rc['Address']?`<br><span style="font-size:0.74rem;color:var(--muted)">📍 ${rc['Address']}</span>`:''}<br><span style="font-size:0.74rem;color:var(--muted)">Item: <strong>${r['Item Requested']}</strong> · Qty: <strong>${r['Qty Requested']}</strong></span></div><div class="abtns"><button class="btn btn-green btn-sm" onclick="updReq(${r._row},'Delivered')">✓ Mark Delivered</button></div></div>`;}).join('')
+    :'<div class="no-data">No deliveries pending</div>';
+
+  document.getElementById('allRCnt').textContent=req.length+' total';
+  document.getElementById('allRBody').innerHTML=req.map(r=>{
+    const rc=rm[r['Recipient ID']]||{};
+    const s=(r['Status']||'pending').toLowerCase().replace(' ','-');
+    let nxt='';
+    if(s==='pending') nxt=`<button class="btn btn-green btn-sm" onclick="updReq(${r._row},'Approved')">Approve</button>`;
+    else if(s==='approved') nxt=`<button class="btn btn-blue btn-sm" onclick="updReq(${r._row},'Delivery Pending')">→ Delivery Pending</button>`;
+    else if(s==='delivery-pending') nxt=`<button class="btn btn-green btn-sm" onclick="updReq(${r._row},'Delivered')">Mark Delivered</button>`;
+    else nxt=`<span style="font-size:0.75rem;color:var(--muted)">${r['Status']}</span>`;
+    return`<tr><td>${fd(r['Request Date'])}</td><td>${rc['Recipient Name']||r['Recipient ID']||'—'}</td><td style="font-size:0.75rem;color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${rc['Address']||'—'}</td><td>${r['Item Requested']||'—'}</td><td>${r['Qty Requested']||0}</td><td><span class="pill ${s}">${r['Status']||'Pending'}</span></td><td>${nxt}</td></tr>`;
+  }).join()||'<tr><td colspan="7" class="no-data">No requests</td></tr>';
+}
+
+// ══ STATUS UPDATES ══
+async function updDon(rowIdx,status){
+  if(!SU){sa('Not connected','red');return;}
+  try{
+    const r=await fetch(SU+'?'+new URLSearchParams({action:'updateDonationStatus',rowIndex:rowIdx,status}));
+    const d=await r.json();
+    if(d.success){sa(`Donation ${status}!`,'green');setTimeout(loadData,900);}
+    else sa('Error: '+(d.error||'Unknown'),'red');
+  }catch(e){sa('Failed: '+e.message,'red');}
+}
+async function updReq(rowIdx,status){
+  if(!SU){sa('Not connected','red');return;}
+  try{
+    const r=await fetch(SU+'?'+new URLSearchParams({action:'updateRequestStatus',rowIndex:rowIdx,status}));
+    const d=await r.json();
+    if(d.success){sa(`Request ${status}!`,status==='Rejected'?'red':'green');setTimeout(loadData,900);}
+    else sa('Error: '+(d.error||'Unknown'),'red');
+  }catch(e){sa('Failed: '+e.message,'red');}
+}
+
+// ══ ITEM MASTER ══
+function buildItems(){
+  if(!LD)return;
+  const items=LD.items||[];
+  document.getElementById('itemCnt').textContent=items.length+' items';
+  document.getElementById('itemGrid').innerHTML=items.length
+    ?items.map(i=>`<div class="item-card"><div><div class="item-name">${i['Item Name']||''}</div><div class="item-cat">${i['Category']||'General'}</div></div><button class="btn btn-red btn-sm" onclick="delItem('${es(i['Item Name']||'')}')">✕</button></div>`).join('')
+    :'<div class="no-data">No items yet — add some above</div>';
+}
+async function addItem(){
+  const name=document.getElementById('newItem').value.trim();
+  const cat=document.getElementById('newCat').value.trim();
+  if(!name){sa('Please enter an item name.','amber');return;}
+  if(!SU){sa('Not connected','red');return;}
+  try{
+    const r=await fetch(SU+'?'+new URLSearchParams({action:'addItem',itemName:name,category:cat||'General'}));
+    const d=await r.json();
+    if(d.success){sa('Item added: '+name,'green');document.getElementById('newItem').value='';document.getElementById('newCat').value='';setTimeout(loadData,900);}
+    else sa(d.error||'Could not add item','red');
+  }catch(e){sa('Failed: '+e.message,'red');}
+}
+async function delItem(name){
+  if(!confirm(`Remove "${name}" from the item list?\nExisting donation records won't be affected.`))return;
+  if(!SU){sa('Not connected','red');return;}
+  try{
+    const r=await fetch(SU+'?'+new URLSearchParams({action:'deleteItem',itemName:name}));
+    const d=await r.json();
+    if(d.success){sa('Item removed: '+name,'amber');setTimeout(loadData,900);}
+    else sa(d.error||'Could not remove item','red');
+  }catch(e){sa('Failed: '+e.message,'red');}
+}
+
+// ══ HISTORY ══
+function sHTab(t){
+  hTab=t;
+  document.querySelectorAll('.htab').forEach((b,i)=>b.classList.toggle('active',['donors','recipients','all'][i]===t));
+  ['donors','recipients','all'].forEach(n=>document.getElementById('ht-'+n).style.display=n===t?'block':'none');
+  if(LD)buildHistory();
+}
+function buildHistory(){
+  if(!LD)return;
+  const don=LD.donations||[],donors=LD.donors||[],rec=LD.recipients||[],req=LD.requests||[];
+  // Donors table
+  const dm={};don.forEach(r=>{if(!dm[r['Donor ID']])dm[r['Donor ID']]={tot:0,col:0,units:0};dm[r['Donor ID']].tot++;if((r['Status']||'').toLowerCase()==='collected'){dm[r['Donor ID']].col++;dm[r['Donor ID']].units+=(parseInt(r['Quantity'])||0);}});
+  document.getElementById('allDB').innerHTML=donors.map((d,i)=>{const s=dm[d['Donor ID']]||{tot:0,col:0,units:0};return`<tr><td style="color:var(--muted);font-size:0.76rem">${d['Donor ID']}</td><td><span class="ava av${i%4}">${ini(d['Donor Name'])}</span>${d['Donor Name']||'—'}</td><td style="font-size:0.78rem;color:var(--muted)">${d['Email']||'—'}</td><td style="font-size:0.78rem;color:var(--muted)">${d['Phone']||'—'}</td><td style="font-size:0.75rem;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d['Address']||'—'}</td><td>${s.tot}</td><td>${s.col}</td><td><strong>${s.units}</strong></td></tr>`;}).join()||'<tr><td colspan="8" class="no-data">No donors</td></tr>';
+  // Recipients table
+  const rm={};req.forEach(r=>{if(!rm[r['Recipient ID']])rm[r['Recipient ID']]={tot:0,del:0,units:0};rm[r['Recipient ID']].tot++;if((r['Status']||'').toLowerCase()==='delivered'){rm[r['Recipient ID']].del++;rm[r['Recipient ID']].units+=(parseInt(r['Qty Requested'])||0);}});
+  document.getElementById('allRB').innerHTML=rec.map((r,i)=>{const s=rm[r['Recipient ID']]||{tot:0,del:0,units:0};return`<tr><td style="color:var(--muted);font-size:0.76rem">${r['Recipient ID']}</td><td><span class="ava av${(i+1)%4}">${ini(r['Recipient Name'])}</span>${r['Recipient Name']||'—'}</td><td style="font-size:0.78rem;color:var(--muted)">${r['Email']||'—'}</td><td style="font-size:0.78rem;color:var(--muted)">${r['Phone']||'—'}</td><td style="font-size:0.75rem;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r['Address']||'—'}</td><td>${s.tot}</td><td>${s.del}</td><td><strong>${s.units}</strong></td></tr>`;}).join()||'<tr><td colspan="8" class="no-data">No recipients</td></tr>';
+  // Activity log
+  const hist=LD.history||[];
+  document.getElementById('logCnt').textContent=hist.length+' entries';
+  document.getElementById('logBody').innerHTML=[...hist].reverse().map(r=>`<tr><td style="color:var(--muted);font-size:0.75rem;white-space:nowrap">${r['Timestamp']||'—'}</td><td><span class="pill ${pillCls(r['Type'])}" style="font-size:0.62rem">${r['Type']||'—'}</span></td><td style="color:var(--muted);font-size:0.78rem">${r['Person ID']||'—'}</td><td>${r['Item']||'—'}</td><td>${r['Quantity']||0}</td><td style="font-size:0.78rem;color:var(--muted)">${r['Status']||''}</td></tr>`).join()||'<tr><td colspan="6" class="no-data">No activity yet</td></tr>';
+}
+function filtAct(){if(!LD)return;const q=document.getElementById('actS').value.toLowerCase();const hist=(LD.history||[]).filter(h=>JSON.stringify(h).toLowerCase().includes(q));document.getElementById('logCnt').textContent=hist.length+' entries';document.getElementById('logBody').innerHTML=[...hist].reverse().map(r=>`<tr><td style="color:var(--muted);font-size:0.75rem;white-space:nowrap">${r['Timestamp']||'—'}</td><td><span class="pill ${pillCls(r['Type'])}" style="font-size:0.62rem">${r['Type']||'—'}</span></td><td style="color:var(--muted);font-size:0.78rem">${r['Person ID']||'—'}</td><td>${r['Item']||'—'}</td><td>${r['Quantity']||0}</td><td style="font-size:0.78rem;color:var(--muted)">${r['Status']||''}</td></tr>`).join()||'<tr><td colspan="6" class="no-data">No activity</td></tr>';}
+function pillCls(t){const l=(t||'').toLowerCase();return l.includes('donation')?'approved':l.includes('request')?'pending':'submitted';}
+async function lookupD(){
+  const q=document.getElementById('hdid').value.trim();if(!q||!LD)return;
+  const d=(LD.donors||[]).find(x=>x['Donor ID'].toLowerCase()===q.toLowerCase()||(x['Donor Name']||'').toLowerCase().includes(q.toLowerCase()));
+  if(!d){document.getElementById('hdres').innerHTML='<div class="panel"><div class="no-data">Donor not found.</div></div>';return;}
+  const recs=(LD.donations||[]).filter(r=>r['Donor ID']===d['Donor ID']);
+  const col=recs.filter(r=>(r['Status']||'').toLowerCase()==='collected');
+  const units=col.reduce((s,r)=>s+(parseInt(r['Quantity'])||0),0);
+  document.getElementById('hdres').innerHTML=`<div class="panel"><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.98rem;margin-bottom:4px">${d['Donor Name']} · ${d['Donor ID']}</div>${d['Address']?`<div style="font-size:0.77rem;color:var(--muted);margin-bottom:3px">📍 ${d['Address']}</div>`:''}<div style="font-size:0.77rem;color:var(--muted);margin-bottom:12px">${[d['Email'],d['Phone']].filter(Boolean).join(' · ')}</div><div style="display:flex;gap:18px;margin-bottom:12px"><div><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--accent)">${recs.length}</div><div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase">Submitted</div></div><div><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--accent)">${col.length}</div><div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase">Collected</div></div><div><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--accent)">${units}</div><div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase">Units</div></div></div><div class="tw"><table><thead><tr><th>Date</th><th>Item</th><th>Qty</th><th>Status</th></tr></thead><tbody>${recs.map(r=>`<tr><td>${fd(r['Date'])}</td><td>${r['Item']||'—'}</td><td>${r['Quantity']||0}</td><td><span class="pill ${(r['Status']||'submitted').toLowerCase()}">${r['Status']||'Submitted'}</span></td></tr>`).join()||'<tr><td colspan="4" class="no-data">No donations</td></tr>'}</tbody></table></div></div>`;
+}
+async function lookupR(){
+  const q=document.getElementById('hrid').value.trim();if(!q||!LD)return;
+  const rc=(LD.recipients||[]).find(x=>x['Recipient ID'].toLowerCase()===q.toLowerCase()||(x['Recipient Name']||'').toLowerCase().includes(q.toLowerCase()));
+  if(!rc){document.getElementById('hrres').innerHTML='<div class="panel"><div class="no-data">Recipient not found.</div></div>';return;}
+  const reqs=(LD.requests||[]).filter(r=>r['Recipient ID']===rc['Recipient ID']);
+  const del=reqs.filter(r=>(r['Status']||'').toLowerCase()==='delivered');
+  const units=del.reduce((s,r)=>s+(parseInt(r['Qty Requested'])||0),0);
+  document.getElementById('hrres').innerHTML=`<div class="panel"><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.98rem;margin-bottom:4px">${rc['Recipient Name']} · ${rc['Recipient ID']}</div>${rc['Address']?`<div style="font-size:0.77rem;color:var(--muted);margin-bottom:3px">📍 ${rc['Address']}</div>`:''}<div style="font-size:0.77rem;color:var(--muted);margin-bottom:12px">${[rc['Email'],rc['Phone']].filter(Boolean).join(' · ')}</div><div style="display:flex;gap:18px;margin-bottom:12px"><div><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--accent)">${reqs.length}</div><div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase">Requests</div></div><div><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--accent)">${del.length}</div><div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase">Delivered</div></div><div><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--accent)">${units}</div><div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase">Units</div></div></div><div class="tw"><table><thead><tr><th>Date</th><th>Item</th><th>Qty</th><th>Status</th></tr></thead><tbody>${reqs.map(r=>`<tr><td>${fd(r['Request Date'])}</td><td>${r['Item Requested']||'—'}</td><td>${r['Qty Requested']||0}</td><td><span class="pill ${(r['Status']||'pending').toLowerCase().replace(' ','-')}">${r['Status']||'Pending'}</span></td></tr>`).join()||'<tr><td colspan="4" class="no-data">No requests</td></tr>'}</tbody></table></div></div>`;
+}
+
+// ══ REPORTS ══
+function onRType(){
+  const type=document.getElementById('rtype').value;
+  const wrap=document.getElementById('personWrap');
+  const sel=document.getElementById('personSel');
+  document.getElementById('repContent').style.display='none';
+  document.getElementById('repBody').innerHTML='';
+  if(type==='donor'){
+    wrap.style.display='block';document.getElementById('personLbl').textContent='Select Donor';
+    sel.innerHTML='<option value="">— Select —</option>'+(LD?.donors||[]).map(d=>`<option value="${d['Donor ID']}">${d['Donor ID']} · ${d['Donor Name']}</option>`).join('');
+  }else if(type==='recipient'){
+    wrap.style.display='block';document.getElementById('personLbl').textContent='Select Recipient';
+    sel.innerHTML='<option value="">— Select —</option>'+(LD?.recipients||[]).map(r=>`<option value="${r['Recipient ID']}">${r['Recipient ID']} · ${r['Recipient Name']}</option>`).join('');
+  }else{
+    wrap.style.display='none';
+    if(type)genReport();
+  }
+}
+function genReport(){
+  if(!LD)return;
+  const type=document.getElementById('rtype').value;
+  const pid=document.getElementById('personSel').value;
+  if((type==='donor'||type==='recipient')&&!pid)return;
+  const don=LD.donations||[],donors=LD.donors||[],rec=LD.recipients||[],req=LD.requests||[];
+  const now=new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const typeLabels={donor:'Individual Donor Report',recipient:'Individual Recipient Report','all-donors':'All Donors Summary','all-recipients':'All Recipients Summary',inventory:'Inventory Status Report',collections:'Collection Queue Report',full:'Full Activity Report'};
+  let html='';
+  if(type==='donor'){
+    const d=donors.find(x=>x['Donor ID']===pid)||{};
+    const recs=don.filter(r=>r['Donor ID']===pid);
+    const col=recs.filter(r=>(r['Status']||'').toLowerCase()==='collected');
+    const units=col.reduce((s,r)=>s+(parseInt(r['Quantity'])||0),0);
+    html=pHead(d['Donor Name']||pid,pid,d['Email'],d['Phone'],d['Address'])+
+      pStats([{v:recs.length,l:'Submissions'},{v:col.length,l:'Collected'},{v:units,l:'Units Donated'}])+
+      pTable(['Date','Item','Qty','Status'],recs.map(r=>[fd(r['Date']),r['Item']||'—',r['Quantity']||0,r['Status']||'Submitted']));
+  }else if(type==='recipient'){
+    const rc=rec.find(x=>x['Recipient ID']===pid)||{};
+    const reqs=req.filter(r=>r['Recipient ID']===pid);
+    const del=reqs.filter(r=>(r['Status']||'').toLowerCase()==='delivered');
+    const units=del.reduce((s,r)=>s+(parseInt(r['Qty Requested'])||0),0);
+    html=pHead(rc['Recipient Name']||pid,pid,rc['Email'],rc['Phone'],rc['Address'])+
+      pStats([{v:reqs.length,l:'Requests'},{v:del.length,l:'Delivered'},{v:units,l:'Units Received'}])+
+      pTable(['Date','Item','Qty','Status'],reqs.map(r=>[fd(r['Request Date']),r['Item Requested']||'—',r['Qty Requested']||0,r['Status']||'Pending']));
+  }else if(type==='all-donors'){
+    const dm={};don.forEach(r=>{if(!dm[r['Donor ID']])dm[r['Donor ID']]={tot:0,col:0,units:0};dm[r['Donor ID']].tot++;if((r['Status']||'').toLowerCase()==='collected'){dm[r['Donor ID']].col++;dm[r['Donor ID']].units+=(parseInt(r['Quantity'])||0);}});
+    html=pTable(['ID','Name','Email','Phone','Address','Submissions','Collected','Units'],donors.map(d=>{const s=dm[d['Donor ID']]||{tot:0,col:0,units:0};return[d['Donor ID'],d['Donor Name']||'—',d['Email']||'—',d['Phone']||'—',d['Address']||'—',s.tot,s.col,s.units];}));
+  }else if(type==='all-recipients'){
+    const rm={};req.forEach(r=>{if(!rm[r['Recipient ID']])rm[r['Recipient ID']]={tot:0,del:0,units:0};rm[r['Recipient ID']].tot++;if((r['Status']||'').toLowerCase()==='delivered'){rm[r['Recipient ID']].del++;rm[r['Recipient ID']].units+=(parseInt(r['Qty Requested'])||0);}});
+    html=pTable(['ID','Name','Email','Phone','Address','Requests','Delivered','Units'],rec.map(r=>{const s=rm[r['Recipient ID']]||{tot:0,del:0,units:0};return[r['Recipient ID'],r['Recipient Name']||'—',r['Email']||'—',r['Phone']||'—',r['Address']||'—',s.tot,s.del,s.units];}));
+  }else if(type==='inventory'){
+    const inv=compInv(don,req);
+    html=pTable(['Item','Total Donated','Distributed','Balance','Status'],inv.map(i=>[i.item,i.donated,i.distributed,i.balance,i.balance>0?'In Stock':'Out of Stock']));
+  }else if(type==='collections'){
+    const sub=don.filter(r=>(r['Status']||'submitted').toLowerCase()==='submitted');
+    const dm2={};donors.forEach(d=>dm2[d['Donor ID']]=d);
+    html=pTable(['Date','Donor','Phone','Address','Item','Qty'],sub.map(r=>{const d=dm2[r['Donor ID']]||{};return[fd(r['Date']),d['Donor Name']||r['Donor ID'],d['Phone']||'—',d['Address']||'—',r['Item']||'—',r['Quantity']||0];}));
+  }else if(type==='full'){
+    const hist=LD.history||[];
+    html=`<p style="font-size:0.8rem;color:var(--muted);margin-bottom:10px">${hist.length} entries</p>`+pTable(['Timestamp','Type','Person ID','Item','Qty','Status'],[...hist].reverse().map(r=>[r['Timestamp']||'—',r['Type']||'—',r['Person ID']||'—',r['Item']||'—',r['Quantity']||0,r['Status']||'']));
+  }
+  document.getElementById('repBody').innerHTML=html;
+  document.getElementById('repContent').style.display='block';
+  // prep print area
+  document.getElementById('printArea').innerHTML=`<div class="ph">🛒 Grocery Donation Tracker &nbsp;·&nbsp; ${typeLabels[type]||'Report'}</div><div class="pm">Generated: ${now}</div>${html}<div class="pf">Grocery Donation Tracker · Admin Report · ${now}</div>`;
+}
+function pHead(name,id,email,phone,address){
+  return`<div style="margin-bottom:12px"><strong style="font-size:1rem">${name}</strong> · <span style="color:var(--muted)">${id}</span>${address?`<br><small style="color:var(--muted)">📍 ${address}</small>`:''}${(email||phone)?`<br><small style="color:var(--muted)">${[email,phone].filter(Boolean).join(' · ')}</small>`:''}</div>`;
+}
+function pStats(items){return`<div class="rstat-row">${items.map(i=>`<div class="rstat"><div class="rstat-val">${i.v}</div><div class="rstat-lbl">${i.l}</div></div>`).join('')}</div>`;}
+function pTable(headers,rows){return`<div class="tw"><table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join(''):'<tr><td colspan="'+headers.length+'" class="no-data">No data</td></tr>'}</tbody></table></div>`;}
+function printRep(){if(!document.getElementById('repBody').innerHTML){sa('Generate a report first.','amber');return;}window.print();}
+
+// ══ MASTERS ══
+function buildMasters(){
+  if(!LD)return;
+  const don=LD.donations||[],donors=LD.donors||[],rec=LD.recipients||[],req=LD.requests||[];
+  const dm={};don.forEach(r=>{if(!dm[r['Donor ID']])dm[r['Donor ID']]={tot:0,col:0,units:0};dm[r['Donor ID']].tot++;if((r['Status']||'').toLowerCase()==='collected'){dm[r['Donor ID']].col++;dm[r['Donor ID']].units+=(parseInt(r['Quantity'])||0);}});
+  document.getElementById('dmCnt').textContent=donors.length+' donors';
+  document.getElementById('dmBody').innerHTML=donors.map((d,i)=>{const s=dm[d['Donor ID']]||{tot:0,col:0,units:0};return`<tr><td style="color:var(--muted);font-size:0.75rem">${d['Donor ID']}</td><td><span class="ava av${i%4}">${ini(d['Donor Name'])}</span>${d['Donor Name']||'—'}</td><td style="font-size:0.77rem;color:var(--muted)">${d['Email']||'—'}</td><td style="font-size:0.77rem;color:var(--muted)">${d['Phone']||'—'}</td><td style="font-size:0.75rem;color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d['Address']||'—'}</td><td style="font-size:0.77rem;color:var(--muted)">${fd(d['Registered On'])}</td><td>${s.tot}</td><td><strong>${s.units}</strong></td></tr>`;}).join()||'<tr><td colspan="8" class="no-data">No donors</td></tr>';
+  const rm={};req.forEach(r=>{if(!rm[r['Recipient ID']])rm[r['Recipient ID']]={tot:0,del:0,units:0};rm[r['Recipient ID']].tot++;if((r['Status']||'').toLowerCase()==='delivered'){rm[r['Recipient ID']].del++;rm[r['Recipient ID']].units+=(parseInt(r['Qty Requested'])||0);}});
+  document.getElementById('rmCnt').textContent=rec.length+' recipients';
+  document.getElementById('rmBody').innerHTML=rec.map((r,i)=>{const s=rm[r['Recipient ID']]||{tot:0,del:0,units:0};return`<tr><td style="color:var(--muted);font-size:0.75rem">${r['Recipient ID']}</td><td><span class="ava av${(i+1)%4}">${ini(r['Recipient Name'])}</span>${r['Recipient Name']||'—'}</td><td style="font-size:0.77rem;color:var(--muted)">${r['Email']||'—'}</td><td style="font-size:0.77rem;color:var(--muted)">${r['Phone']||'—'}</td><td style="font-size:0.75rem;color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r['Address']||'—'}</td><td style="font-size:0.77rem;color:var(--muted)">${fd(r['Registered On'])}</td><td>${s.tot}</td><td>${s.del}</td><td><strong>${s.units}</strong></td></tr>`;}).join()||'<tr><td colspan="9" class="no-data">No recipients</td></tr>';
+}
+
+// ══ UTILS ══
+function fd(d){if(!d)return'—';try{return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch{return d;}}
+function ini(n){if(!n)return'?';return n.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);}
+function es(s){return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
+function sa(msg,type='green'){const el=document.getElementById('alert');el.textContent=msg;el.className=`alert ${type} show`;setTimeout(()=>el.classList.remove('show'),3500);}
+</script>
+</body>
+</html>
