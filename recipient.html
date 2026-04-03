@@ -5,110 +5,86 @@
 <title>Recipient Portal · Grocery Donation Tracker</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
-:root{--bg:#f4f1eb;--surface:#fff;--border:#e2ddd4;--accent:#c07c2e;--a-light:#fdf3e3;--green:#2d5a27;--g-light:#eaf3e8;--red:#b83232;--red-light:#fdeaea;--blue:#1f5f8b;--bl-light:#e5f0f8;--text:#1c1c1c;--muted:#888078;--radius:14px;--sh:0 2px 14px rgba(0,0,0,0.07)}
+:root{--bg:#f4f1eb;--s:#fff;--b:#e2ddd4;--ac:#c07c2e;--al:#fdf3e3;--gr:#2d5a27;--gl:#eaf3e8;--re:#b83232;--rl:#fdeaea;--bl:#1f5f8b;--bll:#e5f0f8;--tx:#1c1c1c;--mu:#888078;--ra:14px;--sh:0 2px 14px rgba(0,0,0,0.07)}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-nav{background:var(--accent);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,0.2)}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+nav{background:var(--ac);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,0.2)}
 .brand{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800;color:white}
-.brand-sub{font-size:0.67rem;color:rgba(255,255,255,0.5);letter-spacing:0.05em}
-.nav-tabs{display:flex;gap:6px;flex-wrap:wrap}
-.nav-tab{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 14px;border-radius:999px;font-size:0.79rem;font-weight:500;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
-.nav-tab:hover,.nav-tab.active{background:white;color:var(--accent)}
-.sync-chip{font-size:0.72rem;color:rgba(255,255,255,0.6);display:flex;align-items:center;gap:5px}
-.sync-dot{width:7px;height:7px;border-radius:50%;background:#aaa}
-.main{max-width:880px;margin:0 auto;padding:26px}
-.page{display:none}.page.active{display:block}
+.bsub{font-size:0.67rem;color:rgba(255,255,255,0.5);letter-spacing:0.05em}
+.ntabs{display:flex;gap:6px;flex-wrap:wrap}
+.ntab{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:white;padding:6px 14px;border-radius:999px;font-size:0.79rem;font-weight:500;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+.ntab:hover,.ntab.on{background:white;color:var(--ac)}
+.sc{font-size:0.72rem;color:rgba(255,255,255,0.6);display:flex;align-items:center;gap:5px}
+.sd{width:7px;height:7px;border-radius:50%;background:#aaa}
+.main{max-width:860px;margin:0 auto;padding:26px}
+.pg{display:none}.pg.on{display:block}
 @media(max-width:680px){.main{padding:14px}}
-.hero{background:linear-gradient(135deg,var(--accent),#7a4e1a);color:white;border-radius:var(--radius);padding:24px;margin-bottom:18px}
+.hero{background:linear-gradient(135deg,var(--ac),#7a4e1a);color:white;border-radius:var(--ra);padding:24px;margin-bottom:18px}
 .hero h2{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;margin-bottom:4px}
 .hero p{font-size:0.83rem;opacity:0.85}
-.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--sh);margin-bottom:16px}
+.panel{background:var(--s);border:1px solid var(--b);border-radius:var(--ra);padding:20px;box-shadow:var(--sh);margin-bottom:16px}
 .ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .pt{font-family:'Syne',sans-serif;font-size:0.92rem;font-weight:700}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px}
-@media(max-width:560px){.grid2{grid-template-columns:1fr}}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px}
+@media(max-width:560px){.g2{grid-template-columns:1fr}}
 .fg{display:flex;flex-direction:column;gap:5px;position:relative}
-.fg.span2{grid-column:1/-1}
-label{font-size:0.73rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em}
-input,select,textarea{padding:10px 12px;border:1px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.86rem;background:var(--bg);color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s;width:100%}
-input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--a-light)}
-textarea{resize:vertical;min-height:68px}
-.ta-wrap{position:relative}
-.ta-list{position:absolute;top:calc(100% + 2px);left:0;right:0;background:white;border:1px solid var(--border);border-radius:9px;box-shadow:0 4px 18px rgba(0,0,0,0.1);z-index:300;max-height:190px;overflow-y:auto;display:none}
-.ta-item{padding:9px 12px;cursor:pointer;font-size:0.84rem;border-bottom:1px solid var(--bg);display:flex;align-items:center}
-.ta-item:last-child{border-bottom:none}.ta-item:hover{background:var(--a-light)}
-.ta-sub{font-size:0.7rem;color:var(--muted);margin-left:auto}
+.fg.s2{grid-column:1/-1}
+label{font-size:0.73rem;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:0.05em}
+input,select,textarea{padding:10px 12px;border:1px solid var(--b);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.86rem;background:var(--bg);color:var(--tx);outline:none;transition:border-color .15s,box-shadow .15s;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--al)}
+textarea{resize:vertical;min-height:65px}
+.taw{position:relative}
+.tal{position:absolute;top:calc(100% + 2px);left:0;right:0;background:white;border:1px solid var(--b);border-radius:9px;box-shadow:0 4px 18px rgba(0,0,0,0.1);z-index:300;max-height:190px;overflow-y:auto;display:none}
+.tai{padding:9px 12px;cursor:pointer;font-size:0.84rem;border-bottom:1px solid var(--bg);font-family:monospace}
+.tai:last-child{border-bottom:none}.tai:hover{background:var(--al)}
 .btn{display:inline-flex;align-items:center;gap:7px;padding:10px 22px;border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.86rem;font-weight:600;cursor:pointer;transition:all .18s}
-.btn-amber{background:var(--accent);color:white}.btn-amber:hover{background:#9a621f}
+.ba{background:var(--ac);color:white}.ba:hover{background:#9a621f}
 .btn:disabled{opacity:0.5;cursor:not-allowed}
-.fm{padding:10px 13px;border-radius:8px;font-size:0.82rem;font-weight:500;margin-top:10px;display:none}
-.fm.ok{background:var(--g-light);color:var(--green);display:block}
-.fm.err{background:var(--red-light);color:var(--red);display:block}
+.fm{padding:10px 13px;border-radius:8px;font-size:0.82rem;font-weight:500;margin-top:10px;display:none;white-space:pre-line}
+.fm.ok{background:var(--gl);color:var(--gr);display:block}
+.fm.err{background:var(--rl);color:var(--re);display:block}
 .inv-item{margin-bottom:12px}.inv-item:last-child{margin-bottom:0}
 .inv-top{display:flex;justify-content:space-between;margin-bottom:5px;align-items:baseline}
-.inv-name{font-size:0.85rem;font-weight:600}.inv-nums{font-size:0.73rem;color:var(--muted)}
-.bar-track{height:7px;background:var(--bg);border-radius:4px;overflow:hidden;border:1px solid var(--border)}
+.inv-name{font-size:0.85rem;font-weight:600}.inv-nums{font-size:0.73rem;color:var(--mu)}
+.bar-track{height:7px;background:var(--bg);border-radius:4px;overflow:hidden;border:1px solid var(--b)}
 .bar-fill{height:100%;border-radius:4px;transition:width .8s cubic-bezier(.4,0,.2,1)}
-table{width:100%;border-collapse:collapse;font-size:0.82rem}
-th{text-align:left;font-size:0.68rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;padding:0 8px 9px 0;border-bottom:1px solid var(--border);white-space:nowrap}
-td{padding:9px 8px 9px 0;border-bottom:1px solid var(--bg);vertical-align:middle}
-tr:last-child td{border-bottom:none}tbody tr:hover td{background:var(--bg)}
-.pill{display:inline-block;font-size:0.65rem;font-weight:600;padding:3px 9px;border-radius:999px;text-transform:uppercase}
-.pill.pending{background:var(--a-light);color:var(--accent)}
-.pill.approved,.pill.collected,.pill.delivered{background:var(--g-light);color:var(--green)}
-.pill.rejected{background:var(--red-light);color:var(--red)}
-.pill.delivery-pending{background:var(--bl-light);color:var(--blue)}
-.no-data{color:var(--muted);font-size:0.82rem;text-align:center;padding:18px 0}
-.spinner{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite}
+.infobox{background:var(--al);border:1px solid #e8c87a;border-radius:10px;padding:12px 15px;font-size:0.81rem;color:#7a5010;margin-bottom:16px;line-height:1.6}
+.sp{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.alert{position:fixed;top:18px;right:18px;padding:11px 18px;border-radius:var(--radius);font-size:0.82rem;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,0.2);z-index:999;transform:translateX(140%);transition:transform .3s ease;max-width:300px}
-.alert.show{transform:translateX(0)}.alert.amber{background:var(--accent);color:white}
-.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:16px}
-.stat{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:14px;text-align:center;box-shadow:var(--sh)}
-.stat-val{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:var(--accent)}
-.stat-lbl{font-size:0.69rem;color:var(--muted);text-transform:uppercase;margin-top:3px}
-.info-box{background:var(--a-light);border:1px solid #e8c87a;border-radius:10px;padding:12px 15px;font-size:0.81rem;color:#7a5010;margin-bottom:16px;line-height:1.6}
-/* Workflow stepper */
-.workflow{display:flex;align-items:center;gap:0;margin-bottom:16px;flex-wrap:wrap;gap:4px}
-.wstep{font-size:0.72rem;font-weight:600;padding:4px 10px;border-radius:999px;border:1px solid var(--border);color:var(--muted);background:var(--bg)}
-.wstep.done{background:var(--g-light);color:var(--green);border-color:#b8d9b2}
-.wstep.current{background:var(--accent);color:white;border-color:var(--accent)}
-.warrow{font-size:0.7rem;color:var(--muted);margin:0 2px}
-footer{text-align:center;color:var(--muted);font-size:0.71rem;padding:16px;border-top:1px solid var(--border);margin-top:8px}
+.al2{position:fixed;top:18px;right:18px;padding:11px 18px;border-radius:var(--ra);font-size:0.82rem;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,0.2);z-index:999;transform:translateX(140%);transition:transform .3s ease;max-width:300px}
+.al2.show{transform:translateX(0)}.al2.amber{background:var(--ac);color:white}
+.no-data{color:var(--mu);font-size:0.82rem;text-align:center;padding:18px 0}
+footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-top:1px solid var(--b);margin-top:8px}
 </style>
 </head>
 <body>
 <nav>
-  <div><div class="brand">🤲 Recipient Portal</div><div class="brand-sub">Grocery Donation Tracker</div></div>
-  <div class="nav-tabs">
-    <button class="nav-tab active" onclick="go('request',this)">🤲 Request</button>
-    <button class="nav-tab" onclick="go('register',this)">📋 Register</button>
-    <button class="nav-tab" onclick="go('history',this)">🕓 My History</button>
+  <div><div class="brand">🤲 Recipient Portal</div><div class="bsub">Grocery Donation Tracker</div></div>
+  <div class="ntabs">
+    <button class="ntab on" onclick="go('request',this)">🤲 Request</button>
+    <button class="ntab" onclick="go('register',this)">📋 Register</button>
   </div>
-  <div class="sync-chip"><div class="sync-dot" id="sd"></div><span id="sl">Connecting…</span></div>
+  <div class="sc"><div class="sd" id="sd"></div><span id="sl">Connecting…</span></div>
 </nav>
-<div class="alert" id="alert"></div>
+<div class="al2" id="al"></div>
 <div class="main">
 
-<!-- REQUEST -->
-<div class="page active" id="page-request">
-  <div class="hero"><h2>🤲 Request Groceries</h2><p>Select from available items. Your request will be reviewed and delivered to your address.</p></div>
-  <div class="info-box">
-    📋 <strong>Request workflow:</strong> Pending → Approved → Delivery Pending → <strong>Delivered</strong>
-  </div>
+<div class="pg on" id="pg-request">
+  <div class="hero"><h2>🤲 Request Groceries</h2><p>Enter your Recipient ID to request items. The admin will review and arrange delivery.</p></div>
+  <div class="infobox">📋 <strong>Workflow:</strong> Pending → Approved → Delivery Pending → Delivered. Email notification sent at each stage.</div>
   <div class="panel">
     <div class="ph"><div class="pt">📦 Currently Available</div></div>
     <div id="invBars"><div class="no-data">Loading…</div></div>
   </div>
   <div class="panel">
-    <div class="grid2">
-      <div class="fg">
-        <label for="rn">Your Name *</label>
-        <div class="ta-wrap"><input type="text" id="rn" placeholder="Type name…" autocomplete="off" oninput="tf('rn','ri','recipients','Recipient Name','Recipient ID')"/><div class="ta-list" id="ta-rn"></div></div>
-      </div>
-      <div class="fg">
-        <label for="ri">Recipient ID</label>
-        <div class="ta-wrap"><input type="text" id="ri" placeholder="Auto-filled or type…" autocomplete="off" oninput="tf('ri','rn','recipients','Recipient ID','Recipient Name')"/><div class="ta-list" id="ta-ri"></div></div>
+    <div class="g2">
+      <div class="fg s2">
+        <label for="ri">Your Recipient ID *</label>
+        <div class="taw">
+          <input type="text" id="ri" placeholder="Type your Recipient ID e.g. RCP001…" autocomplete="off" oninput="tfId('ri','recipients','Recipient ID')"/>
+          <div class="tal" id="ta-ri"></div>
+        </div>
+        <small style="color:var(--mu);font-size:0.73rem;margin-top:3px">No ID yet? Go to the Register tab first.</small>
       </div>
       <div class="fg">
         <label for="ritem">Item Requested *</label>
@@ -118,41 +94,28 @@ footer{text-align:center;color:var(--muted);font-size:0.71rem;padding:16px;borde
         <label for="rqty">Quantity *</label>
         <input type="number" id="rqty" placeholder="e.g. 1" min="1"/>
       </div>
-      <div class="fg span2">
+      <div class="fg s2">
         <label for="rnotes">Notes (optional)</label>
         <textarea id="rnotes" placeholder="Preferred delivery time, special instructions…"></textarea>
       </div>
     </div>
-    <button class="btn btn-amber" id="rBtn" onclick="submitRequest()"><span>Submit Request</span></button>
+    <button class="btn ba" id="rBtn" onclick="sub()"><span>Submit Request</span></button>
     <div class="fm" id="rm2"></div>
   </div>
 </div>
 
-<!-- REGISTER -->
-<div class="page" id="page-register">
-  <div class="hero"><h2>📋 Register as Recipient</h2><p>Create your profile. Address is required for delivery.</p></div>
+<div class="pg" id="pg-register">
+  <div class="hero"><h2>📋 Register as Recipient</h2><p>Create your profile. A unique Recipient ID is generated — save it for future requests.</p></div>
   <div class="panel">
-    <div class="grid2">
+    <div class="g2">
       <div class="fg"><label for="rrn">Full Name *</label><input type="text" id="rrn" placeholder="e.g. Anita Sharma"/></div>
-      <div class="fg"><label for="rre">Email</label><input type="email" id="rre" placeholder="anita@email.com"/></div>
+      <div class="fg"><label for="rre">Email <small style="text-transform:none;font-weight:400">(for status notifications)</small></label><input type="email" id="rre" placeholder="anita@email.com"/></div>
       <div class="fg"><label for="rrp">Phone</label><input type="tel" id="rrp" placeholder="+91 98765 43210"/></div>
-      <div class="fg span2"><label for="rra">Address * <small style="text-transform:none;letter-spacing:0;font-weight:400">(needed for delivery)</small></label><textarea id="rra" placeholder="House/Flat no, Street, Area, City, PIN…"></textarea></div>
+      <div class="fg s2"><label for="rra">Address * <small style="text-transform:none;letter-spacing:0;font-weight:400">(needed for delivery)</small></label><textarea id="rra" placeholder="House/Flat no, Street, Area, City, PIN…"></textarea></div>
     </div>
-    <button class="btn btn-amber" id="regBtn" onclick="registerRecipient()"><span>Register &amp; Get My Recipient ID →</span></button>
+    <button class="btn ba" id="regBtn" onclick="reg()"><span>Register &amp; Get My Recipient ID →</span></button>
     <div class="fm" id="regm"></div>
   </div>
-</div>
-
-<!-- HISTORY -->
-<div class="page" id="page-history">
-  <div class="hero"><h2>🕓 My Request History</h2><p>Track the status of all your requests from pending through to delivered.</p></div>
-  <div class="panel">
-    <div style="display:flex;gap:8px">
-      <input type="text" id="hid" placeholder="e.g. RCP001 or Anita Sharma" style="flex:1"/>
-      <button class="btn btn-amber" onclick="loadHistory()" style="white-space:nowrap">Look Up</button>
-    </div>
-  </div>
-  <div id="hres"></div>
 </div>
 
 </div>
@@ -165,32 +128,22 @@ async function init(){
   if(!SU){document.getElementById('sl').textContent='Not configured';return;}
   try{
     const r=await fetch(SU+'?action=getData&t='+Date.now());
-    const d=await r.json(); if(d.error) throw new Error(d.error);
-    LD=d; renderInv(d); popItems(d);
+    const d=await r.json();if(d.error)throw new Error(d.error);
+    LD=d;renderInv(d);popItems(d);
     document.getElementById('sd').style.background='#a8e6a0';
     document.getElementById('sl').textContent='Live';
   }catch(e){document.getElementById('sd').style.background='#e57373';document.getElementById('sl').textContent='Offline';}
 }
 setInterval(init,30000);init();
-
-function compInv(d){
-  const m={};
-  (d.donations||[]).forEach(r=>{if((r['Status']||'').toLowerCase()==='collected'){const it=String(r['Item']||'').trim();if(!it)return;if(!m[it])m[it]={d:0,di:0};m[it].d+=(parseInt(r['Quantity'])||0);}});
-  (d.requests||[]).forEach(r=>{if((r['Status']||'').toLowerCase()==='delivered'){const it=String(r['Item Requested']||'').trim();if(!it)return;if(!m[it])m[it]={d:0,di:0};m[it].di+=(parseInt(r['Qty Requested'])||0);}});
-  return Object.entries(m).map(([item,v])=>({item,donated:v.d,distributed:v.di,balance:v.d-v.di}));
-}
-
 function renderInv(d){
-  const inv=compInv(d);
+  const inv=d.inventory||[];
   const maxD=Math.max(...inv.map(i=>i.donated),1);
   document.getElementById('invBars').innerHTML=inv.length
     ?inv.map((i,idx)=>`<div class="inv-item"><div class="inv-top"><span class="inv-name">${i.item}</span><span class="inv-nums">Available: <strong>${i.balance}</strong> · Donated: ${i.donated} · Distributed: ${i.distributed}</span></div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(2,Math.round(i.balance/maxD*100))}%;background:${PAL[idx%PAL.length]}"></div></div></div>`).join('')
     :'<div class="no-data">No inventory yet</div>';
 }
-
 function popItems(d){
-  const inv=compInv(d);
-  // Show all admin items, mark availability
+  const inv=d.inventory||[];
   const adminItems=(d.items||[]).map(r=>r['Item Name']||'').filter(Boolean);
   const balMap={};inv.forEach(i=>balMap[i.item]=i.balance);
   const s=document.getElementById('ritem'),c=s.value;
@@ -201,49 +154,45 @@ function popItems(d){
   }).join('');
   if(c)s.value=c;
 }
-
 function go(n,b){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('page-'+n).classList.add('active');
-  if(b)b.classList.add('active'); cta();
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('pg-'+n).classList.add('on');
+  if(b)b.classList.add('on');cta();
 }
-function tf(inp,lnk,lk,sf,lf){
+function tfId(inp,lk,idf){
   const v=document.getElementById(inp).value.toLowerCase().trim();
   const el=document.getElementById('ta-'+inp);
   const list=LD?.[lk];
   if(!list||!v){el.style.display='none';return;}
-  const m=list.filter(r=>String(r[sf]||'').toLowerCase().includes(v)).slice(0,8);
+  const m=list.filter(r=>String(r[idf]||'').toLowerCase().includes(v)).slice(0,10);
   if(!m.length){el.style.display='none';return;}
-  el.innerHTML=m.map(r=>`<div class="ta-item" onmousedown="ts('${inp}','${lnk}','${es(String(r[sf]||''))}','${es(String(r[lf]||''))}')">${r[sf]||''}<span class="ta-sub">${r[lf]||''}</span></div>`).join('');
+  el.innerHTML=m.map(r=>`<div class="tai" onmousedown="tsId('${inp}','${es(String(r[idf]||''))}')">${r[idf]||''}</div>`).join('');
   el.style.display='block';
 }
-function ts(i,l,v,lv){document.getElementById(i).value=v;document.getElementById(l).value=lv;cta();}
-function cta(){document.querySelectorAll('.ta-list').forEach(e=>e.style.display='none');}
-document.addEventListener('click',e=>{if(!e.target.closest('.ta-wrap'))cta();});
+function tsId(i,v){document.getElementById(i).value=v;cta();}
+function cta(){document.querySelectorAll('.tal').forEach(e=>e.style.display='none');}
+document.addEventListener('click',e=>{if(!e.target.closest('.taw'))cta();});
 function es(s){return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
-
-async function submitRequest(){
-  const name=document.getElementById('rn').value.trim();
+async function sub(){
   const rid=document.getElementById('ri').value.trim();
   const item=document.getElementById('ritem').value;
   const qty=document.getElementById('rqty').value;
   const notes=document.getElementById('rnotes').value.trim();
-  if(!name){sf('rm2','Please enter your name.','err');return;}
+  if(!rid){sf('rm2','Please enter your Recipient ID.','err');return;}
   if(!item){sf('rm2','Please select an item.','err');return;}
   if(!qty||qty<1){sf('rm2','Please enter a valid quantity.','err');return;}
   if(!SU){sf('rm2','System not configured.','err');return;}
-  const btn=document.getElementById('rBtn');btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Submitting…';
+  const btn=document.getElementById('rBtn');btn.disabled=true;btn.innerHTML='<span class="sp"></span> Submitting…';
   try{
-    const r=await fetch(SU+'?'+new URLSearchParams({action:'addRequest',recipientName:name,recipientId:rid||'',itemRequested:item,qtyRequested:qty,notes}));
+    const r=await fetch(SU+'?'+new URLSearchParams({action:'addRequest',recipientId:rid,itemRequested:item,qtyRequested:qty,notes}));
     const d=await r.json();
-    if(d.success){sf('rm2',`✅ ${d.message}${d.recipientId?' · Recipient ID: '+d.recipientId:''}`,'ok');sa('Request submitted!','amber');['rn','ri','rqty','rnotes'].forEach(id=>document.getElementById(id).value='');document.getElementById('ritem').value='';setTimeout(init,1500);}
+    if(d.success){sf('rm2','✅ '+d.message+'\n\nRequest ID: '+d.requestId+'\nSave this ID to track your request.','ok');sa('Request submitted!','amber');['ri','rqty','rnotes'].forEach(id=>document.getElementById(id).value='');document.getElementById('ritem').value='';}
     else sf('rm2','❌ '+(d.error||'Error'),'err');
   }catch(e){sf('rm2','❌ Failed: '+e.message,'err');}
   btn.disabled=false;btn.innerHTML='<span>Submit Request</span>';
 }
-
-async function registerRecipient(){
+async function reg(){
   const name=document.getElementById('rrn').value.trim();
   const email=document.getElementById('rre').value.trim();
   const phone=document.getElementById('rrp').value.trim();
@@ -251,55 +200,17 @@ async function registerRecipient(){
   if(!name){sf('regm','Please enter your full name.','err');return;}
   if(!address){sf('regm','Please enter your address — needed for delivery.','err');return;}
   if(!SU){sf('regm','System not configured.','err');return;}
-  const btn=document.getElementById('regBtn');btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Registering…';
+  const btn=document.getElementById('regBtn');btn.disabled=true;btn.innerHTML='<span class="sp"></span> Registering…';
   try{
     const r=await fetch(SU+'?'+new URLSearchParams({action:'addRecipient',name,email,phone,address}));
     const d=await r.json();
-    if(d.success){sf('regm',`✅ Registered! Your Recipient ID is: ${d.recipientId}\n\nSave this for future requests.`,'ok');['rrn','rre','rrp','rra'].forEach(id=>document.getElementById(id).value='');sa('Registered: '+d.recipientId,'amber');setTimeout(init,1500);}
+    if(d.success){sf('regm','✅ Registered!\n\nYour Recipient ID is: '+d.recipientId+'\n\nSave this — you need it to make requests.','ok');['rrn','rre','rrp','rra'].forEach(id=>document.getElementById(id).value='');sa('Registered: '+d.recipientId,'amber');}
     else sf('regm','❌ '+(d.error||'Error'),'err');
   }catch(e){sf('regm','❌ Failed: '+e.message,'err');}
   btn.disabled=false;btn.innerHTML='<span>Register &amp; Get My Recipient ID →</span>';
 }
-
-function pillCls(s){const l=(s||'').toLowerCase().replace(' ','-');return l==='pending'?'pending':l==='approved'?'approved':l==='delivery-pending'?'delivery-pending':l==='delivered'?'delivered':l==='rejected'?'rejected':'pending';}
-
-function workflowHtml(status){
-  const steps=['Pending','Approved','Delivery Pending','Delivered'];
-  const idx=steps.findIndex(s=>s.toLowerCase()===status.toLowerCase());
-  return`<div class="workflow">${steps.map((s,i)=>`${i>0?'<span class="warrow">›</span>':''}<span class="wstep ${i<idx?'done':i===idx?'current':''}">${s}</span>`).join('')}</div>`;
-}
-
-async function loadHistory(){
-  const q=document.getElementById('hid').value.trim();
-  if(!q||!LD){document.getElementById('hres').innerHTML='<div class="panel"><div class="no-data">Please enter your Recipient ID or name.</div></div>';return;}
-  const rc=(LD.recipients||[]).find(r=>r['Recipient ID'].toLowerCase()===q.toLowerCase()||(r['Recipient Name']||'').toLowerCase().includes(q.toLowerCase()));
-  if(!rc){document.getElementById('hres').innerHTML='<div class="panel"><div class="no-data">Recipient not found.</div></div>';return;}
-  const reqs=(LD.requests||[]).filter(r=>r['Recipient ID']===rc['Recipient ID']);
-  const delivered=reqs.filter(r=>(r['Status']||'').toLowerCase()==='delivered');
-  const units=delivered.reduce((s,r)=>s+(parseInt(r['Qty Requested'])||0),0);
-  document.getElementById('hres').innerHTML=`
-    <div class="stat-row">
-      <div class="stat"><div class="stat-val">${reqs.length}</div><div class="stat-lbl">Requests</div></div>
-      <div class="stat"><div class="stat-val">${delivered.length}</div><div class="stat-lbl">Delivered</div></div>
-      <div class="stat"><div class="stat-val">${units}</div><div class="stat-lbl">Units Received</div></div>
-    </div>
-    <div class="panel">
-      <div class="ph"><div class="pt">${rc['Recipient Name']} · ${rc['Recipient ID']}</div></div>
-      ${rc['Address']?`<div style="font-size:0.78rem;color:var(--muted);margin-bottom:6px">📍 ${rc['Address']}</div>`:''}
-      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:14px">${[rc['Email'],rc['Phone']].filter(Boolean).join(' · ')}</div>
-      ${reqs.length?reqs.map(r=>`
-        <div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;background:var(--bg)">
-          ${workflowHtml(r['Status']||'Pending')}
-          <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px">
-            <span style="font-weight:600">${r['Item Requested']||'—'}</span>
-            <span style="font-size:0.78rem;color:var(--muted)">Qty: ${r['Qty Requested']||0} · ${fd(r['Request Date'])}</span>
-          </div>
-        </div>`).join(''):'<div class="no-data">No requests yet</div>'}
-    </div>`;
-}
-function fd(d){if(!d)return'—';try{return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch{return d;}}
-function sf(id,msg,type){const el=document.getElementById(id);el.textContent=msg;el.className='fm '+type;setTimeout(()=>el.style.display='none',9000);}
-function sa(msg,type='amber'){const el=document.getElementById('alert');el.textContent=msg;el.className=`alert ${type} show`;setTimeout(()=>el.classList.remove('show'),3500);}
+function sf(id,msg,type){const el=document.getElementById(id);el.textContent=msg;el.className='fm '+type;setTimeout(()=>el.style.display='none',12000);}
+function sa(msg,type='amber'){const el=document.getElementById('al');el.textContent=msg;el.className='al2 '+type+' show';setTimeout(()=>el.classList.remove('show'),3500);}
 </script>
 </body>
 </html>
