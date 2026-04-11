@@ -117,6 +117,28 @@ label{font-size:0.72rem;font-weight:600;color:var(--mu);text-transform:uppercase
 .alert{position:fixed;top:18px;right:18px;padding:11px 18px;border-radius:var(--ra);font-size:0.82rem;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,0.2);z-index:9998;transform:translateX(140%);transition:transform .3s ease;max-width:300px}
 .alert.show{transform:translateX(0)}.alert.green{background:var(--ac);color:white}.alert.red{background:var(--re);color:white}.alert.amber{background:var(--am);color:white}
 .sm-msg{margin-top:11px;font-size:0.8rem;display:none;padding:8px 12px;border-radius:7px}
+
+
+/* RESOLVE CUSTOM REQUEST MODAL */
+.res-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:600;align-items:center;justify-content:center}
+.res-box{background:#fff;border-radius:14px;padding:26px;max-width:460px;width:92%;box-shadow:0 12px 40px rgba(0,0,0,0.22)}
+.res-ttl{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:4px}
+.res-sub{font-size:0.81rem;color:var(--mu);margin-bottom:14px;line-height:1.5}
+.res-ta{width:100%;padding:10px 12px;border:1.5px solid var(--b);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.85rem;resize:vertical;min-height:75px;outline:none;transition:border-color .15s;background:var(--bg);color:var(--tx)}
+.res-ta:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--al)}
+.res-actions{display:flex;gap:9px;margin-top:14px;flex-wrap:wrap}
+/* REJECT MODAL */
+.rej-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:600;align-items:center;justify-content:center}
+.rej-box{background:#fff;border-radius:14px;padding:26px;max-width:440px;width:92%;box-shadow:0 12px 40px rgba(0,0,0,0.22)}
+.rej-ttl{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:4px;color:var(--re)}
+.rej-sub{font-size:0.81rem;color:var(--mu);margin-bottom:14px;line-height:1.5}
+.rej-ta{width:100%;padding:10px 12px;border:1.5px solid var(--b);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.85rem;resize:vertical;min-height:80px;outline:none;transition:border-color .15s;background:var(--bg);color:var(--tx)}
+.rej-ta:focus{border-color:var(--re);box-shadow:0 0 0 3px var(--rl)}
+.rej-actions{display:flex;gap:9px;margin-top:14px;flex-wrap:wrap}
+/* NOTES TOOLTIP */
+.info-ico{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--bl);color:white;font-size:0.65rem;font-weight:700;cursor:help;position:relative;flex-shrink:0;vertical-align:middle;margin-left:4px}
+.info-ico .tip-bubble{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1c1c1c;color:white;font-size:0.75rem;font-weight:400;padding:7px 10px;border-radius:8px;white-space:pre-wrap;min-width:160px;max-width:260px;z-index:400;line-height:1.5;text-align:left;font-family:'DM Sans',sans-serif}
+.info-ico:hover .tip-bubble{display:block}
 footer{text-align:center;color:var(--mu);font-size:0.7rem;padding:14px;border-top:1px solid var(--b);margin-top:8px}
 @media print{
   body *{visibility:hidden}
@@ -160,6 +182,36 @@ footer{text-align:center;color:var(--mu);font-size:0.7rem;padding:14px;border-to
   </div>
 </div>
 <div id="pA" style="display:none"></div>
+
+<!-- RESOLVE CUSTOM REQUEST MODAL -->
+<div class="res-overlay" id="resOverlay">
+  <div class="res-box">
+    <div class="res-ttl" id="resTtl">Resolve Custom Request</div>
+    <div class="res-sub" id="resSub"></div>
+    <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px">Admin Note <small style="text-transform:none;font-weight:400;font-size:0.72rem">(will be emailed to recipient)</small></label>
+    <textarea class="res-ta" id="resNote" placeholder="Add a note for the recipient…"></textarea>
+    <div id="resErr" style="color:var(--re);font-size:0.79rem;margin-top:6px;display:none">Please enter a note before resolving.</div>
+    <div class="res-actions">
+      <button class="btn bg" id="resFulfilBtn" onclick="confirmCustom('Fulfilled')">✅ Mark Fulfilled</button>
+      <button class="btn br" id="resNaBtn" onclick="confirmCustom('Not Available')">❌ Not Available</button>
+      <button onclick="closeResolve()" style="background:var(--bg);color:var(--mu);border:1px solid var(--b);padding:8px 16px;border-radius:9px;font-size:0.84rem;cursor:pointer;font-family:inherit">Cancel</button>
+    </div>
+  </div>
+</div>
+<!-- REJECT MODAL -->
+<div class="rej-overlay" id="rejOverlay">
+  <div class="rej-box">
+    <div class="rej-ttl">❌ Reject — Comment Required</div>
+    <div class="rej-sub" id="rejSub">Please provide a reason for rejection. This will be emailed to the donor/recipient.</div>
+    <textarea class="rej-ta" id="rejComment" placeholder="Enter rejection reason…"></textarea>
+    <div id="rejErr" style="color:var(--re);font-size:0.79rem;margin-top:6px;display:none">Please enter a rejection comment before confirming.</div>
+    <div class="rej-actions">
+      <button class="btn br" id="rejConfirmBtn" onclick="confirmReject()">Confirm Rejection</button>
+      <button onclick="closeReject()" style="background:var(--bg);color:var(--mu);border:1px solid var(--b);padding:8px 16px;border-radius:9px;font-size:0.84rem;cursor:pointer;font-family:inherit">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <div id="AS">
 <nav>
   <div class="brand">🛒 Grocery Donation Tracker <span class="bdg">ADMIN</span></div>
@@ -168,6 +220,7 @@ footer{text-align:center;color:var(--mu);font-size:0.7rem;padding:14px;border-to
     <button class="ntab" onclick="go('collections',this)">📦 Collections</button>
     <button class="ntab" onclick="go('requests',this)">✅ Requests</button>
     <button class="ntab" onclick="go('items',this)">🗂 Items</button>
+    <button class="ntab" onclick="go('custom',this)">🔍 Custom Requests</button>
     <button class="ntab" onclick="go('history',this)">🕓 History</button>
     <button class="ntab" onclick="go('reports',this)">📄 Reports</button>
     <button class="ntab" onclick="go('masters',this)">👥 Masters</button>
@@ -206,7 +259,7 @@ footer{text-align:center;color:var(--mu);font-size:0.7rem;padding:14px;border-to
   </div>
   <div class="panel">
     <div class="ph"><div class="pt">✅ All Donations</div><div class="pc" id="allDC">—</div></div>
-    <div class="tw"><table><thead><tr><th>Donation ID</th><th>Date</th><th>Donor ID</th><th>Item</th><th>Qty</th><th>Status</th><th>Submitted On</th><th>Collected On</th><th>Action</th></tr></thead><tbody id="allDB2"></tbody></table></div>
+    <div class="tw"><table><thead><tr><th>Donation ID</th><th>Date</th><th>Donor ID</th><th>Item</th><th>Qty</th><th>Status</th><th>Submitted On</th><th>Collected On</th><th>Notes</th><th>Action</th></tr></thead><tbody id="allDB2"></tbody></table></div>
   </div>
   <div class="tip">💡 Once you've physically collected the donation, click <strong>Mark Collected</strong>. This updates inventory and sends an email notification to the donor.</div>
 </div>
@@ -240,6 +293,31 @@ footer{text-align:center;color:var(--mu);font-size:0.7rem;padding:14px;border-to
     <div id="itemGrid" class="item-grid"><div class="no-data">No items yet</div></div>
   </div>
   <div class="tip">💡 Deleting an item marks it inactive — existing donation records are preserved. Donors and recipients will no longer see deleted items.</div>
+</div>
+
+
+<!-- CUSTOM REQUESTS -->
+<div class="pg" id="pg-custom">
+  <div class="panel" style="margin-bottom:16px">
+    <div class="ph">
+      <div class="pt">🔍 Custom Item Requests — Pending</div>
+      <div class="pc" id="custPendCnt">—</div>
+    </div>
+    <p style="font-size:0.82rem;color:var(--mu);margin-bottom:14px;line-height:1.6">Recipients have requested items not in your list. Fulfil by adding the item to Item Master, or mark as Not Available with a note — recipient will be emailed automatically.</p>
+    <div id="custPendList"><div class="no-data">No pending custom requests</div></div>
+  </div>
+  <div class="panel">
+    <div class="ph">
+      <div class="pt">📋 All Custom Requests</div>
+      <div class="pc" id="custAllCnt">—</div>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Custom ID</th><th>Date</th><th>Recipient ID</th><th>Item Requested</th><th>Notes</th><th>Status</th><th>Admin Note</th><th>Resolved On</th></tr></thead>
+        <tbody id="custAllBody"></tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
 <!-- HISTORY -->
@@ -380,6 +458,7 @@ function go(n,b){
   if(n==='history'&&LD)buildHistory();
   if(n==='masters'&&LD)buildMasters();
   if(n==='items'&&LD)buildItems();
+  if(n==='custom'&&LD)buildCustom();
   if(n==='collections'&&LD)buildCollections();
   if(n==='requests'&&LD)buildRequests();
 }
@@ -398,6 +477,7 @@ async function loadData(){
     if(ap==='pg-history')buildHistory();
     if(ap==='pg-masters')buildMasters();
     if(ap==='pg-items')buildItems();
+    if(ap==='pg-custom')buildCustom();
   }catch(e){setSS('error');sa('Could not reach Google Sheet.','red');console.error(e);}
 }
 setInterval(()=>{if(SU&&sessionStorage.getItem('adm'))loadData();},30000);
@@ -451,7 +531,7 @@ function renderDash(data){
   const pendReqs=req.filter(r=>(r['Status']||'').toLowerCase()==='pending').slice(0,5);
   document.getElementById('prc').textContent=(pendReq)+' pending';
   document.getElementById('prl').innerHTML=pendReqs.length
-    ?pendReqs.map(r=>`<div class="arow"><div class="ainfo"><span class="tid">${r['Request ID']||r['Recipient ID']}</span> &nbsp;<strong>${rm[r['Recipient ID']]||r['Recipient ID']}</strong> · ${r['Item Requested']} · Qty: <strong>${r['Qty Requested']}</strong><br><span style="font-size:0.74rem;color:var(--mu)">${fd(r['Pending On']||r['Request Date'])}</span></div><div class="abtns"><button class="btn bg bsm" onclick="updR(${r._row},'Approved')">✓ Approve</button><button class="btn br bsm" onclick="updR(${r._row},'Rejected')">✗ Reject</button></div></div>`).join('')
+    ?pendReqs.map(r=>`<div class="arow"><div class="ainfo"><span class="tid">${r['Request ID']||r['Recipient ID']}</span> &nbsp;<strong>${rm[r['Recipient ID']]||r['Recipient ID']}</strong> · ${r['Item Requested']} · Qty: <strong>${r['Qty Requested']}</strong><br><span style="font-size:0.74rem;color:var(--mu)">${fd(r['Pending On']||r['Request Date'])}</span></div><div class="abtns"><button class="btn bg bsm" onclick="updR(${r._row},'Approved')">✓ Approve</button><button class="btn br bsm" onclick="openReject('req',${r._row},''+r['Item Requested']+' ('+r['Qty Requested']+')')">✗ Reject</button></div></div>`).join('')
     :'<div class="no-data">🎉 No pending requests</div>';
 }
 
@@ -463,13 +543,14 @@ function buildCollections(){
   const sub=don.filter(r=>(r['Status']||'submitted').toLowerCase()==='submitted');
   document.getElementById('subCnt').textContent=sub.length+' pending';
   document.getElementById('subList').innerHTML=sub.length
-    ?sub.map(r=>{const d=dm[r['Donor ID']]||{};return`<div class="arow"><div class="ainfo"><span class="tid">${r['Donation ID']||'—'}</span> &nbsp;<strong>${d['Donor Name']||r['Donor ID']}</strong><br>${d['Address']?`<span style="font-size:0.74rem;color:var(--mu)">📍 ${d['Address']}</span><br>`:''}<span style="font-size:0.74rem;color:var(--mu)">${d['Phone']?'📞 '+d['Phone']+' · ':''}<strong>${r['Item']}</strong> · Qty <strong>${r['Quantity']}</strong> · ${fd(r['Submitted On']||r['Date'])}</span></div><div class="abtns"><button class="btn bg bsm" onclick="updD(${r._row},'Collected')">✓ Mark Collected</button></div></div>`;}).join('')
+    ?sub.map(r=>{const d=dm[r['Donor ID']]||{};const notesIcon=r['Notes']?`<span class="info-ico">ℹ<span class="tip-bubble">${String(r['Notes']).replace(/</g,'&lt;')}</span></span>`:'';return`<div class="arow"><div class="ainfo"><span class="tid">${r['Donation ID']||'—'}</span> &nbsp;<strong>${d['Donor Name']||r['Donor ID']}</strong>${notesIcon}<br>${d['Address']?`<span style="font-size:0.74rem;color:var(--mu)">📍 ${d['Address']}</span><br>`:''}<span style="font-size:0.74rem;color:var(--mu)">${d['Phone']?'📞 '+d['Phone']+' · ':''}<strong>${r['Item']}</strong> · Qty <strong>${r['Quantity']}</strong> · ${fd(r['Submitted On']||r['Date'])}</span></div><div class="abtns"><button class="btn bg bsm" onclick="updD(${r._row},'Collected')">✓ Mark Collected</button><button class="btn br bsm" onclick="openReject('don',${r._row},''+r['Item']+' ('+r['Quantity']+')')">✗ Reject</button></div></div>`;}).join('')
     :'<div class="no-data">🎉 No collections pending</div>';
   document.getElementById('allDC').textContent=don.length+' total';
   document.getElementById('allDB2').innerHTML=don.map(r=>{
     const s=(r['Status']||'submitted').toLowerCase();
-    const nxt=s==='submitted'?`<button class="btn bg bsm" onclick="updD(${r._row},'Collected')">Mark Collected</button>`:`<span style="font-size:0.75rem;color:var(--mu)">${r['Status']}</span>`;
-    return`<tr><td><span class="tid">${r['Donation ID']||'—'}</span></td><td>${fd(r['Date'])}</td><td style="font-size:0.75rem;color:var(--mu)">${r['Donor ID']||'—'}</td><td>${r['Item']||'—'}</td><td>${r['Quantity']||0}</td><td><span class="pill ${s}">${r['Status']||'Submitted'}</span></td><td style="font-size:0.75rem;color:var(--mu)">${fd(r['Submitted On'])}</td><td style="font-size:0.75rem;color:var(--mu)">${fd(r['Collected On'])}</td><td>${nxt}</td></tr>`;}).join()||'<tr><td colspan="9" class="no-data">No donations</td></tr>';
+    const notes=r['Notes']?`<span class="info-ico">ℹ<span class="tip-bubble">${String(r['Notes']).replace(/</g,'&lt;')}</span></span>`:'';
+    const nxt=s==='submitted'?`<button class="btn bg bsm" onclick="updD(${r._row},'Collected')">Mark Collected</button> <button class="btn br bsm" onclick="openReject('don',${r._row},''+r['Item']+' ('+r['Quantity']+')')">Reject</button>`:`<span style="font-size:0.75rem;color:var(--mu)">${r['Status']}</span>`;
+    return`<tr><td><span class="tid">${r['Donation ID']||'—'}</span></td><td>${fd(r['Date'])}</td><td style="font-size:0.75rem;color:var(--mu)">${r['Donor ID']||'—'}</td><td>${r['Item']||'—'}</td><td>${r['Quantity']||0}</td><td><span class="pill ${s}">${r['Status']||'Submitted'}</span></td><td style="font-size:0.75rem;color:var(--mu)">${fd(r['Submitted On'])}</td><td style="font-size:0.75rem;color:var(--mu)">${fd(r['Collected On'])}</td><td>${notes}</td><td>${nxt}</td></tr>`;}).join()||'<tr><td colspan="9" class="no-data">No donations</td></tr>';
 }
 
 // ── REQUESTS ──
@@ -481,7 +562,7 @@ function buildRequests(){
   const dp=req.filter(r=>(r['Status']||'').toLowerCase()==='delivery pending');
   document.getElementById('pendRC').textContent=pending.length+' pending';
   document.getElementById('pendRL').innerHTML=pending.length
-    ?pending.map(r=>{const rc=rm[r['Recipient ID']]||{};return`<div class="arow"><div class="ainfo"><span class="tid">${r['Request ID']||'—'}</span> &nbsp;<strong>${rc['Recipient Name']||r['Recipient ID']}</strong>${rc['Address']?`<br><span style="font-size:0.74rem;color:var(--mu)">📍 ${rc['Address']}</span>`:''}<br><span style="font-size:0.74rem;color:var(--mu)">Item: <strong>${r['Item Requested']}</strong> · Qty: <strong>${r['Qty Requested']}</strong> · ${fd(r['Pending On']||r['Request Date'])}</span></div><div class="abtns"><button class="btn bg bsm" onclick="updR(${r._row},'Approved')">✓ Approve</button><button class="btn br bsm" onclick="updR(${r._row},'Rejected')">✗ Reject</button></div></div>`;}).join('')
+    ?pending.map(r=>{const rc=rm[r['Recipient ID']]||{};const notesI=r['Notes']?`<span class="info-ico">ℹ<span class="tip-bubble">${String(r['Notes']).replace(/</g,'&lt;')}</span></span>`:'';return`<div class="arow"><div class="ainfo"><span class="tid">${r['Request ID']||'—'}</span> &nbsp;<strong>${rc['Recipient Name']||r['Recipient ID']}</strong>${notesI}${rc['Address']?`<br><span style="font-size:0.74rem;color:var(--mu)">📍 ${rc['Address']}</span>`:''}<br><span style="font-size:0.74rem;color:var(--mu)">Item: <strong>${r['Item Requested']}</strong> · Qty: <strong>${r['Qty Requested']}</strong> · ${fd(r['Pending On']||r['Request Date'])}</span></div><div class="abtns"><button class="btn bg bsm" onclick="updR(${r._row},'Approved')">✓ Approve</button><button class="btn br bsm" onclick="openReject('req',${r._row},''+r['Item Requested']+' ('+r['Qty Requested']+')')">✗ Reject</button></div></div>`;}).join('')
     :'<div class="no-data">🎉 No pending requests</div>';
   document.getElementById('dpC').textContent=dp.length+' to deliver';
   document.getElementById('dpL').innerHTML=dp.length
@@ -491,7 +572,7 @@ function buildRequests(){
   document.getElementById('allRB2').innerHTML=req.map(r=>{
     const s=(r['Status']||'pending').toLowerCase().replace(/ /g,'-');
     let nxt='';
-    if(s==='pending')nxt=`<button class="btn bg bsm" onclick="updR(${r._row},'Approved')">Approve</button>`;
+    if(s==='pending')nxt=`<button class="btn bg bsm" onclick="updR(${r._row},'Approved')">Approve</button> <button class="btn br bsm" onclick="openReject('req',${r._row},''+r['Item Requested']+' ('+r['Qty Requested']+')')">Reject</button>`;
     else if(s==='approved')nxt=`<button class="btn bbl bsm" onclick="updR(${r._row},'Delivery Pending')">→ Delivery Pending</button>`;
     else if(s==='delivery-pending')nxt=`<button class="btn bg bsm" onclick="updR(${r._row},'Delivered')">Mark Delivered</button>`;
     else nxt=`<span style="font-size:0.75rem;color:var(--mu)">${r['Status']}</span>`;
@@ -499,10 +580,10 @@ function buildRequests(){
 }
 
 // ── STATUS UPDATES — instant refresh from server response ──
-async function updD(rowIdx,status){
+async function updD(rowIdx,status,comment=''){
   if(!SU){sa('Not connected','red');return;}
   try{
-    const r=await fetch(SU+'?'+new URLSearchParams({action:'updateDonationStatus',rowIndex:rowIdx,status}));
+    const r=await fetch(SU+'?'+new URLSearchParams({action:'updateDonationStatus',rowIndex:rowIdx,status,comment}));
     const d=await r.json();
     if(d.success){
       sa('Donation '+status+'!','green');
@@ -511,10 +592,10 @@ async function updD(rowIdx,status){
     }else sa('Error: '+(d.error||'Unknown'),'red');
   }catch(e){sa('Failed: '+e.message,'red');}
 }
-async function updR(rowIdx,status){
+async function updR(rowIdx,status,comment=''){
   if(!SU){sa('Not connected','red');return;}
   try{
-    const r=await fetch(SU+'?'+new URLSearchParams({action:'updateRequestStatus',rowIndex:rowIdx,status}));
+    const r=await fetch(SU+'?'+new URLSearchParams({action:'updateRequestStatus',rowIndex:rowIdx,status,comment}));
     const d=await r.json();
     if(d.success){
       sa('Request '+status+'!',status==='Rejected'?'red':'green');
@@ -689,6 +770,67 @@ function buildMasters(){
   const rm={};req.forEach(r=>{if(!rm[r['Recipient ID']])rm[r['Recipient ID']]={tot:0,del:0,units:0};rm[r['Recipient ID']].tot++;if((r['Status']||'').toLowerCase()==='delivered'){rm[r['Recipient ID']].del++;rm[r['Recipient ID']].units+=(parseInt(r['Qty Requested'])||0);}});
   document.getElementById('rmC').textContent=rec.length+' recipients';
   document.getElementById('rmB').innerHTML=rec.map((r,i)=>{const s=rm[r['Recipient ID']]||{tot:0,del:0,units:0};return`<tr><td style="color:var(--mu);font-size:0.74rem">${r['Recipient ID']}</td><td><span class="ava av${(i+1)%4}">${ini(r['Recipient Name'])}</span>${r['Recipient Name']||'—'}</td><td style="font-size:0.76rem;color:var(--mu)">${r['Email']||'—'}</td><td style="font-size:0.76rem;color:var(--mu)">${r['Phone']||'—'}</td><td style="font-size:0.74rem;color:var(--mu);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r['Address']||'—'}</td><td style="font-size:0.76rem;color:var(--mu)">${fd(r['Registered On'])}</td><td>${s.tot}</td><td>${s.del}</td><td><strong>${s.units}</strong></td></tr>`;}).join()||'<tr><td colspan="9" class="no-data">No recipients</td></tr>';
+}
+
+
+// ── REJECT MODAL ──
+let _rejType='',_rejRow=0,_rejLabel='';
+function openReject(type,row,label){
+  _rejType=type;_rejRow=row;_rejLabel=label;
+  document.getElementById('rejComment').value='';
+  document.getElementById('rejErr').style.display='none';
+  document.getElementById('rejSub').textContent='Reason for rejecting: '+label+'. This comment will be emailed to the '+(type==='don'?'donor':'recipient')+'.';
+  document.getElementById('rejOverlay').style.display='flex';
+  setTimeout(()=>document.getElementById('rejComment').focus(),100);
+}
+function closeReject(){document.getElementById('rejOverlay').style.display='none';}
+document.getElementById('rejOverlay').addEventListener('click',function(e){if(e.target===this)closeReject();});
+async function confirmReject(){
+  const comment=document.getElementById('rejComment').value.trim();
+  if(!comment){document.getElementById('rejErr').style.display='block';return;}
+  closeReject();
+  if(_rejType==='don') await updD(_rejRow,'Rejected',comment);
+  else                 await updR(_rejRow,'Rejected',comment);
+}
+
+// ── CUSTOM REQUESTS ──
+function buildCustom(){
+  if(!LD)return;
+  const cr=LD.customRequests||[];
+  const pending=cr.filter(r=>(r['Status']||'').toLowerCase()==='pending');
+  document.getElementById('custPendCnt').textContent=pending.length+' pending';
+  document.getElementById('custPendList').innerHTML=pending.length
+    ?pending.map(r=>`<div class="arow"><div class="ainfo"><span class="tid">${r['Custom ID']||'—'}</span> &nbsp;<strong>${r['Recipient ID']||'—'}</strong><br><span style="font-weight:600;color:var(--tx)">${r['Item Requested']||'—'}</span>${r['Notes']?`<br><span style="font-size:0.74rem;color:var(--mu)">Notes: ${r['Notes']}</span>`:''}<br><span style="font-size:0.74rem;color:var(--mu)">${fd(r['Date'])}</span></div><div class="abtns"><button class="btn bg bsm" onclick="openResolve(${r._row},'${es(r['Custom ID']||'')}','${es(r['Item Requested']||'')}')">Resolve</button></div></div>`).join('')
+    :'<div class="no-data">🎉 No pending custom requests</div>';
+  document.getElementById('custAllCnt').textContent=cr.length+' total';
+  document.getElementById('custAllBody').innerHTML=cr.length
+    ?cr.map(r=>`<tr><td><span class="tid">${r['Custom ID']||'—'}</span></td><td>${fd(r['Date'])}</td><td style="font-size:0.75rem;color:var(--mu)">${r['Recipient ID']||'—'}</td><td><strong>${r['Item Requested']||'—'}</strong></td><td style="font-size:0.77rem;color:var(--mu)">${r['Notes']||'—'}</td><td><span class="pill ${(r['Status']||'pending').toLowerCase().replace(/ /g,'-').replace('not-available','rejected').replace('fulfilled','approved').replace('pending','pending')}">${r['Status']||'Pending'}</span></td><td style="font-size:0.77rem;color:var(--mu)">${r['Admin Note']||'—'}</td><td style="font-size:0.75rem;color:var(--mu)">${fd(r['Resolved On'])}</td></tr>`).join('')
+    :'<tr><td colspan="8" class="no-data">No custom requests yet</td></tr>';
+}
+
+let _resRow=0,_resId='',_resItem='';
+function openResolve(row,id,item){
+  _resRow=row;_resId=id;_resItem=item;
+  document.getElementById('resTtl').textContent='Resolve: '+item;
+  document.getElementById('resSub').textContent='Custom ID: '+id+' · Add a note that will be emailed to the recipient explaining the outcome.';
+  document.getElementById('resNote').value='';
+  document.getElementById('resErr').style.display='none';
+  document.getElementById('resOverlay').style.display='flex';
+  setTimeout(()=>document.getElementById('resNote').focus(),100);
+}
+function closeResolve(){document.getElementById('resOverlay').style.display='none';}
+document.getElementById('resOverlay').addEventListener('click',function(e){if(e.target===this)closeResolve();});
+async function confirmCustom(status){
+  const note=document.getElementById('resNote').value.trim();
+  if(!note){document.getElementById('resErr').style.display='block';return;}
+  if(!SU){sa('Not connected','red');return;}
+  closeResolve();
+  try{
+    const r=await fetch(SU+'?'+new URLSearchParams({action:'updateCustomRequest',rowIndex:_resRow,status,adminNote:note}));
+    const d=await r.json();
+    if(d.success){sa('Custom request '+status+'!',status==='Fulfilled'?'green':'amber');if(d.data){LD=d.data;buildCustom();}else setTimeout(loadData,800);}
+    else sa('Error: '+(d.error||'Unknown'),'red');
+  }catch(e){sa('Failed: '+e.message,'red');}
 }
 
 // ── UTILS ──

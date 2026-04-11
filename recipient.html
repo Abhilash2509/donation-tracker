@@ -86,13 +86,10 @@ footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-t
         </div>
         <small style="color:var(--mu);font-size:0.73rem;margin-top:3px">No ID yet? Go to the Register tab first.</small>
       </div>
-      <div class="fg">
+      <div class="fg s2">
         <label for="ritem">Item Requested *</label>
         <select id="ritem"><option value="">Select item…</option></select>
-      </div>
-      <div class="fg">
-        <label for="rqty">Quantity *</label>
-        <input type="number" id="rqty" placeholder="e.g. 1" min="1"/>
+        <small style="color:var(--mu);font-size:0.73rem;margin-top:2px">Quantity will be 1 per request.</small>
       </div>
       <div class="fg s2">
         <label for="rnotes">Notes (optional)</label>
@@ -104,12 +101,38 @@ footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-t
   </div>
 </div>
 
+
+  <!-- Custom Item Request -->
+  <div class="panel" style="border-left:4px solid var(--bl)">
+    <div class="ph"><div class="pt" style="color:var(--bl)">🔍 Can't find your item?</div></div>
+    <p style="font-size:0.83rem;color:var(--mu);margin-bottom:14px;line-height:1.6">If the item you need isn't in the list above, submit a custom request below. The admin will review and either add it or let you know why it isn't available.</p>
+    <div class="g2">
+      <div class="fg s2">
+        <label for="cri">Your Recipient ID *</label>
+        <div class="taw">
+          <input type="text" id="cri" placeholder="Type your Recipient ID e.g. RCP001…" autocomplete="off" oninput="tfId('cri','recipients','Recipient ID')"/>
+          <div class="tal" id="ta-cri"></div>
+        </div>
+      </div>
+      <div class="fg s2">
+        <label for="citem">Item You Need *</label>
+        <input type="text" id="citem" placeholder="e.g. Basmati Rice 5kg, Sunflower Oil 1L…"/>
+      </div>
+      <div class="fg s2">
+        <label for="cnotes">Why do you need this? (optional)</label>
+        <textarea id="cnotes" placeholder="Any context that might help the admin…" style="min-height:55px"></textarea>
+      </div>
+    </div>
+    <button class="btn" style="background:var(--bl);color:white" id="cBtn" onclick="subCustom()"><span>Submit Custom Request</span></button>
+    <div class="fm" id="cm"></div>
+  </div>
+
 <div class="pg" id="pg-register">
   <div class="hero"><h2>📋 Register as Recipient</h2><p>Create your profile. A unique Recipient ID is generated — save it for future requests.</p></div>
   <div class="panel">
     <div class="g2">
       <div class="fg"><label for="rrn">Full Name *</label><input type="text" id="rrn" placeholder="e.g. Anita Sharma"/></div>
-      <div class="fg"><label for="rre">Email <small style="text-transform:none;font-weight:400">(for status notifications)</small></label><input type="email" id="rre" placeholder="anita@email.com"/></div>
+      <div class="fg"><label for="rre">Email * <small style="text-transform:none;font-weight:400">(required for notifications)</small></label><input type="email" id="rre" placeholder="anita@email.com" required/></div>
       <div class="fg"><label for="rrp">Phone</label><input type="tel" id="rrp" placeholder="+91 98765 43210"/></div>
       <div class="fg s2"><label for="rra">Address * <small style="text-transform:none;letter-spacing:0;font-weight:400">(needed for delivery)</small></label><textarea id="rra" placeholder="House/Flat no, Street, Area, City, PIN…"></textarea></div>
     </div>
@@ -142,17 +165,19 @@ function renderInv(d){
     ?inv.map((i,idx)=>`<div class="inv-item"><div class="inv-top"><span class="inv-name">${i.item}</span><span class="inv-nums">Available: <strong>${i.balance}</strong> · Donated: ${i.donated} · Distributed: ${i.distributed}</span></div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(2,Math.round(i.balance/maxD*100))}%;background:${PAL[idx%PAL.length]}"></div></div></div>`).join('')
     :'<div class="no-data">No inventory yet</div>';
 }
+let balMap={};
 function popItems(d){
   const inv=d.inventory||[];
   const adminItems=(d.items||[]).map(r=>r['Item Name']||'').filter(Boolean);
-  const balMap={};inv.forEach(i=>balMap[i.item]=i.balance);
+  balMap={};inv.forEach(i=>balMap[i.item]=i.balance);
   const s=document.getElementById('ritem'),c=s.value;
   s.innerHTML='<option value="">Select item…</option>'+adminItems.map(item=>{
     const bal=balMap[item]??null;
     const suffix=bal===null?'':(bal>0?` (${bal} available)`:' (out of stock)');
-    return`<option value="${item}">${item}${suffix}</option>`;
+    return`<option value="${item}" ${bal!==null&&bal<=0?'disabled':''}>${item}${suffix}</option>`;
   }).join('');
   if(c)s.value=c;
+
 }
 function go(n,b){
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
@@ -177,20 +202,37 @@ function es(s){return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
 async function sub(){
   const rid=document.getElementById('ri').value.trim();
   const item=document.getElementById('ritem').value;
-  const qty=document.getElementById('rqty').value;
   const notes=document.getElementById('rnotes').value.trim();
   if(!rid){sf('rm2','Please enter your Recipient ID.','err');return;}
   if(!item){sf('rm2','Please select an item.','err');return;}
-  if(!qty||qty<1){sf('rm2','Please enter a valid quantity.','err');return;}
+  const avail=balMap[item]??null;
+  if(avail!==null&&avail<1){sf('rm2','"'+item+'" is currently out of stock. Try another item or submit a custom request below.','err');return;}
   if(!SU){sf('rm2','System not configured.','err');return;}
   const btn=document.getElementById('rBtn');btn.disabled=true;btn.innerHTML='<span class="sp"></span> Submitting…';
   try{
-    const r=await fetch(SU+'?'+new URLSearchParams({action:'addRequest',recipientId:rid,itemRequested:item,qtyRequested:qty,notes}));
+    const r=await fetch(SU+'?'+new URLSearchParams({action:'addRequest',recipientId:rid,itemRequested:item,qtyRequested:1,notes}));
     const d=await r.json();
-    if(d.success){sf('rm2','✅ '+d.message+'\n\nRequest ID: '+d.requestId+'\nSave this ID to track your request.','ok');sa('Request submitted!','amber');['ri','rqty','rnotes'].forEach(id=>document.getElementById(id).value='');document.getElementById('ritem').value='';}
+    if(d.success){sf('rm2','✅ '+d.message+'\n\nRequest ID: '+d.requestId+'\nSave this ID to track your request.','ok');sa('Request submitted!','amber');['ri','rnotes'].forEach(id=>document.getElementById(id).value='');document.getElementById('ritem').value='';}
     else sf('rm2','❌ '+(d.error||'Error'),'err');
   }catch(e){sf('rm2','❌ Failed: '+e.message,'err');}
   btn.disabled=false;btn.innerHTML='<span>Submit Request</span>';
+}
+
+async function subCustom(){
+  const rid=document.getElementById('cri').value.trim();
+  const item=document.getElementById('citem').value.trim();
+  const notes=document.getElementById('cnotes').value.trim();
+  if(!rid){sf('cm','Please enter your Recipient ID.','err');return;}
+  if(!item){sf('cm','Please describe the item you need.','err');return;}
+  if(!SU){sf('cm','System not configured.','err');return;}
+  const btn=document.getElementById('cBtn');btn.disabled=true;btn.innerHTML='<span class="sp"></span> Submitting…';
+  try{
+    const r=await fetch(SU+'?'+new URLSearchParams({action:'addCustomRequest',recipientId:rid,itemName:item,notes}));
+    const d=await r.json();
+    if(d.success){sf('cm','✅ Custom request submitted!\n\nCustom Request ID: '+d.customId+'\nThe admin will review and email you the outcome.','ok');sa('Custom request submitted!','amber');['cri','citem','cnotes'].forEach(id=>document.getElementById(id).value='');}
+    else sf('cm','❌ '+(d.error||'Error'),'err');
+  }catch(e){sf('cm','❌ Failed: '+e.message,'err');}
+  btn.disabled=false;btn.innerHTML='<span>Submit Custom Request</span>';
 }
 async function reg(){
   const name=document.getElementById('rrn').value.trim();
@@ -198,6 +240,7 @@ async function reg(){
   const phone=document.getElementById('rrp').value.trim();
   const address=document.getElementById('rra').value.trim();
   if(!name){sf('regm','Please enter your full name.','err');return;}
+  if(!email){sf('regm','Email is required — needed for status notifications.','err');return;}
   if(!address){sf('regm','Please enter your address — needed for delivery.','err');return;}
   if(!SU){sf('regm','System not configured.','err');return;}
   const btn=document.getElementById('regBtn');btn.disabled=true;btn.innerHTML='<span class="sp"></span> Registering…';

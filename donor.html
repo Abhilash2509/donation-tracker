@@ -64,6 +64,10 @@ footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-t
 <div class="pg on" id="pg-donate">
   <div class="hero"><h2>🎁 Make a Donation</h2><p>Enter your Donor ID to donate. The admin will contact you to arrange pickup from your address.</p></div>
   <div class="infobox">📦 <strong>Workflow:</strong> Submit → Admin collects from you → Marked Collected. Email notification sent at each stage.</div>
+  <div id="lowStockBanner" style="display:none;background:#fff8e1;border:1px solid #f5c842;border-left:4px solid #f5c842;border-radius:10px;padding:12px 15px;margin-bottom:16px;font-size:0.82rem;color:#7a5a00;line-height:1.7">
+    ⚠️ <strong>Items running low — your donation is especially needed!</strong><br>
+    <span id="lowStockList"></span>
+  </div>
   <div class="panel">
     <div class="g2">
       <div class="fg s2">
@@ -97,7 +101,7 @@ footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-t
   <div class="panel">
     <div class="g2">
       <div class="fg"><label for="rn">Full Name *</label><input type="text" id="rn" placeholder="e.g. Raj Kumar"/></div>
-      <div class="fg"><label for="re">Email <small style="text-transform:none;font-weight:400">(for status notifications)</small></label><input type="email" id="re" placeholder="raj@email.com"/></div>
+      <div class="fg"><label for="re">Email * <small style="text-transform:none;font-weight:400">(required for notifications)</small></label><input type="email" id="re" placeholder="raj@email.com" required/></div>
       <div class="fg"><label for="rp">Phone</label><input type="tel" id="rp" placeholder="+91 98765 43210"/></div>
       <div class="fg s2"><label for="ra">Address * <small style="text-transform:none;letter-spacing:0;font-weight:400">(needed for collection)</small></label><textarea id="ra" placeholder="House/Flat no, Street, Area, City, PIN…"></textarea></div>
     </div>
@@ -116,7 +120,7 @@ async function init(){
   try{
     const r=await fetch(SU+'?action=getData&t='+Date.now());
     const d=await r.json();if(d.error)throw new Error(d.error);
-    LD=d;popItems(d);
+    LD=d;popItems(d);renderLowStock(d);
     document.getElementById('sd').style.background='#a8e6a0';
     document.getElementById('sl').textContent='Live';
   }catch(e){document.getElementById('sd').style.background='#e57373';document.getElementById('sl').textContent='Offline';}
@@ -148,6 +152,16 @@ function tsId(i,v){document.getElementById(i).value=v;cta();}
 function cta(){document.querySelectorAll('.tal').forEach(e=>e.style.display='none');}
 document.addEventListener('click',e=>{if(!e.target.closest('.taw'))cta();});
 function es(s){return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
+function renderLowStock(d){
+  const inv=d.inventory||[];
+  const low=inv.filter(i=>i.balance>0&&i.balance<5);
+  const banner=document.getElementById('lowStockBanner');
+  if(!low.length){banner.style.display='none';return;}
+  document.getElementById('lowStockList').innerHTML=
+    low.map(i=>`<strong>${i.item}</strong>: only ${i.balance} left`).join(' &nbsp;·&nbsp; ');
+  banner.style.display='block';
+}
+
 async function sub(){
   const did=document.getElementById('di').value.trim();
   const item=document.getElementById('ditem').value;
@@ -172,6 +186,7 @@ async function reg(){
   const phone=document.getElementById('rp').value.trim();
   const address=document.getElementById('ra').value.trim();
   if(!name){sf('rm','Please enter your full name.','err');return;}
+  if(!email){sf('rm','Email is required — needed for status notifications.','err');return;}
   if(!address){sf('rm','Please enter your address — needed for collection.','err');return;}
   if(!SU){sf('rm','System not configured.','err');return;}
   const btn=document.getElementById('rBtn');btn.disabled=true;btn.innerHTML='<span class="sp"></span> Registering…';
