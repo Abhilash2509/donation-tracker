@@ -198,6 +198,27 @@ footer{text-align:center;color:var(--mu);font-size:0.7rem;padding:14px;border-to
     </div>
   </div>
 </div>
+
+<!-- APPROVE WITH ETA MODAL -->
+<div class="rej-overlay" id="appOverlay">
+  <div class="rej-box">
+    <div class="rej-ttl" style="color:var(--ac)">✅ Approve Request</div>
+    <div class="rej-sub" id="appSub"></div>
+    <div style="margin-bottom:10px">
+      <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px">Estimated Delivery Date/Time *</label>
+      <input type="text" id="appEta" placeholder="e.g. Wednesday 14 Jan, 3–5pm" style="padding:10px 12px;border:1.5px solid var(--b);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--bg);color:var(--tx);outline:none;width:100%;transition:border-color .15s"/>
+    </div>
+    <div style="margin-bottom:4px">
+      <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px">Note to Recipient (optional)</label>
+      <textarea class="rej-ta" id="appNote" placeholder="Any additional instructions or information for the recipient…" style="min-height:60px"></textarea>
+    </div>
+    <div id="appErr" style="color:var(--re);font-size:0.79rem;margin-top:6px;display:none">Please enter an estimated delivery date/time.</div>
+    <div class="rej-actions">
+      <button class="btn bg" onclick="confirmApprove()">✅ Approve &amp; Notify Recipient</button>
+      <button onclick="closeApprove()" style="background:var(--bg);color:var(--mu);border:1px solid var(--b);padding:8px 16px;border-radius:9px;font-size:0.84rem;cursor:pointer;font-family:inherit">Cancel</button>
+    </div>
+  </div>
+</div>
 <!-- REJECT MODAL -->
 <div class="rej-overlay" id="rejOverlay">
   <div class="rej-box">
@@ -221,6 +242,7 @@ footer{text-align:center;color:var(--mu);font-size:0.7rem;padding:14px;border-to
     <button class="ntab" onclick="go('requests',this)">✅ Requests</button>
     <button class="ntab" onclick="go('items',this)">🗂 Items</button>
     <button class="ntab" onclick="go('custom',this)">🔍 Custom Requests</button>
+    <button class="ntab" onclick="go('notices',this)">📌 Notices</button>
     <button class="ntab" onclick="go('history',this)">🕓 History</button>
     <button class="ntab" onclick="go('reports',this)">📄 Reports</button>
     <button class="ntab" onclick="go('masters',this)">👥 Masters</button>
@@ -241,14 +263,7 @@ footer{text-align:center;color:var(--mu);font-size:0.7rem;padding:14px;border-to
     <div class="panel"><div class="ph"><div class="pt">🥫 Donations by Item</div></div><div class="chart-wrap"><canvas id="pie"></canvas></div></div>
     <div class="panel"><div class="ph"><div class="pt">📦 Live Inventory</div></div><div id="invBars"><div class="no-data">—</div></div></div>
   </div>
-  <div class="panel" style="margin-bottom:16px">
-    <div class="ph"><div class="pt">📦 Awaiting Collection</div><div class="pc" id="pdc">—</div></div>
-    <div id="pdl"><div class="no-data">—</div></div>
-  </div>
-  <div class="panel">
-    <div class="ph"><div class="pt">⏳ Requests Needing Action</div><div class="pc" id="prc">—</div></div>
-    <div id="prl"><div class="no-data">—</div></div>
-  </div>
+
 </div>
 
 <!-- COLLECTIONS -->
@@ -364,6 +379,20 @@ footer{text-align:center;color:var(--mu);font-size:0.7rem;padding:14px;border-to
   </div>
 </div>
 
+
+<!-- NOTICE BOARD -->
+<div class="pg" id="pg-notices">
+  <div class="panel">
+    <div class="ph"><div class="pt">📌 Notice Board <span style="font-size:0.72rem;font-weight:400;color:var(--mu)">— visible to all recipients &amp; public dashboard</span></div></div>
+    <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
+      <textarea id="newNotice" placeholder="Type an announcement, upcoming event, or important message for recipients…" style="flex:1;min-width:200px;min-height:70px;padding:9px 12px;border:1px solid var(--b);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--bg);color:var(--tx);outline:none;resize:vertical"></textarea>
+      <button class="btn bg" onclick="postNotice()" style="align-self:flex-end;white-space:nowrap">📌 Post Notice</button>
+    </div>
+    <div id="noticeList"><div class="no-data">No notices yet</div></div>
+  </div>
+  <div class="tip">💡 Notices appear on the public dashboard and on the recipient portal. Use this to announce upcoming drives, collection dates, or important updates.</div>
+</div>
+
 <!-- REPORTS -->
 <div class="pg" id="pg-reports">
   <div class="panel">
@@ -459,6 +488,7 @@ function go(n,b){
   if(n==='masters'&&LD)buildMasters();
   if(n==='items'&&LD)buildItems();
   if(n==='custom'&&LD)buildCustom();
+  if(n==='notices'&&LD)buildNotices();
   if(n==='collections'&&LD)buildCollections();
   if(n==='requests'&&LD)buildRequests();
 }
@@ -478,6 +508,7 @@ async function loadData(){
     if(ap==='pg-masters')buildMasters();
     if(ap==='pg-items')buildItems();
     if(ap==='pg-custom')buildCustom();
+    if(ap==='pg-notices')buildNotices();
   }catch(e){setSS('error');sa('Could not reach Google Sheet.','red');console.error(e);}
 }
 setInterval(()=>{if(SU&&sessionStorage.getItem('adm'))loadData();},30000);
@@ -523,16 +554,7 @@ function renderDash(data){
 
   // Dashboard quick lists
   const subDons=don.filter(r=>(r['Status']||'submitted').toLowerCase()==='submitted').slice(0,5);
-  document.getElementById('pdc').textContent=submitted+' to collect';
-  document.getElementById('pdl').innerHTML=subDons.length
-    ?subDons.map(r=>`<div class="arow"><div class="ainfo"><span class="tid">${r['Donation ID']||r['Donor ID']}</span> &nbsp;<strong>${dm[r['Donor ID']]||r['Donor ID']}</strong> · ${r['Item']} · Qty: <strong>${r['Quantity']}</strong><br><span style="font-size:0.74rem;color:var(--mu)">${fd(r['Submitted On']||r['Date'])}</span></div><div class="abtns"><button class="btn bg bsm" onclick="updD(${r._row},'Collected')">✓ Mark Collected</button></div></div>`).join('')
-    :'<div class="no-data">🎉 No donations awaiting collection</div>';
 
-  const pendReqs=req.filter(r=>(r['Status']||'').toLowerCase()==='pending').slice(0,5);
-  document.getElementById('prc').textContent=(pendReq)+' pending';
-  document.getElementById('prl').innerHTML=pendReqs.length
-    ?pendReqs.map(r=>`<div class="arow"><div class="ainfo"><span class="tid">${r['Request ID']||r['Recipient ID']}</span> &nbsp;<strong>${rm[r['Recipient ID']]||r['Recipient ID']}</strong> · ${r['Item Requested']} · Qty: <strong>${r['Qty Requested']}</strong><br><span style="font-size:0.74rem;color:var(--mu)">${fd(r['Pending On']||r['Request Date'])}</span></div><div class="abtns"><button class="btn bg bsm" onclick="updR(${r._row},'Approved')">✓ Approve</button><button class="btn br bsm" onclick="openReject('req',${r._row},''+r['Item Requested']+' ('+r['Qty Requested']+')')">✗ Reject</button></div></div>`).join('')
-    :'<div class="no-data">🎉 No pending requests</div>';
 }
 
 // ── COLLECTIONS ──
@@ -562,7 +584,7 @@ function buildRequests(){
   const dp=req.filter(r=>(r['Status']||'').toLowerCase()==='delivery pending');
   document.getElementById('pendRC').textContent=pending.length+' pending';
   document.getElementById('pendRL').innerHTML=pending.length
-    ?pending.map(r=>{const rc=rm[r['Recipient ID']]||{};const notesI=r['Notes']?`<span class="info-ico">ℹ<span class="tip-bubble">${String(r['Notes']).replace(/</g,'&lt;')}</span></span>`:'';return`<div class="arow"><div class="ainfo"><span class="tid">${r['Request ID']||'—'}</span> &nbsp;<strong>${rc['Recipient Name']||r['Recipient ID']}</strong>${notesI}${rc['Address']?`<br><span style="font-size:0.74rem;color:var(--mu)">📍 ${rc['Address']}</span>`:''}<br><span style="font-size:0.74rem;color:var(--mu)">Item: <strong>${r['Item Requested']}</strong> · Qty: <strong>${r['Qty Requested']}</strong> · ${fd(r['Pending On']||r['Request Date'])}</span></div><div class="abtns"><button class="btn bg bsm" onclick="updR(${r._row},'Approved')">✓ Approve</button><button class="btn br bsm" onclick="openReject('req',${r._row},''+r['Item Requested']+' ('+r['Qty Requested']+')')">✗ Reject</button></div></div>`;}).join('')
+    ?pending.map(r=>{const rc=rm[r['Recipient ID']]||{};const notesI=r['Notes']?`<span class="info-ico">ℹ<span class="tip-bubble">${String(r['Notes']).replace(/</g,'&lt;')}</span></span>`:'';return`<div class="arow"><div class="ainfo"><span class="tid">${r['Request ID']||'—'}</span> &nbsp;<strong>${rc['Recipient Name']||r['Recipient ID']}</strong>${notesI}${rc['Address']?`<br><span style="font-size:0.74rem;color:var(--mu)">📍 ${rc['Address']}</span>`:''}<br><span style="font-size:0.74rem;color:var(--mu)">Item: <strong>${r['Item Requested']}</strong> · Qty: <strong>${r['Qty Requested']}</strong> · ${fd(r['Pending On']||r['Request Date'])}</span></div><div class="abtns"><button class="btn bg bsm" onclick="openApprove(${r._row},''+r['Item Requested']+' ('+r['Qty Requested']+')')">✓ Approve</button><button class="btn br bsm" onclick="openReject('req',${r._row},''+r['Item Requested']+' ('+r['Qty Requested']+')')">✗ Reject</button></div></div>`;}).join('')
     :'<div class="no-data">🎉 No pending requests</div>';
   document.getElementById('dpC').textContent=dp.length+' to deliver';
   document.getElementById('dpL').innerHTML=dp.length
@@ -592,10 +614,10 @@ async function updD(rowIdx,status,comment=''){
     }else sa('Error: '+(d.error||'Unknown'),'red');
   }catch(e){sa('Failed: '+e.message,'red');}
 }
-async function updR(rowIdx,status,comment=''){
+async function updR(rowIdx,status,comment='',eta='',appNote=''){
   if(!SU){sa('Not connected','red');return;}
   try{
-    const r=await fetch(SU+'?'+new URLSearchParams({action:'updateRequestStatus',rowIndex:rowIdx,status,comment}));
+    const r=await fetch(SU+'?'+new URLSearchParams({action:'updateRequestStatus',rowIndex:rowIdx,status,comment:comment||(appNote||''),eta}));
     const d=await r.json();
     if(d.success){
       sa('Request '+status+'!',status==='Rejected'?'red':'green');
@@ -772,6 +794,56 @@ function buildMasters(){
   document.getElementById('rmB').innerHTML=rec.map((r,i)=>{const s=rm[r['Recipient ID']]||{tot:0,del:0,units:0};return`<tr><td style="color:var(--mu);font-size:0.74rem">${r['Recipient ID']}</td><td><span class="ava av${(i+1)%4}">${ini(r['Recipient Name'])}</span>${r['Recipient Name']||'—'}</td><td style="font-size:0.76rem;color:var(--mu)">${r['Email']||'—'}</td><td style="font-size:0.76rem;color:var(--mu)">${r['Phone']||'—'}</td><td style="font-size:0.74rem;color:var(--mu);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r['Address']||'—'}</td><td style="font-size:0.76rem;color:var(--mu)">${fd(r['Registered On'])}</td><td>${s.tot}</td><td>${s.del}</td><td><strong>${s.units}</strong></td></tr>`;}).join()||'<tr><td colspan="9" class="no-data">No recipients</td></tr>';
 }
 
+
+
+// ── APPROVE WITH ETA MODAL ──
+let _appRow=0,_appLabel='';
+function openApprove(row,label){
+  _appRow=row;_appLabel=label;
+  document.getElementById('appSub').textContent='Approving: '+label+'. Enter an estimated delivery date/time — this will be emailed to the recipient.';
+  document.getElementById('appEta').value='';
+  document.getElementById('appNote').value='';
+  document.getElementById('appErr').style.display='none';
+  document.getElementById('appOverlay').style.display='flex';
+  setTimeout(()=>document.getElementById('appEta').focus(),100);
+}
+function closeApprove(){document.getElementById('appOverlay').style.display='none';}
+document.getElementById('appOverlay').addEventListener('click',function(e){if(e.target===this)closeApprove();});
+async function confirmApprove(){
+  const eta=document.getElementById('appEta').value.trim();
+  const note=document.getElementById('appNote').value.trim();
+  if(!eta){document.getElementById('appErr').style.display='block';return;}
+  closeApprove();
+  await updR(_appRow,'Approved','',eta,note);
+}
+
+// ── NOTICE BOARD ──
+function buildNotices(){
+  if(!LD)return;
+  const notices=(LD.notices||[]).filter(n=>n['Active']!=='No').reverse();
+  document.getElementById('noticeList').innerHTML=notices.length
+    ?notices.map(n=>`<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--bg)"><div><div style="font-size:0.72rem;color:var(--mu);margin-bottom:3px">${fd(n['Date'])}</div><div style="font-size:0.86rem;line-height:1.6">${n['Notice']||''}</div></div><button class="btn br bsm" onclick="removeNotice(${n._row})">✕</button></div>`).join('')
+    :'<div class="no-data">No notices posted yet</div>';
+}
+async function postNotice(){
+  const text=document.getElementById('newNotice').value.trim();
+  if(!text){sa('Please write a notice before posting.','amber');return;}
+  if(!SU){sa('Not connected','red');return;}
+  try{
+    const r=await fetch(SU+'?'+new URLSearchParams({action:'addNotice',notice:text}));
+    const d=await r.json();
+    if(d.success){sa('Notice posted!','green');document.getElementById('newNotice').value='';if(d.data){LD=d.data;buildNotices();}else setTimeout(loadData,800);}
+    else sa(d.error||'Error posting','red');
+  }catch(e){sa('Failed: '+e.message,'red');}
+}
+async function removeNotice(rowIdx){
+  if(!SU)return;
+  try{
+    const r=await fetch(SU+'?'+new URLSearchParams({action:'deleteNotice',rowIndex:rowIdx}));
+    const d=await r.json();
+    if(d.success){sa('Notice removed','amber');if(d.data){LD=d.data;buildNotices();}else setTimeout(loadData,800);}
+  }catch(e){sa('Failed: '+e.message,'red');}
+}
 
 // ── REJECT MODAL ──
 let _rejType='',_rejRow=0,_rejLabel='';

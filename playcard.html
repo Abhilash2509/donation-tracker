@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Grocery Donation Drive — Quick Guide</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Karla:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --cream:  #faf6ee;
+  --brown:  #2c1a0e;
+  --green:  #2d5a27;
+  --amber:  #c07c2e;
+  --blue:   #1f5f8b;
+  --red:    #b83232;
+  --warm:   #f0e8d4;
+  --border: #d4c4a0;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+@media print {
+  body { background: white !important; }
+  .card { page-break-inside: avoid; box-shadow: none !important; }
+  .no-print { display: none !important; }
+}
+
+body {
+  font-family: 'Karla', sans-serif;
+  background: var(--brown);
+  min-height: 100vh;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+}
+
+.print-btn {
+  background: var(--amber);
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 999px;
+  font-family: 'Karla', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+}
+.print-btn:hover { background: #9a621f; }
+
+/* ── CARD BASE ── */
+.card {
+  background: var(--cream);
+  width: 100%;
+  max-width: 760px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  position: relative;
+}
+
+/* decorative corner dots */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 14px; left: 14px; right: 14px; bottom: 14px;
+  border: 1.5px dashed var(--border);
+  border-radius: 14px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.card-inner { position: relative; z-index: 1; }
+
+/* ── HEADER BAND ── */
+.card-header {
+  background: var(--green);
+  padding: 32px 40px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.logo-block { display: flex; align-items: center; gap: 14px; }
+.logo-icon {
+  width: 56px; height: 56px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem;
+  border: 1.5px solid rgba(255,255,255,0.25);
+}
+.logo-text { color: white; }
+.logo-title { font-family: 'Playfair Display', serif; font-size: 1.45rem; font-weight: 900; letter-spacing: -0.01em; line-height: 1; }
+.logo-sub { font-size: 0.76rem; color: rgba(255,255,255,0.6); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 4px; }
+
+.header-tag {
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.85);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 5px 14px;
+  border-radius: 999px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ── TAGLINE ── */
+.tagline {
+  background: var(--amber);
+  padding: 14px 40px;
+  text-align: center;
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  font-style: italic;
+  color: white;
+  letter-spacing: 0.02em;
+}
+
+/* ── BODY ── */
+.card-body { padding: 32px 40px; }
+
+/* ── WHO SECTION ── */
+.who-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+@media(max-width:520px){ .who-grid { grid-template-columns: 1fr; } }
+
+.who-card {
+  border-radius: 12px;
+  padding: 18px 20px;
+  border: 1.5px solid;
+  position: relative;
+  overflow: hidden;
+}
+.who-card.donor { background: #f0f7ee; border-color: #b8d4b3; }
+.who-card.recipient { background: #fdf4e8; border-color: #e8c87a; }
+
+.who-card::after {
+  content: attr(data-emoji);
+  position: absolute;
+  right: 14px; top: 12px;
+  font-size: 2rem;
+  opacity: 0.2;
+}
+
+.who-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 5px;
+}
+.who-card.donor .who-label { color: var(--green); }
+.who-card.recipient .who-label { color: var(--amber); }
+
+.who-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--brown);
+  margin-bottom: 8px;
+}
+
+.who-steps { list-style: none; }
+.who-steps li {
+  font-size: 0.82rem;
+  color: #4a3822;
+  padding: 3px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  line-height: 1.4;
+}
+.who-steps li::before { content: '→'; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+.who-card.donor .who-steps li::before { color: var(--green); }
+.who-card.recipient .who-steps li::before { color: var(--amber); }
+
+/* ── DIVIDER ── */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0 24px;
+  color: var(--border);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.divider::before,.divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── WORKFLOW ── */
+.workflow-section { margin-bottom: 26px; }
+.section-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--blue);
+  margin-bottom: 12px;
+}
+
+.workflow-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.wf-icon { font-size: 1rem; width: 26px; text-align: center; flex-shrink: 0; }
+.wf-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  width: 70px;
+  flex-shrink: 0;
+  color: var(--brown);
+}
+.wf-steps-row { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.wf-step {
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.wf-step.green { background: #eaf3e8; border-color: #b8d4b3; color: var(--green); }
+.wf-step.amber { background: #fdf3e3; border-color: #e8c87a; color: var(--amber); }
+.wf-step.blue  { background: #e5f0f8; border-color: #9fc3de; color: var(--blue); }
+.wf-step.final { background: var(--green); border-color: var(--green); color: white; }
+.wf-arrow { font-size: 0.7rem; color: var(--border); font-weight: 700; }
+
+/* ── QUICK TIPS ── */
+.tips-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 26px;
+}
+@media(max-width:480px){ .tips-grid { grid-template-columns: 1fr; } }
+
+.tip-card {
+  background: var(--warm);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  text-align: center;
+}
+.tip-emoji { font-size: 1.4rem; margin-bottom: 6px; }
+.tip-title { font-size: 0.72rem; font-weight: 700; color: var(--brown); margin-bottom: 3px; }
+.tip-desc { font-size: 0.69rem; color: #6a4f30; line-height: 1.4; }
+
+/* ── URLS SECTION ── */
+.urls-section {
+  background: var(--brown);
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin-bottom: 0;
+}
+.urls-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 12px;
+}
+.url-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.url-row:last-child { border-bottom: none; }
+.url-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  width: 80px;
+  text-align: center;
+}
+.url-badge.green { background: var(--green); color: white; }
+.url-badge.amber { background: var(--amber); color: white; }
+.url-badge.dark  { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); }
+.url-badge.blue  { background: var(--blue); color: white; }
+.url-link { font-size: 0.75rem; color: rgba(255,255,255,0.5); font-style: italic; }
+.url-desc { font-size: 0.74rem; color: rgba(255,255,255,0.85); font-weight: 500; margin-left: auto; text-align: right; }
+
+/* ── FOOTER STRIP ── */
+.card-footer {
+  background: var(--warm);
+  border-top: 1.5px solid var(--border);
+  padding: 14px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.footer-note { font-size: 0.72rem; color: #8a6840; }
+.footer-id {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--brown);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: var(--border);
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+</style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">🖨 Print Play Card</button>
+
+<div class="card">
+  <div class="card-inner">
+
+    <!-- HEADER -->
+    <div class="card-header">
+      <div class="logo-block">
+        <div class="logo-icon">🛒</div>
+        <div class="logo-text">
+          <div class="logo-title">Grocery Donation Drive</div>
+          <div class="logo-sub">Community Food Support Programme</div>
+        </div>
+      </div>
+      <div class="header-tag">Quick Reference Card</div>
+    </div>
+
+    <div class="tagline">"Connecting generous donors with students who need a helping hand"</div>
+
+    <div class="card-body">
+
+      <!-- WHO IS THIS FOR -->
+      <div class="who-grid">
+        <div class="who-card donor" data-emoji="🎁">
+          <div class="who-label">If you want to give</div>
+          <div class="who-title">You are a Donor</div>
+          <ul class="who-steps">
+            <li>Register once, get your <strong>Donor ID</strong></li>
+            <li>Select an item from the approved list &amp; submit</li>
+            <li>Admin will contact you to collect from your address</li>
+            <li>Receive email at every step</li>
+            <li>Track your donation using your Donation ID</li>
+          </ul>
+        </div>
+        <div class="who-card recipient" data-emoji="🤲">
+          <div class="who-label">If you need support</div>
+          <div class="who-title">You are a Recipient</div>
+          <ul class="who-steps">
+            <li>Register once, get your <strong>Recipient ID</strong></li>
+            <li>Request 1 available item at a time</li>
+            <li>Add your preferred delivery time in the notes</li>
+            <li>Receive email at every step</li>
+            <li>Leave feedback once your item arrives</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="divider">How it works</div>
+
+      <!-- WORKFLOWS -->
+      <div class="workflow-section">
+        <div class="section-label">Donation Journey</div>
+        <div class="workflow-row">
+          <div class="wf-icon">🎁</div>
+          <div class="wf-label">Donation</div>
+          <div class="wf-steps-row">
+            <span class="wf-step amber">You Submit</span>
+            <span class="wf-arrow">›</span>
+            <span class="wf-step amber">Awaiting Collection</span>
+            <span class="wf-arrow">›</span>
+            <span class="wf-step final">✓ Collected</span>
+          </div>
+        </div>
+        <div class="section-label" style="margin-top:14px">Request Journey</div>
+        <div class="workflow-row">
+          <div class="wf-icon">🤲</div>
+          <div class="wf-label">Request</div>
+          <div class="wf-steps-row">
+            <span class="wf-step amber">Pending</span>
+            <span class="wf-arrow">›</span>
+            <span class="wf-step green">Approved</span>
+            <span class="wf-arrow">›</span>
+            <span class="wf-step blue">Delivery Pending</span>
+            <span class="wf-arrow">›</span>
+            <span class="wf-step final">✓ Delivered</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider">Good to know</div>
+
+      <!-- QUICK TIPS -->
+      <div class="tips-grid">
+        <div class="tip-card">
+          <div class="tip-emoji">🆔</div>
+          <div class="tip-title">Save Your ID</div>
+          <div class="tip-desc">Your Donor or Recipient ID is your key. Save it from your welcome email — you need it every time.</div>
+        </div>
+        <div class="tip-card">
+          <div class="tip-emoji">📧</div>
+          <div class="tip-title">Email Updates</div>
+          <div class="tip-desc">You will receive an email at every status change. Check your inbox (and spam folder) for updates.</div>
+        </div>
+        <div class="tip-card">
+          <div class="tip-emoji">🔍</div>
+          <div class="tip-title">Track Anytime</div>
+          <div class="tip-desc">Use the Track tab in your portal with your Donation ID or Request ID to see the current status instantly.</div>
+        </div>
+        <div class="tip-card">
+          <div class="tip-emoji">📋</div>
+          <div class="tip-title">Item Not Listed?</div>
+          <div class="tip-desc">Recipients can submit a Custom Request. Include the item name, size, and why you need it — admin will review.</div>
+        </div>
+        <div class="tip-card">
+          <div class="tip-emoji">📝</div>
+          <div class="tip-title">Leave Feedback</div>
+          <div class="tip-desc">After delivery, leave a quick note in your portal. Your donor will be notified — it means a lot to them!</div>
+        </div>
+        <div class="tip-card">
+          <div class="tip-emoji">📱</div>
+          <div class="tip-title">Works on Mobile</div>
+          <div class="tip-desc">All portals work on your phone. Add the link to your home screen for quick one-tap access.</div>
+        </div>
+      </div>
+
+      <!-- URLS -->
+      <div class="urls-section">
+        <div class="urls-title">Portal Links — Add to your phone home screen</div>
+        <div class="url-row">
+          <span class="url-badge green">🎁 Donor</span>
+          <span class="url-link">your-github.io/donation/donor.html</span>
+          <span class="url-desc">Register &amp; Donate</span>
+        </div>
+        <div class="url-row">
+          <span class="url-badge amber">🤲 Recipient</span>
+          <span class="url-link">your-github.io/donation/recipient.html</span>
+          <span class="url-desc">Register &amp; Request</span>
+        </div>
+        <div class="url-row">
+          <span class="url-badge blue">📊 Dashboard</span>
+          <span class="url-link">your-github.io/donation/dashboard.html</span>
+          <span class="url-desc">Live Inventory (Public)</span>
+        </div>
+        <div class="url-row">
+          <span class="url-badge dark">🔐 Admin</span>
+          <span class="url-link">your-github.io/donation/admin.html</span>
+          <span class="url-desc">Admin Only</span>
+        </div>
+      </div>
+
+    </div><!-- /card-body -->
+
+    <div class="card-footer">
+      <span class="footer-note">All data is private and stored securely. Email notifications are automatic. Zero cost — powered by Google Sheets.</span>
+      <span class="footer-id">v6.0 · 2025</span>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

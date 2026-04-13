@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c07c2e"/>
+      <stop offset="100%" style="stop-color:#7a4e1a"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.18)"/>
+      <stop offset="100%" style="stop-color:rgba(255,255,255,0)"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="112" fill="url(#shine)"/>
+  <!-- Open hands / receiving gesture -->
+  <!-- Left hand -->
+  <ellipse cx="170" cy="340" rx="72" ry="36" fill="white" opacity="0.95" transform="rotate(-15 170 340)"/>
+  <rect x="108" y="290" width="46" height="90" rx="23" fill="white" opacity="0.95" transform="rotate(-15 108 290)"/>
+  <!-- Right hand -->
+  <ellipse cx="342" cy="340" rx="72" ry="36" fill="white" opacity="0.95" transform="rotate(15 342 340)"/>
+  <rect x="360" y="290" width="46" height="90" rx="23" fill="white" opacity="0.95" transform="rotate(15 360 290)"/>
+  <!-- Grocery bag -->
+  <rect x="176" y="200" width="160" height="140" rx="14" fill="white"/>
+  <!-- Bag handle -->
+  <path d="M210 200 Q210 168 256 168 Q302 168 302 200" stroke="white" stroke-width="16" fill="none" stroke-linecap="round"/>
+  <!-- Bag stripe -->
+  <rect x="176" y="236" width="160" height="20" fill="#fdf3e3" opacity="0.8"/>
+  <!-- Carrot in bag -->
+  <ellipse cx="230" cy="218" rx="12" ry="20" fill="#e07030" transform="rotate(-10 230 218)"/>
+  <path d="M224 200 Q222 188 228 185" stroke="#2d5a27" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <!-- Bread in bag -->
+  <ellipse cx="278" cy="214" rx="20" ry="16" fill="#d4a060"/>
+  <!-- Stars -->
+  <circle cx="380" cy="150" r="9" fill="rgba(255,255,255,0.4)"/>
+  <circle cx="140" cy="170" r="6" fill="rgba(255,255,255,0.3)"/>
+  <circle cx="400" cy="180" r="5" fill="rgba(255,255,255,0.25)"/>
+</svg>

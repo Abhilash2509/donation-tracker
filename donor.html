@@ -5,7 +5,7 @@
 <title>Donor Portal · Grocery Donation Tracker</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
-:root{--bg:#f4f1eb;--s:#fff;--b:#e2ddd4;--ac:#2d5a27;--al:#eaf3e8;--am:#c07c2e;--aml:#fdf3e3;--re:#b83232;--rl:#fdeaea;--tx:#1c1c1c;--mu:#888078;--ra:14px;--sh:0 2px 14px rgba(0,0,0,0.07)}
+:root{--bg:#f4f1eb;--s:#fff;--b:#e2ddd4;--ac:#2d5a27;--al:#eaf3e8;--am:#c07c2e;--aml:#fdf3e3;--re:#b83232;--rl:#fdeaea;--bl:#1f5f8b;--bll:#e5f0f8;--tx:#1c1c1c;--mu:#888078;--ra:14px;--sh:0 2px 14px rgba(0,0,0,0.07)}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
 nav{background:var(--ac);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,0.2)}
@@ -46,6 +46,19 @@ textarea{resize:vertical;min-height:65px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .al2{position:fixed;top:18px;right:18px;padding:11px 18px;border-radius:var(--ra);font-size:0.82rem;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,0.2);z-index:999;transform:translateX(140%);transition:transform .3s ease;max-width:300px}
 .al2.show{transform:translateX(0)}.al2.green{background:var(--ac);color:white}
+/* TOOLTIP */
+.tip-wrap{position:relative;display:inline-flex;align-items:center;gap:4px}
+.tip-icon{width:16px;height:16px;border-radius:50%;background:var(--bl);color:white;font-size:0.6rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;cursor:help;flex-shrink:0}
+.tip-icon .tip-txt{display:none;position:absolute;bottom:calc(100% + 6px);left:0;background:#1c1c1c;color:white;font-size:0.75rem;font-weight:400;padding:8px 11px;border-radius:8px;white-space:normal;min-width:210px;max-width:280px;z-index:400;line-height:1.5;font-family:'DM Sans',sans-serif;text-transform:none;letter-spacing:0}
+.tip-icon:hover .tip-txt{display:block}
+/* WORKFLOW */
+.wf-wrap{background:var(--s);border:1px solid var(--b);border-radius:var(--ra);padding:20px;margin-bottom:16px}
+.wf-steps{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.wf-step{font-size:0.72rem;font-weight:600;padding:4px 10px;border-radius:999px;border:1px solid var(--b);color:var(--mu);background:var(--bg)}
+.wf-step.done{background:var(--al);color:var(--ac);border-color:#b8d9b2}
+.wf-step.cur{background:var(--ac);color:white;border-color:var(--ac)}
+.wf-arrow{font-size:0.65rem;color:var(--mu)}
+.wf-detail{font-size:0.82rem;color:var(--mu);line-height:1.6}
 footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-top:1px solid var(--b);margin-top:8px}
 </style>
 </head>
@@ -54,6 +67,7 @@ footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-t
   <div><div class="brand">🎁 Donor Portal</div><div class="bsub">Grocery Donation Tracker</div></div>
   <div class="ntabs">
     <button class="ntab on" onclick="go('donate',this)">🎁 Donate</button>
+    <button class="ntab" onclick="go('track',this)">🔍 Track</button>
     <button class="ntab" onclick="go('register',this)">📋 Register</button>
   </div>
   <div class="sc"><div class="sd" id="sd"></div><span id="sl">Connecting…</span></div>
@@ -61,22 +75,22 @@ footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-t
 <div class="al2" id="al"></div>
 <div class="main">
 
+<!-- DONATE -->
 <div class="pg on" id="pg-donate">
-  <div class="hero"><h2>🎁 Make a Donation</h2><p>Enter your Donor ID to donate. The admin will contact you to arrange pickup from your address.</p></div>
-  <div class="infobox">📦 <strong>Workflow:</strong> Submit → Admin collects from you → Marked Collected. Email notification sent at each stage.</div>
+  <div class="hero"><h2>🎁 Make a Donation</h2><p>Enter your Donor ID, select an item, and submit. We'll arrange collection from your address.</p></div>
+  <div class="infobox">📦 <strong>Workflow:</strong> Submit → Admin collects from you → Marked Collected. Email sent at each stage.</div>
   <div id="lowStockBanner" style="display:none;background:#fff8e1;border:1px solid #f5c842;border-left:4px solid #f5c842;border-radius:10px;padding:12px 15px;margin-bottom:16px;font-size:0.82rem;color:#7a5a00;line-height:1.7">
-    ⚠️ <strong>Items running low — your donation is especially needed!</strong><br>
-    <span id="lowStockList"></span>
+    ⚠️ <strong>Items running low — your donation is appreciated!</strong><br><span id="lowStockList"></span>
   </div>
   <div class="panel">
     <div class="g2">
       <div class="fg s2">
         <label for="di">Your Donor ID *</label>
         <div class="taw">
-          <input type="text" id="di" placeholder="Type your Donor ID e.g. DON001…" autocomplete="off" oninput="tfId('di','donors','Donor ID')"/>
+          <input type="text" id="di" placeholder="e.g. DON001" autocomplete="off" oninput="tfId('di','donors','Donor ID')"/>
           <div class="tal" id="ta-di"></div>
         </div>
-        <small style="color:var(--mu);font-size:0.73rem;margin-top:3px">No ID yet? Go to the Register tab first.</small>
+        <small style="color:var(--mu);font-size:0.73rem;margin-top:3px">No ID? Register first →</small>
       </div>
       <div class="fg">
         <label for="ditem">Item *</label>
@@ -88,33 +102,54 @@ footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-t
       </div>
       <div class="fg s2">
         <label for="dnotes">Notes (optional)</label>
-        <textarea id="dnotes" placeholder="Best time for pickup, parking info, etc.…"></textarea>
+        <textarea id="dnotes" placeholder="Best time for pickup, parking info, gate code…"></textarea>
       </div>
     </div>
-    <button class="btn bg" id="dBtn" onclick="sub()"><span>Submit Donation</span></button>
+    <button class="btn bg" id="dBtn" onclick="subDonation()"><span>Submit Donation</span></button>
     <div class="fm" id="dm"></div>
   </div>
 </div>
 
+<!-- TRACK -->
+<div class="pg" id="pg-track">
+  <div class="hero"><h2>🔍 Track Your Donation</h2><p>Enter your Donation ID to see the current status and workflow.</p></div>
+  <div class="panel">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input type="text" id="trackId" placeholder="Donation ID e.g. DON001_D001" style="flex:1;min-width:180px"/>
+      <button class="btn bg" onclick="trackDonation()" style="white-space:nowrap">Track →</button>
+    </div>
+  </div>
+  <div id="trackResult"></div>
+</div>
+
+<!-- REGISTER -->
 <div class="pg" id="pg-register">
-  <div class="hero"><h2>📋 Register as Donor</h2><p>Create your profile. A unique Donor ID is generated — save it for future donations.</p></div>
+  <div class="hero"><h2>📋 Register as Donor</h2><p>Create your profile. A unique Donor ID will be generated — save it for future donations.</p></div>
   <div class="panel">
     <div class="g2">
-      <div class="fg"><label for="rn">Full Name *</label><input type="text" id="rn" placeholder="e.g. Raj Kumar"/></div>
-      <div class="fg"><label for="re">Email * <small style="text-transform:none;font-weight:400">(required for notifications)</small></label><input type="email" id="re" placeholder="raj@email.com" required/></div>
+      <div class="fg"><label for="rn">First Name *</label><input type="text" id="rn" placeholder="e.g. Raj"/></div>
+      <div class="fg"><label for="rnl">Last Name *</label><input type="text" id="rnl" placeholder="e.g. Kumar"/></div>
+      <div class="fg"><label for="re">Email * <small style="text-transform:none;font-weight:400">(for notifications)</small></label><input type="email" id="re" placeholder="raj@email.com"/></div>
       <div class="fg"><label for="rp">Phone</label><input type="tel" id="rp" placeholder="+91 98765 43210"/></div>
-      <div class="fg s2"><label for="ra">Address * <small style="text-transform:none;letter-spacing:0;font-weight:400">(needed for collection)</small></label><textarea id="ra" placeholder="House/Flat no, Street, Area, City, PIN…"></textarea></div>
+      <div class="fg s2">
+        <div class="tip-wrap">
+          <label for="ra">Address *</label>
+          <span class="tip-icon">ℹ<span class="tip-txt">Your address is required so the admin knows where to collect your donation from. It is only shared with the admin and never made public.</span></span>
+        </div>
+        <textarea id="ra" placeholder="House/Flat no, Street, Area, City, PIN…"></textarea>
+      </div>
     </div>
-    <button class="btn bg" id="rBtn" onclick="reg()"><span>Register &amp; Get My Donor ID →</span></button>
+    <button class="btn bg" id="rBtn" onclick="regDonor()"><span>Register &amp; Get My Donor ID →</span></button>
     <div class="fm" id="rm"></div>
   </div>
 </div>
 
 </div>
-<footer>Donor Portal · Grocery Donation Tracker 🔒</footer>
+<footer>Donor Portal · Grocery Donation Tracker · Works on mobile 📱</footer>
 <script>
 const SU=localStorage.getItem('donationScriptUrl')||'';
 let LD=null;
+const SURPLUS=10; // hide items with balance >= this
 async function init(){
   if(!SU){document.getElementById('sl').textContent='Not configured';return;}
   try{
@@ -126,12 +161,29 @@ async function init(){
   }catch(e){document.getElementById('sd').style.background='#e57373';document.getElementById('sl').textContent='Offline';}
 }
 setInterval(init,30000);init();
+
 function popItems(d){
-  const items=(d.items||[]).map(r=>r['Item Name']||'').filter(Boolean);
+  const inv=d.inventory||[];
+  const balMap={};inv.forEach(i=>balMap[i.item]=i.balance);
+  // Only show admin items where inventory balance < SURPLUS
+  const items=(d.items||[]).map(r=>r['Item Name']||'').filter(name=>{
+    const bal=balMap[name]??0;
+    return name && bal<SURPLUS; // hide if already >= 10 in stock
+  });
   const s=document.getElementById('ditem'),c=s.value;
   s.innerHTML='<option value="">Select item…</option>'+items.map(i=>`<option value="${i}">${i}</option>`).join('');
-  if(c)s.value=c;
+  if(c&&items.includes(c))s.value=c;
 }
+
+function renderLowStock(d){
+  const inv=d.inventory||[];
+  const low=inv.filter(i=>i.balance>0&&i.balance<5);
+  const banner=document.getElementById('lowStockBanner');
+  if(!low.length){banner.style.display='none';return;}
+  document.getElementById('lowStockList').innerHTML=low.map(i=>`<strong>${i.item}</strong>: only ${i.balance} left`).join(' &nbsp;·&nbsp; ');
+  banner.style.display='block';
+}
+
 function go(n,b){
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('on'));
@@ -152,53 +204,62 @@ function tsId(i,v){document.getElementById(i).value=v;cta();}
 function cta(){document.querySelectorAll('.tal').forEach(e=>e.style.display='none');}
 document.addEventListener('click',e=>{if(!e.target.closest('.taw'))cta();});
 function es(s){return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
-function renderLowStock(d){
-  const inv=d.inventory||[];
-  const low=inv.filter(i=>i.balance>0&&i.balance<5);
-  const banner=document.getElementById('lowStockBanner');
-  if(!low.length){banner.style.display='none';return;}
-  document.getElementById('lowStockList').innerHTML=
-    low.map(i=>`<strong>${i.item}</strong>: only ${i.balance} left`).join(' &nbsp;·&nbsp; ');
-  banner.style.display='block';
-}
 
-async function sub(){
+async function subDonation(){
   const did=document.getElementById('di').value.trim();
   const item=document.getElementById('ditem').value;
   const qty=document.getElementById('dqty').value;
   const notes=document.getElementById('dnotes').value.trim();
   if(!did){sf('dm','Please enter your Donor ID.','err');return;}
   if(!item){sf('dm','Please select an item.','err');return;}
-  if(!qty||qty<1){sf('dm','Please enter a valid quantity.','err');return;}
-  if(!SU){sf('dm','System not configured. Contact admin.','err');return;}
+  if(!qty||Number(qty)<1){sf('dm','Please enter a valid quantity.','err');return;}
+  if(!SU){sf('dm','System not configured.','err');return;}
   const btn=document.getElementById('dBtn');btn.disabled=true;btn.innerHTML='<span class="sp"></span> Submitting…';
   try{
     const r=await fetch(SU+'?'+new URLSearchParams({action:'addDonation',donorId:did,item,quantity:qty,notes}));
     const d=await r.json();
-    if(d.success){sf('dm','✅ '+d.message+'\n\nDonation ID: '+d.donationId+'\nSave this ID to track your donation.','ok');sa('Donation submitted!','green');['di','dqty','dnotes'].forEach(id=>document.getElementById(id).value='');document.getElementById('ditem').value='';}
+    if(d.success){sf('dm','✅ Donation submitted!\n\nDonation ID: '+d.donationId+'\n\nSave this ID to track your donation. A confirmation email has been sent to you.','ok');sa('Donation submitted!','green');['di','dqty','dnotes'].forEach(id=>document.getElementById(id).value='');document.getElementById('ditem').value='';setTimeout(init,1500);}
     else sf('dm','❌ '+(d.error||'Error'),'err');
   }catch(e){sf('dm','❌ Failed: '+e.message,'err');}
   btn.disabled=false;btn.innerHTML='<span>Submit Donation</span>';
 }
-async function reg(){
-  const name=document.getElementById('rn').value.trim();
+
+function trackDonation(){
+  const id=document.getElementById('trackId').value.trim().toUpperCase();
+  if(!id||!LD){document.getElementById('trackResult').innerHTML='<div class="panel" style="color:var(--mu);text-align:center;padding:20px">Please enter a Donation ID.</div>';return;}
+  const don=(LD.donations||[]).find(r=>String(r['Donation ID']||'').toUpperCase()===id);
+  if(!don){document.getElementById('trackResult').innerHTML='<div class="panel" style="color:var(--mu);text-align:center;padding:20px">Donation ID not found. Check and try again.</div>';return;}
+  const steps=['Submitted','Collected'];
+  const cur=String(don['Status']||'Submitted');
+  const curIdx=steps.findIndex(s=>s.toLowerCase()===cur.toLowerCase());
+  const stepsHtml=steps.map((s,i)=>`${i>0?'<span class="wf-arrow">›</span>':''}<span class="wf-step ${i<curIdx?'done':i===curIdx?'cur':''}">${s}</span>`).join('');
+  const dates=`<div class="wf-detail">Submitted: ${fd(don['Submitted On']||don['Date'])}${don['Collected On']?' · Collected: '+fd(don['Collected On']):''}</div>`;
+  const rejComment=don['Rejection Comment']?`<div style="margin-top:8px;font-size:0.81rem;background:var(--rl);color:var(--re);padding:8px 12px;border-radius:8px">Rejection reason: ${don['Rejection Comment']}</div>`:'';
+  document.getElementById('trackResult').innerHTML=`<div class="wf-wrap"><div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:10px">${don['Donation ID']} · ${don['Item']} ×${don['Quantity']}</div><div class="wf-steps">${stepsHtml}</div>${dates}${rejComment}</div>`;
+}
+
+async function regDonor(){
+  const fn=document.getElementById('rn').value.trim();
+  const ln=document.getElementById('rnl').value.trim();
   const email=document.getElementById('re').value.trim();
   const phone=document.getElementById('rp').value.trim();
   const address=document.getElementById('ra').value.trim();
-  if(!name){sf('rm','Please enter your full name.','err');return;}
-  if(!email){sf('rm','Email is required — needed for status notifications.','err');return;}
-  if(!address){sf('rm','Please enter your address — needed for collection.','err');return;}
+  if(!fn||!ln){sf('rm','Please enter your first and last name.','err');return;}
+  if(!email){sf('rm','Email is required for notifications.','err');return;}
+  if(!address){sf('rm','Address is required for collection pickup.','err');return;}
   if(!SU){sf('rm','System not configured.','err');return;}
+  const name=fn+' '+ln;
   const btn=document.getElementById('rBtn');btn.disabled=true;btn.innerHTML='<span class="sp"></span> Registering…';
   try{
     const r=await fetch(SU+'?'+new URLSearchParams({action:'addDonor',name,email,phone,address}));
     const d=await r.json();
-    if(d.success){sf('rm','✅ Registered!\n\nYour Donor ID is: '+d.donorId+'\n\nSave this — you need it to donate.','ok');['rn','re','rp','ra'].forEach(id=>document.getElementById(id).value='');sa('Registered: '+d.donorId,'green');}
+    if(d.success){sf('rm','✅ Registered!\n\nYour Donor ID is: '+d.donorId+'\n\nA confirmation email has been sent to '+email+'\nSave your Donor ID — you need it to donate.','ok');['rn','rnl','re','rp','ra'].forEach(id=>document.getElementById(id).value='');sa('Registered: '+d.donorId,'green');setTimeout(init,1500);}
     else sf('rm','❌ '+(d.error||'Error'),'err');
   }catch(e){sf('rm','❌ Failed: '+e.message,'err');}
   btn.disabled=false;btn.innerHTML='<span>Register &amp; Get My Donor ID →</span>';
 }
-function sf(id,msg,type){const el=document.getElementById(id);el.textContent=msg;el.className='fm '+type;setTimeout(()=>el.style.display='none',12000);}
+function fd(d){if(!d)return'—';try{return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch{return String(d)||'—';}}
+function sf(id,msg,type){const el=document.getElementById(id);el.textContent=msg;el.className='fm '+type;setTimeout(()=>el.style.display='none',14000);}
 function sa(msg,type='green'){const el=document.getElementById('al');el.textContent=msg;el.className='al2 '+type+' show';setTimeout(()=>el.classList.remove('show'),3500);}
 </script>
 </body>

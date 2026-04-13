@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Community Dashboard · Grocery Donation Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+:root{--bg:#f4f1eb;--s:#fff;--b:#e2ddd4;--ac:#2d5a27;--al:#eaf3e8;--am:#c07c2e;--aml:#fdf3e3;--re:#b83232;--bl:#1f5f8b;--tx:#1c1c1c;--mu:#888078;--ra:14px;--sh:0 2px 14px rgba(0,0,0,0.07)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+header{background:linear-gradient(135deg,var(--ac),#1a3d16);padding:20px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.htitle{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:white}
+.hsub{font-size:0.74rem;color:rgba(255,255,255,0.7)}
+.badge{background:rgba(255,255,255,0.2);color:white;font-size:0.7rem;padding:4px 12px;border-radius:999px;border:1px solid rgba(255,255,255,0.3)}
+.sc{font-size:0.72rem;color:rgba(255,255,255,0.7);display:flex;align-items:center;gap:5px}
+.sd{width:7px;height:7px;border-radius:50%;background:#aaa;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.main{max-width:1100px;margin:0 auto;padding:28px}
+@media(max-width:700px){.main{padding:14px}}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:13px;margin-bottom:24px}
+.sc2{background:var(--s);border:1px solid var(--b);border-radius:var(--ra);padding:18px;box-shadow:var(--sh);text-align:center;position:relative;overflow:hidden}
+.sc2::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.sc2.g::before{background:var(--ac)}.sc2.o::before{background:var(--am)}.sc2.b::before{background:var(--bl)}.sc2.r::before{background:var(--re)}
+.sc-val{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;line-height:1;margin:8px 0 4px}
+.sc2.g .sc-val{color:var(--ac)}.sc2.o .sc-val{color:var(--am)}.sc2.b .sc-val{color:var(--bl)}.sc2.r .sc-val{color:var(--re)}
+.sc-lbl{font-size:0.7rem;color:var(--mu);text-transform:uppercase;letter-spacing:0.06em}
+.sc-ico{font-size:1.3rem}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+@media(max-width:760px){.row2{grid-template-columns:1fr}}
+.panel{background:var(--s);border:1px solid var(--b);border-radius:var(--ra);padding:20px;box-shadow:var(--sh);margin-bottom:18px}
+.pt{font-family:'Syne',sans-serif;font-size:0.93rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.chart-wrap{position:relative;height:220px}
+.inv-item{margin-bottom:13px}.inv-item:last-child{margin-bottom:0}
+.inv-top{display:flex;justify-content:space-between;margin-bottom:5px;align-items:baseline}
+.inv-name{font-size:0.86rem;font-weight:600}.inv-nums{font-size:0.73rem;color:var(--mu)}
+.bar-track{height:8px;background:var(--bg);border-radius:4px;overflow:hidden;border:1px solid var(--b)}
+.bar-fill{height:100%;border-radius:4px;transition:width 1s cubic-bezier(.4,0,.2,1)}
+.low-badge{display:inline-block;font-size:0.64rem;font-weight:600;padding:1px 7px;border-radius:999px;background:#fff3cd;color:#856404;margin-left:6px;border:1px solid #ffc107}
+.notice-item{padding:12px 0;border-bottom:1px solid var(--bg);line-height:1.6}
+.notice-item:last-child{border-bottom:none}
+.notice-date{font-size:0.72rem;color:var(--mu);margin-bottom:3px}
+.notice-txt{font-size:0.84rem}
+.feedback-item{padding:10px 0;border-bottom:1px solid var(--bg)}
+.feedback-item:last-child{border-bottom:none}
+.fb-quote{font-size:0.83rem;color:var(--tx);line-height:1.5;font-style:italic}
+.fb-meta{font-size:0.72rem;color:var(--mu);margin-top:3px}
+.no-data{color:var(--mu);font-size:0.82rem;text-align:center;padding:18px 0}
+footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-top:1px solid var(--b);margin-top:10px}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="htitle">🛒 Community Grocery Drive</div>
+    <div class="hsub">Live public dashboard — read only</div>
+  </div>
+  <span class="badge">🔓 Public View</span>
+  <div class="sc"><div class="sd" id="sd"></div><span id="sl">Loading…</span></div>
+</header>
+<div class="main">
+  <div class="stats" id="statsRow"><div class="no-data" style="grid-column:1/-1">Loading data…</div></div>
+  <div class="row2">
+    <div class="panel"><div class="pt">🥫 Items Donated</div><div class="chart-wrap"><canvas id="pieChart"></canvas></div></div>
+    <div class="panel"><div class="pt">📦 Live Inventory</div><div id="invBars"><div class="no-data">—</div></div></div>
+  </div>
+  <div class="row2">
+    <div class="panel"><div class="pt">📋 Notice Board</div><div id="noticeBoard"><div class="no-data">No notices posted yet</div></div></div>
+    <div class="panel"><div class="pt">💬 Recipient Feedback</div><div id="feedbackList"><div class="no-data">No feedback yet</div></div></div>
+  </div>
+</div>
+<footer>Community Grocery Donation Drive · Public Dashboard · Auto-refreshes every 60 seconds</footer>
+<script>
+const SU=localStorage.getItem('donationScriptUrl')||'';
+const PAL=['#2d5a27','#c07c2e','#1f5f8b','#b83232','#6c3483','#117a65'];
+let PC=null;
+
+async function load(){
+  if(!SU){document.getElementById('sl').textContent='Script URL not set in admin portal';return;}
+  try{
+    const r=await fetch(SU+'?action=getData&t='+Date.now());
+    const d=await r.json();if(d.error)throw new Error(d.error);
+    render(d);
+    document.getElementById('sd').style.background='#a8e6a0';
+    document.getElementById('sl').textContent='Live · '+new Date().toLocaleTimeString();
+  }catch(e){document.getElementById('sd').style.background='#e57373';document.getElementById('sl').textContent='Error loading';}
+}
+setInterval(load,60000);load();
+
+function render(d){
+  const don=d.donations||[],req=d.requests||[],donors=d.donors||[],rec=d.recipients||[];
+  const inv=d.inventory||[];
+  const totalU=don.reduce((s,r)=>s+(parseInt(r['Quantity'])||0),0);
+  const delivered=req.filter(r=>(r['Status']||'').toLowerCase()==='delivered').length;
+
+  document.getElementById('statsRow').innerHTML=`
+    <div class="sc2 g"><div class="sc-ico">🧑‍🤝‍🧑</div><div class="sc-val">${donors.length}</div><div class="sc-lbl">Donors</div></div>
+    <div class="sc2 o"><div class="sc-ico">🎁</div><div class="sc-val">${totalU}</div><div class="sc-lbl">Units Donated</div></div>
+    <div class="sc2 b"><div class="sc-ico">🤲</div><div class="sc-val">${rec.length}</div><div class="sc-lbl">Recipients</div></div>
+    <div class="sc2 r"><div class="sc-ico">📦</div><div class="sc-val">${delivered}</div><div class="sc-lbl">Deliveries Made</div></div>`;
+
+  // Pie chart
+  const it={};don.forEach(r=>{const k=r['Item']||'';it[k]=(it[k]||0)+(parseInt(r['Quantity'])||0);});
+  const labels=Object.keys(it),vals=Object.values(it);
+  if(PC)PC.destroy();
+  if(labels.length)PC=new Chart(document.getElementById('pieChart').getContext('2d'),{
+    type:'doughnut',
+    data:{labels,datasets:[{data:vals,backgroundColor:PAL.slice(0,labels.length),borderColor:'#fff',borderWidth:3,hoverOffset:5}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{font:{family:'DM Sans',size:11},padding:10,color:'#1c1c1c',boxWidth:10}}},animation:{duration:800}}
+  });
+
+  // Inventory bars
+  const maxD=Math.max(...inv.map(i=>i.donated),1);
+  document.getElementById('invBars').innerHTML=inv.length
+    ?inv.map((i,idx)=>`<div class="inv-item"><div class="inv-top"><span class="inv-name">${i.item}${i.balance<5?'<span class="low-badge">Low</span>':''}</span><span class="inv-nums">Available: <strong>${i.balance}</strong> of ${i.donated}</span></div><div class="bar-track"><div class="bar-fill" style="width:${i.donated>0?Math.max(2,Math.round(i.balance/i.donated*100)):0}%;background:${PAL[idx%PAL.length]}"></div></div></div>`).join('')
+    :'<div class="no-data">No donations collected yet</div>';
+
+  // Notice board
+  const notices=(d.notices||[]).filter(n=>n['Active']!=='No').slice(-5).reverse();
+  document.getElementById('noticeBoard').innerHTML=notices.length
+    ?notices.map(n=>`<div class="notice-item"><div class="notice-date">${fd(n['Date'])}</div><div class="notice-txt">${n['Notice']||''}</div></div>`).join('')
+    :'<div class="no-data">No notices posted yet</div>';
+
+  // Feedback (only show delivered items with feedback)
+  const fbs=(d.requests||[]).filter(r=>(r['Status']||'').toLowerCase()==='delivered'&&r['Feedback']).slice(-6).reverse();
+  document.getElementById('feedbackList').innerHTML=fbs.length
+    ?fbs.map(r=>`<div class="feedback-item"><div class="fb-quote">"${r['Feedback']}"</div><div class="fb-meta">${r['Item Requested']} · ${fd(r['Delivered On'])}</div></div>`).join('')
+    :'<div class="no-data">No feedback submitted yet</div>';
+}
+
+function fd(d){if(!d)return'—';try{return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch{return String(d)||'—';}}
+</script>
+</body>
+</html>

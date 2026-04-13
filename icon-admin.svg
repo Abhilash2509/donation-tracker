@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1c1c1c"/>
+      <stop offset="100%" style="stop-color:#2d5a27"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.12)"/>
+      <stop offset="100%" style="stop-color:rgba(255,255,255,0)"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="112" fill="url(#shine)"/>
+  <!-- Clipboard -->
+  <rect x="148" y="148" width="216" height="260" rx="16" fill="white" opacity="0.93"/>
+  <!-- Clip top -->
+  <rect x="212" y="134" width="88" height="38" rx="10" fill="#d0d0d0"/>
+  <rect x="228" y="138" width="56" height="22" rx="6" fill="#f0f0f0"/>
+  <!-- Tick lines (checklist) -->
+  <!-- Row 1 - checked -->
+  <circle cx="186" cy="222" r="10" fill="#2d5a27"/>
+  <path d="M181 222 L186 228 L196 215" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="208" y="217" width="120" height="10" rx="5" fill="#e0e0e0"/>
+  <!-- Row 2 - checked -->
+  <circle cx="186" cy="264" r="10" fill="#2d5a27"/>
+  <path d="M181 264 L186 270 L196 257" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="208" y="259" width="96" height="10" rx="5" fill="#e0e0e0"/>
+  <!-- Row 3 - pending -->
+  <circle cx="186" cy="306" r="10" fill="#c07c2e"/>
+  <rect x="182" y="302" width="8" height="8" rx="1" fill="white"/>
+  <rect x="208" y="301" width="108" height="10" rx="5" fill="#e0e0e0"/>
+  <!-- Row 4 - pending -->
+  <circle cx="186" cy="348" r="10" fill="#e0e0e0"/>
+  <rect x="208" y="343" width="80" height="10" rx="5" fill="#e8e8e8"/>
+  <!-- Shield badge top right -->
+  <path d="M360 152 L398 152 L398 185 Q398 206 379 218 Q360 206 360 185 Z" fill="#c07c2e"/>
+  <path d="M369 181 L377 189 L391 170" stroke="white" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -39,6 +39,7 @@ textarea{resize:vertical;min-height:65px}
 .tai:last-child{border-bottom:none}.tai:hover{background:var(--al)}
 .btn{display:inline-flex;align-items:center;gap:7px;padding:10px 22px;border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.86rem;font-weight:600;cursor:pointer;transition:all .18s}
 .ba{background:var(--ac);color:white}.ba:hover{background:#9a621f}
+.bbl{background:var(--bl);color:white}.bbl:hover{background:#174a6e}
 .btn:disabled{opacity:0.5;cursor:not-allowed}
 .fm{padding:10px 13px;border-radius:8px;font-size:0.82rem;font-weight:500;margin-top:10px;display:none;white-space:pre-line}
 .fm.ok{background:var(--gl);color:var(--gr);display:block}
@@ -54,6 +55,24 @@ textarea{resize:vertical;min-height:65px}
 .al2{position:fixed;top:18px;right:18px;padding:11px 18px;border-radius:var(--ra);font-size:0.82rem;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,0.2);z-index:999;transform:translateX(140%);transition:transform .3s ease;max-width:300px}
 .al2.show{transform:translateX(0)}.al2.amber{background:var(--ac);color:white}
 .no-data{color:var(--mu);font-size:0.82rem;text-align:center;padding:18px 0}
+.pill{display:inline-block;font-size:0.65rem;font-weight:600;padding:3px 9px;border-radius:999px;text-transform:uppercase}
+.pill.pending{background:var(--al);color:var(--ac)}.pill.approved,.pill.delivered{background:var(--gl);color:var(--gr)}.pill.rejected{background:var(--rl);color:var(--re)}.pill.delivery-pending{background:var(--bll);color:var(--bl)}
+/* TOOLTIP */
+.tip-wrap{position:relative;display:inline-flex;align-items:center;gap:4px}
+.tip-icon{width:16px;height:16px;border-radius:50%;background:var(--bl);color:white;font-size:0.6rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;cursor:help;flex-shrink:0}
+.tip-icon .tip-txt{display:none;position:absolute;bottom:calc(100% + 6px);left:0;background:#1c1c1c;color:white;font-size:0.75rem;font-weight:400;padding:8px 11px;border-radius:8px;white-space:normal;min-width:210px;max-width:280px;z-index:400;line-height:1.5;font-family:'DM Sans',sans-serif;text-transform:none;letter-spacing:0}
+.tip-icon:hover .tip-txt{display:block}
+/* WORKFLOW */
+.wf-wrap{background:var(--s);border:1px solid var(--b);border-radius:var(--ra);padding:20px;margin-bottom:12px}
+.wf-steps{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.wf-step{font-size:0.7rem;font-weight:600;padding:3px 9px;border-radius:999px;border:1px solid var(--b);color:var(--mu);background:var(--bg)}
+.wf-step.done{background:var(--gl);color:var(--gr);border-color:#b8d9b2}
+.wf-step.cur{background:var(--ac);color:white;border-color:var(--ac)}
+.wf-arrow{font-size:0.65rem;color:var(--mu)}
+.wf-detail{font-size:0.81rem;color:var(--mu);line-height:1.6}
+/* FEEDBACK */
+.fb-box{background:var(--bll);border:1px solid #b8d0e8;border-radius:10px;padding:14px;margin-top:10px}
+.fb-box p{font-size:0.82rem;color:var(--bl);margin-bottom:10px;line-height:1.6}
 footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-top:1px solid var(--b);margin-top:8px}
 </style>
 </head>
@@ -62,6 +81,8 @@ footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-t
   <div><div class="brand">🤲 Recipient Portal</div><div class="bsub">Grocery Donation Tracker</div></div>
   <div class="ntabs">
     <button class="ntab on" onclick="go('request',this)">🤲 Request</button>
+    <button class="ntab" onclick="go('custom',this)">🔍 Custom Request</button>
+    <button class="ntab" onclick="go('track',this)">📍 Track</button>
     <button class="ntab" onclick="go('register',this)">📋 Register</button>
   </div>
   <div class="sc"><div class="sd" id="sd"></div><span id="sl">Connecting…</span></div>
@@ -69,9 +90,10 @@ footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-t
 <div class="al2" id="al"></div>
 <div class="main">
 
+<!-- REQUEST -->
 <div class="pg on" id="pg-request">
-  <div class="hero"><h2>🤲 Request Groceries</h2><p>Enter your Recipient ID to request items. The admin will review and arrange delivery.</p></div>
-  <div class="infobox">📋 <strong>Workflow:</strong> Pending → Approved → Delivery Pending → Delivered. Email notification sent at each stage.</div>
+  <div class="hero"><h2>🤲 Request Groceries</h2><p>Enter your Recipient ID and select an available item. Delivery will be arranged to your address.</p></div>
+  <div class="infobox">📋 <strong>Workflow:</strong> Pending → Approved → Delivery Pending → Delivered. Email sent at every stage.</div>
   <div class="panel">
     <div class="ph"><div class="pt">📦 Currently Available</div></div>
     <div id="invBars"><div class="no-data">Loading…</div></div>
@@ -81,71 +103,107 @@ footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-t
       <div class="fg s2">
         <label for="ri">Your Recipient ID *</label>
         <div class="taw">
-          <input type="text" id="ri" placeholder="Type your Recipient ID e.g. RCP001…" autocomplete="off" oninput="tfId('ri','recipients','Recipient ID')"/>
+          <input type="text" id="ri" placeholder="e.g. RCP001" autocomplete="off" oninput="tfId('ri','recipients','Recipient ID')"/>
           <div class="tal" id="ta-ri"></div>
         </div>
-        <small style="color:var(--mu);font-size:0.73rem;margin-top:3px">No ID yet? Go to the Register tab first.</small>
+        <small style="color:var(--mu);font-size:0.73rem;margin-top:3px">No ID? Register first →</small>
       </div>
       <div class="fg s2">
         <label for="ritem">Item Requested *</label>
         <select id="ritem"><option value="">Select item…</option></select>
-        <small style="color:var(--mu);font-size:0.73rem;margin-top:2px">Quantity will be 1 per request.</small>
+        <small style="color:var(--mu);font-size:0.73rem;margin-top:2px">Quantity is 1 per request.</small>
       </div>
       <div class="fg s2">
-        <label for="rnotes">Notes (optional)</label>
-        <textarea id="rnotes" placeholder="Preferred delivery time, special instructions…"></textarea>
+        <label for="rnotes">Preferred Delivery Schedule * <small style="text-transform:none;font-weight:400">(required)</small></label>
+        <textarea id="rnotes" placeholder="e.g. Weekdays after 5pm, Saturday morning before 11am…"></textarea>
       </div>
     </div>
-    <button class="btn ba" id="rBtn" onclick="sub()"><span>Submit Request</span></button>
+    <button class="btn ba" id="rBtn" onclick="subRequest()"><span>Submit Request</span></button>
     <div class="fm" id="rm2"></div>
   </div>
 </div>
 
-
-  <!-- Custom Item Request -->
-  <div class="panel" style="border-left:4px solid var(--bl)">
-    <div class="ph"><div class="pt" style="color:var(--bl)">🔍 Can't find your item?</div></div>
-    <p style="font-size:0.83rem;color:var(--mu);margin-bottom:14px;line-height:1.6">If the item you need isn't in the list above, submit a custom request below. The admin will review and either add it or let you know why it isn't available.</p>
+<!-- CUSTOM REQUEST -->
+<div class="pg" id="pg-custom">
+  <div class="hero"><h2>🔍 Custom Item Request</h2><p>Can't find what you need? Request a specific item not currently in our list.</p></div>
+  <div class="infobox">The admin will review your request and either add the item or explain why it isn't available. You'll be notified by email either way.</div>
+  <div class="panel">
     <div class="g2">
       <div class="fg s2">
         <label for="cri">Your Recipient ID *</label>
         <div class="taw">
-          <input type="text" id="cri" placeholder="Type your Recipient ID e.g. RCP001…" autocomplete="off" oninput="tfId('cri','recipients','Recipient ID')"/>
+          <input type="text" id="cri" placeholder="e.g. RCP001" autocomplete="off" oninput="tfId('cri','recipients','Recipient ID')"/>
           <div class="tal" id="ta-cri"></div>
         </div>
       </div>
       <div class="fg s2">
-        <label for="citem">Item You Need *</label>
-        <input type="text" id="citem" placeholder="e.g. Basmati Rice 5kg, Sunflower Oil 1L…"/>
+        <div class="tip-wrap">
+          <label for="citem">Item You Need *</label>
+          <span class="tip-icon">ℹ<span class="tip-txt">Please use this format: Item Name + Quantity/Size. Examples: "Basmati Rice 5kg", "Sunflower Oil 1 litre", "Whole Wheat Bread 400g loaf"</span></span>
+        </div>
+        <input type="text" id="citem" placeholder="e.g. Basmati Rice 5kg, Sunflower Oil 1 litre…"/>
       </div>
       <div class="fg s2">
-        <label for="cnotes">Why do you need this? (optional)</label>
-        <textarea id="cnotes" placeholder="Any context that might help the admin…" style="min-height:55px"></textarea>
+        <label for="cnotes">Why do you need this? * <small style="text-transform:none;font-weight:400">(required)</small></label>
+        <textarea id="cnotes" placeholder="Please explain why this specific item is important for you…" style="min-height:70px"></textarea>
       </div>
     </div>
-    <button class="btn" style="background:var(--bl);color:white" id="cBtn" onclick="subCustom()"><span>Submit Custom Request</span></button>
+    <button class="btn bbl" id="cBtn" onclick="subCustom()"><span>Submit Custom Request</span></button>
     <div class="fm" id="cm"></div>
   </div>
+</div>
 
+<!-- TRACK -->
+<div class="pg" id="pg-track">
+  <div class="hero"><h2>📍 Track Your Request</h2><p>Enter your Request ID to see current status and workflow.</p></div>
+  <div class="panel">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input type="text" id="trackId" placeholder="Request ID e.g. RCP001_R001" style="flex:1;min-width:180px"/>
+      <button class="btn ba" onclick="trackRequest()" style="white-space:nowrap">Track →</button>
+    </div>
+  </div>
+  <div id="trackResult"></div>
+  <!-- Feedback form shown only when delivered -->
+  <div id="feedbackSection" style="display:none">
+    <div class="fb-box">
+      <p>📝 <strong>Your item has been delivered!</strong> Please take a moment to share your feedback. This helps our donors know their contribution made a difference.</p>
+      <div style="margin-bottom:10px">
+        <label style="display:block;margin-bottom:5px;font-size:0.73rem;font-weight:600;color:var(--bl);text-transform:uppercase;letter-spacing:0.05em">Your Feedback *</label>
+        <textarea id="fbText" placeholder="How did the item help you? Was it what you needed? Any comments…" style="min-height:80px;border-color:#b8d0e8"></textarea>
+      </div>
+      <button class="btn bbl" id="fbBtn" onclick="submitFeedback()"><span>Submit Feedback</span></button>
+      <div class="fm" id="fbMsg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- REGISTER -->
 <div class="pg" id="pg-register">
-  <div class="hero"><h2>📋 Register as Recipient</h2><p>Create your profile. A unique Recipient ID is generated — save it for future requests.</p></div>
+  <div class="hero"><h2>📋 Register as Recipient</h2><p>Create your profile. A unique Recipient ID will be generated — save it for future requests.</p></div>
   <div class="panel">
     <div class="g2">
-      <div class="fg"><label for="rrn">Full Name *</label><input type="text" id="rrn" placeholder="e.g. Anita Sharma"/></div>
-      <div class="fg"><label for="rre">Email * <small style="text-transform:none;font-weight:400">(required for notifications)</small></label><input type="email" id="rre" placeholder="anita@email.com" required/></div>
+      <div class="fg"><label for="rrn">First Name *</label><input type="text" id="rrn" placeholder="e.g. Anita"/></div>
+      <div class="fg"><label for="rrnl">Last Name *</label><input type="text" id="rrnl" placeholder="e.g. Sharma"/></div>
+      <div class="fg"><label for="rre">Email * <small style="text-transform:none;font-weight:400">(for notifications)</small></label><input type="email" id="rre" placeholder="anita@email.com"/></div>
       <div class="fg"><label for="rrp">Phone</label><input type="tel" id="rrp" placeholder="+91 98765 43210"/></div>
-      <div class="fg s2"><label for="rra">Address * <small style="text-transform:none;letter-spacing:0;font-weight:400">(needed for delivery)</small></label><textarea id="rra" placeholder="House/Flat no, Street, Area, City, PIN…"></textarea></div>
+      <div class="fg s2">
+        <div class="tip-wrap">
+          <label for="rra">Address *</label>
+          <span class="tip-icon">ℹ<span class="tip-txt">Your address is required so the admin can deliver your requested items to you. It is only shared with the admin and never made public.</span></span>
+        </div>
+        <textarea id="rra" placeholder="House/Flat no, Street, Area, City, PIN…"></textarea>
+      </div>
     </div>
-    <button class="btn ba" id="regBtn" onclick="reg()"><span>Register &amp; Get My Recipient ID →</span></button>
+    <button class="btn ba" id="regBtn" onclick="regRecipient()"><span>Register &amp; Get My Recipient ID →</span></button>
     <div class="fm" id="regm"></div>
   </div>
 </div>
 
 </div>
-<footer>Recipient Portal · Grocery Donation Tracker 🔒</footer>
+<footer>Recipient Portal · Grocery Donation Tracker · Works on mobile 📱</footer>
 <script>
 const SU=localStorage.getItem('donationScriptUrl')||'';
-let LD=null;
+let LD=null,trackingReqId='';
 const PAL=['#2d5a27','#c07c2e','#1f5f8b','#b83232','#6c3483','#117a65'];
 async function init(){
   if(!SU){document.getElementById('sl').textContent='Not configured';return;}
@@ -158,6 +216,7 @@ async function init(){
   }catch(e){document.getElementById('sd').style.background='#e57373';document.getElementById('sl').textContent='Offline';}
 }
 setInterval(init,30000);init();
+
 function renderInv(d){
   const inv=d.inventory||[];
   const maxD=Math.max(...inv.map(i=>i.donated),1);
@@ -165,6 +224,7 @@ function renderInv(d){
     ?inv.map((i,idx)=>`<div class="inv-item"><div class="inv-top"><span class="inv-name">${i.item}</span><span class="inv-nums">Available: <strong>${i.balance}</strong> · Donated: ${i.donated} · Distributed: ${i.distributed}</span></div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(2,Math.round(i.balance/maxD*100))}%;background:${PAL[idx%PAL.length]}"></div></div></div>`).join('')
     :'<div class="no-data">No inventory yet</div>';
 }
+
 let balMap={};
 function popItems(d){
   const inv=d.inventory||[];
@@ -177,8 +237,8 @@ function popItems(d){
     return`<option value="${item}" ${bal!==null&&bal<=0?'disabled':''}>${item}${suffix}</option>`;
   }).join('');
   if(c)s.value=c;
-
 }
+
 function go(n,b){
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('on'));
@@ -199,20 +259,22 @@ function tsId(i,v){document.getElementById(i).value=v;cta();}
 function cta(){document.querySelectorAll('.tal').forEach(e=>e.style.display='none');}
 document.addEventListener('click',e=>{if(!e.target.closest('.taw'))cta();});
 function es(s){return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
-async function sub(){
+
+async function subRequest(){
   const rid=document.getElementById('ri').value.trim();
   const item=document.getElementById('ritem').value;
   const notes=document.getElementById('rnotes').value.trim();
   if(!rid){sf('rm2','Please enter your Recipient ID.','err');return;}
   if(!item){sf('rm2','Please select an item.','err');return;}
+  if(!notes){sf('rm2','Please enter your preferred delivery schedule — this helps us arrange delivery at a suitable time.','err');return;}
   const avail=balMap[item]??null;
-  if(avail!==null&&avail<1){sf('rm2','"'+item+'" is currently out of stock. Try another item or submit a custom request below.','err');return;}
+  if(avail!==null&&avail<1){sf('rm2','"'+item+'" is currently out of stock.','err');return;}
   if(!SU){sf('rm2','System not configured.','err');return;}
   const btn=document.getElementById('rBtn');btn.disabled=true;btn.innerHTML='<span class="sp"></span> Submitting…';
   try{
     const r=await fetch(SU+'?'+new URLSearchParams({action:'addRequest',recipientId:rid,itemRequested:item,qtyRequested:1,notes}));
     const d=await r.json();
-    if(d.success){sf('rm2','✅ '+d.message+'\n\nRequest ID: '+d.requestId+'\nSave this ID to track your request.','ok');sa('Request submitted!','amber');['ri','rnotes'].forEach(id=>document.getElementById(id).value='');document.getElementById('ritem').value='';}
+    if(d.success){sf('rm2','✅ Request submitted!\n\nRequest ID: '+d.requestId+'\n\nA confirmation email has been sent to you. Use the Track tab to follow your request.','ok');sa('Request submitted!','amber');['ri','rnotes'].forEach(id=>document.getElementById(id).value='');document.getElementById('ritem').value='';setTimeout(init,1500);}
     else sf('rm2','❌ '+(d.error||'Error'),'err');
   }catch(e){sf('rm2','❌ Failed: '+e.message,'err');}
   btn.disabled=false;btn.innerHTML='<span>Submit Request</span>';
@@ -223,36 +285,85 @@ async function subCustom(){
   const item=document.getElementById('citem').value.trim();
   const notes=document.getElementById('cnotes').value.trim();
   if(!rid){sf('cm','Please enter your Recipient ID.','err');return;}
-  if(!item){sf('cm','Please describe the item you need.','err');return;}
+  if(!item){sf('cm','Please describe the item you need (include size/quantity).','err');return;}
+  if(!notes){sf('cm','Please explain why you need this item — this is required.','err');return;}
   if(!SU){sf('cm','System not configured.','err');return;}
   const btn=document.getElementById('cBtn');btn.disabled=true;btn.innerHTML='<span class="sp"></span> Submitting…';
   try{
     const r=await fetch(SU+'?'+new URLSearchParams({action:'addCustomRequest',recipientId:rid,itemName:item,notes}));
     const d=await r.json();
-    if(d.success){sf('cm','✅ Custom request submitted!\n\nCustom Request ID: '+d.customId+'\nThe admin will review and email you the outcome.','ok');sa('Custom request submitted!','amber');['cri','citem','cnotes'].forEach(id=>document.getElementById(id).value='');}
+    if(d.success){sf('cm','✅ Custom request submitted!\n\nCustom Request ID: '+d.customId+'\n\nThe admin will review and email you the outcome.','ok');sa('Custom request sent!','amber');['cri','citem','cnotes'].forEach(id=>document.getElementById(id).value='');}
     else sf('cm','❌ '+(d.error||'Error'),'err');
   }catch(e){sf('cm','❌ Failed: '+e.message,'err');}
   btn.disabled=false;btn.innerHTML='<span>Submit Custom Request</span>';
 }
-async function reg(){
-  const name=document.getElementById('rrn').value.trim();
+
+function trackRequest(){
+  const id=document.getElementById('trackId').value.trim().toUpperCase();
+  const fbSection=document.getElementById('feedbackSection');
+  fbSection.style.display='none';
+  trackingReqId='';
+  if(!id||!LD){document.getElementById('trackResult').innerHTML='<div class="panel" style="color:var(--mu);text-align:center;padding:20px">Please enter a Request ID.</div>';return;}
+  const req=(LD.requests||[]).find(r=>String(r['Request ID']||'').toUpperCase()===id);
+  if(!req){document.getElementById('trackResult').innerHTML='<div class="panel" style="color:var(--mu);text-align:center;padding:20px">Request ID not found. Check and try again.</div>';return;}
+  const steps=['Pending','Approved','Delivery Pending','Delivered'];
+  const cur=String(req['Status']||'Pending');
+  const curIdx=steps.findIndex(s=>s.toLowerCase()===cur.toLowerCase());
+  const stepsHtml=steps.map((s,i)=>`${i>0?'<span class="wf-arrow">›</span>':''}<span class="wf-step ${i<curIdx?'done':i===curIdx?'cur':''}">${s}</span>`).join('');
+  const etaLine=req['ETA']?`<br>🚚 <strong>Estimated delivery:</strong> ${req['ETA']}`:'';
+  const dates=[
+    req['Pending On']&&('Submitted: '+fd(req['Pending On'])),
+    req['Approved On']&&('Approved: '+fd(req['Approved On'])),
+    req['Delivery Pending On']&&('Out for delivery: '+fd(req['Delivery Pending On'])),
+    req['Delivered On']&&('Delivered: '+fd(req['Delivered On'])),
+  ].filter(Boolean).join(' · ');
+  const feedbackLine=req['Feedback']?`<div style="margin-top:8px;font-size:0.81rem;background:var(--gl);color:var(--gr);padding:8px 12px;border-radius:8px">✅ Feedback submitted: ${req['Feedback']}</div>`:'';
+  const rejComment=req['Rejection Comment']?`<div style="margin-top:8px;font-size:0.81rem;background:var(--rl);color:var(--re);padding:8px 12px;border-radius:8px">Rejection reason: ${req['Rejection Comment']}</div>`:'';
+  document.getElementById('trackResult').innerHTML=`<div class="wf-wrap"><div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:10px">${req['Request ID']} · ${req['Item Requested']} ×${req['Qty Requested']}</div><div class="wf-steps">${stepsHtml}</div><div class="wf-detail">${dates}${etaLine}</div>${feedbackLine}${rejComment}</div>`;
+  // Show feedback form if delivered and no feedback yet
+  if(cur.toLowerCase()==='delivered'&&!req['Feedback']){
+    trackingReqId=req['Request ID'];
+    fbSection.style.display='block';
+  }
+}
+
+async function submitFeedback(){
+  const fb=document.getElementById('fbText').value.trim();
+  if(!fb){sf('fbMsg','Please write your feedback before submitting.','err');return;}
+  if(!SU||!trackingReqId){sf('fbMsg','Error — please re-track your request and try again.','err');return;}
+  const btn=document.getElementById('fbBtn');btn.disabled=true;btn.innerHTML='<span class="sp"></span> Submitting…';
+  try{
+    const r=await fetch(SU+'?'+new URLSearchParams({action:'submitFeedback',requestId:trackingReqId,feedback:fb}));
+    const d=await r.json();
+    if(d.success){sf('fbMsg','✅ Thank you for your feedback!','ok');document.getElementById('feedbackSection').style.display='none';document.getElementById('fbText').value='';setTimeout(()=>{init();trackRequest();},1500);}
+    else sf('fbMsg','❌ '+(d.error||'Error'),'err');
+  }catch(e){sf('fbMsg','❌ Failed: '+e.message,'err');}
+  btn.disabled=false;btn.innerHTML='<span>Submit Feedback</span>';
+}
+
+async function regRecipient(){
+  const fn=document.getElementById('rrn').value.trim();
+  const ln=document.getElementById('rrnl').value.trim();
   const email=document.getElementById('rre').value.trim();
   const phone=document.getElementById('rrp').value.trim();
   const address=document.getElementById('rra').value.trim();
-  if(!name){sf('regm','Please enter your full name.','err');return;}
-  if(!email){sf('regm','Email is required — needed for status notifications.','err');return;}
-  if(!address){sf('regm','Please enter your address — needed for delivery.','err');return;}
+  if(!fn||!ln){sf('regm','Please enter your first and last name.','err');return;}
+  if(!email){sf('regm','Email is required for notifications.','err');return;}
+  if(!address){sf('regm','Address is required for delivery.','err');return;}
   if(!SU){sf('regm','System not configured.','err');return;}
+  const name=fn+' '+ln;
   const btn=document.getElementById('regBtn');btn.disabled=true;btn.innerHTML='<span class="sp"></span> Registering…';
   try{
     const r=await fetch(SU+'?'+new URLSearchParams({action:'addRecipient',name,email,phone,address}));
     const d=await r.json();
-    if(d.success){sf('regm','✅ Registered!\n\nYour Recipient ID is: '+d.recipientId+'\n\nSave this — you need it to make requests.','ok');['rrn','rre','rrp','rra'].forEach(id=>document.getElementById(id).value='');sa('Registered: '+d.recipientId,'amber');}
+    if(d.success){sf('regm','✅ Registered!\n\nYour Recipient ID is: '+d.recipientId+'\n\nA confirmation email has been sent to '+email+'\nSave your ID — you need it to make requests.','ok');['rrn','rrnl','rre','rrp','rra'].forEach(id=>document.getElementById(id).value='');sa('Registered: '+d.recipientId,'amber');setTimeout(init,1500);}
     else sf('regm','❌ '+(d.error||'Error'),'err');
   }catch(e){sf('regm','❌ Failed: '+e.message,'err');}
   btn.disabled=false;btn.innerHTML='<span>Register &amp; Get My Recipient ID →</span>';
 }
-function sf(id,msg,type){const el=document.getElementById(id);el.textContent=msg;el.className='fm '+type;setTimeout(()=>el.style.display='none',12000);}
+
+function fd(d){if(!d)return'—';try{return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch{return String(d)||'—';}}
+function sf(id,msg,type){const el=document.getElementById(id);el.textContent=msg;el.className='fm '+type;setTimeout(()=>el.style.display='none',14000);}
 function sa(msg,type='amber'){const el=document.getElementById('al');el.textContent=msg;el.className='al2 '+type+' show';setTimeout(()=>el.classList.remove('show'),3500);}
 </script>
 </body>

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1f5f8b"/>
+      <stop offset="100%" style="stop-color:#0d3a5c"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:rgba(255,255,255,0.15)"/>
+      <stop offset="100%" style="stop-color:rgba(255,255,255,0)"/>
+    </linearGradient>
+    <linearGradient id="bar1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#2d5a27"/>
+      <stop offset="100%" style="stop-color:#1a3d16"/>
+    </linearGradient>
+    <linearGradient id="bar2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#c07c2e"/>
+      <stop offset="100%" style="stop-color:#7a4e1a"/>
+    </linearGradient>
+    <linearGradient id="bar3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1f5f8b"/>
+      <stop offset="100%" style="stop-color:#0d3a5c"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="112" fill="url(#shine)"/>
+  <!-- Screen frame -->
+  <rect x="110" y="138" width="292" height="220" rx="16" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.25)" stroke-width="2"/>
+  <!-- Screen content area -->
+  <rect x="122" y="150" width="268" height="196" rx="10" fill="rgba(0,0,0,0.3)"/>
+  <!-- Bar chart bars -->
+  <rect x="150" y="256" width="36" height="78" rx="6" fill="url(#bar1)"/>
+  <rect x="204" y="222" width="36" height="112" rx="6" fill="url(#bar2)"/>
+  <rect x="258" y="238" width="36" height="96" rx="6" fill="url(#bar1)"/>
+  <rect x="312" y="198" width="36" height="136" rx="6" fill="url(#bar2)"/>
+  <!-- Baseline -->
+  <line x1="138" y1="346" x2="362" y2="346" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
+  <!-- Mini dots top of bars -->
+  <circle cx="168" cy="252" r="5" fill="rgba(255,255,255,0.8)"/>
+  <circle cx="222" cy="218" r="5" fill="rgba(255,255,255,0.8)"/>
+  <circle cx="276" cy="234" r="5" fill="rgba(255,255,255,0.8)"/>
+  <circle cx="330" cy="194" r="5" fill="rgba(255,255,255,0.8)"/>
+  <!-- Trend line -->
+  <polyline points="168,252 222,218 276,234 330,194" stroke="rgba(255,255,255,0.5)" stroke-width="2.5" fill="none" stroke-dasharray="6,4"/>
+  <!-- Stand -->
+  <rect x="238" y="358" width="36" height="18" rx="4" fill="rgba(255,255,255,0.2)"/>
+  <rect x="200" y="370" width="112" height="14" rx="7" fill="rgba(255,255,255,0.15)"/>
+  <!-- Public badge -->
+  <rect x="148" y="406" width="216" height="34" rx="17" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+  <text x="256" y="428" font-family="sans-serif" font-size="16" font-weight="700" fill="white" text-anchor="middle" opacity="0.85">PUBLIC DASHBOARD</text>
+</svg>
