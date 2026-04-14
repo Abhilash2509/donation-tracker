@@ -576,54 +576,75 @@ function buildCollections(){
 }
 
 // ── REQUESTS ──
+// Store row refs globally to avoid quote escaping in onclick
+let _reqRows=[];
+function rAct(i,action){
+  const r=_reqRows[i];if(!r)return;
+  if(action==='approve')  openApprove(r._row, r['Item Requested']+' ('+r['Qty Requested']+')');
+  if(action==='reject')   openReject('req',r._row, r['Item Requested']+' ('+r['Qty Requested']+')');
+  if(action==='dp')       updR(r._row,'Delivery Pending');
+  if(action==='deliver')  updR(r._row,'Delivered');
+}
 function buildRequests(){
   if(!LD)return;
   const req=LD.requests||[],rec=LD.recipients||[];
   const rm={};rec.forEach(r=>rm[r['Recipient ID']]=r);
+  _reqRows=req; // store globally for rAct
   const pending=req.filter(r=>(r['Status']||'').toLowerCase()==='pending');
   const dp=req.filter(r=>(r['Status']||'').toLowerCase()==='delivery pending');
-  document.getElementById('pendRC').textContent=pending.length+' pending';
-  // Build inventory balance map for stock check
   const invMap2={};(LD.inventory||[]).forEach(i=>invMap2[i.item]=i.balance);
+
+  document.getElementById('pendRC').textContent=pending.length+' pending';
   document.getElementById('pendRL').innerHTML=pending.length
-    ?pending.map(r=>{
+    ?pending.map((r,gi)=>{
+      const idx=req.indexOf(r);
       const rc=rm[r['Recipient ID']]||{};
       const notesI=r['Notes']?`<span class="info-ico">ℹ<span class="tip-bubble">${String(r['Notes']).replace(/</g,'&lt;')}</span></span>`:'';
       const bal=invMap2[r['Item Requested']]??null;
       const outOfStock=bal!==null&&bal<1;
-      const stockWarn=outOfStock?`<span style="font-size:0.72rem;color:var(--re);font-weight:600;margin-left:6px">⚠ Out of stock — stock item before approving</span>`:'';
+      const stockWarn=outOfStock?`<span style="font-size:0.72rem;color:var(--re);font-weight:600;margin-left:6px">⚠ Out of stock</span>`:'';
       const appBtn=outOfStock
-        ?`<button class="btn bsm" style="background:#e0e0e0;color:#888;cursor:not-allowed" disabled title="Item is out of stock. Add donations first.">✓ Approve</button>`
-        :`<button class="btn bg bsm" onclick="openApprove(${r._row},''+r['Item Requested']+' ('+r['Qty Requested']+')')">✓ Approve</button>`;
-      return`<div class="arow"><div class="ainfo"><span class="tid">${r['Request ID']||'—'}</span> &nbsp;<strong>${rc['Recipient Name']||r['Recipient ID']}</strong>${notesI}${stockWarn}${rc['Address']?`<br><span style="font-size:0.74rem;color:var(--mu)">📍 ${rc['Address']}</span>`:''}<br><span style="font-size:0.74rem;color:var(--mu)">Item: <strong>${r['Item Requested']}</strong> · Qty: <strong>${r['Qty Requested']}</strong> · ${fd(r['Pending On']||r['Request Date'])}</span></div><div class="abtns">${appBtn}<button class="btn br bsm" onclick="openReject('req',${r._row},''+r['Item Requested']+' ('+r['Qty Requested']+')')">✗ Reject</button></div></div>`;
+        ?`<button class="btn bsm" style="background:#e0e0e0;color:#888;cursor:not-allowed" disabled>✓ Approve</button>`
+        :`<button class="btn bg bsm" onclick="rAct(${idx},'approve')">✓ Approve</button>`;
+      return`<div class="arow"><div class="ainfo"><span class="tid">${r['Request ID']||'—'}</span>&nbsp;<strong>${rc['Recipient Name']||r['Recipient ID']}</strong>${notesI}${stockWarn}${rc['Address']?`<br><span style="font-size:0.74rem;color:var(--mu)">📍 ${rc['Address']}</span>`:''}<br><span style="font-size:0.74rem;color:var(--mu)">Item: <strong>${r['Item Requested']}</strong> · Qty: <strong>${r['Qty Requested']}</strong> · ${fd(r['Pending On']||r['Request Date'])}</span></div><div class="abtns">${appBtn}<button class="btn br bsm" onclick="rAct(${idx},'reject')">✗ Reject</button></div></div>`;
     }).join('')
     :'<div class="no-data">🎉 No pending requests</div>';
+
   document.getElementById('dpC').textContent=dp.length+' to deliver';
   document.getElementById('dpL').innerHTML=dp.length
-    ?dp.map(r=>{const rc=rm[r['Recipient ID']]||{};return`<div class="arow"><div class="ainfo"><span class="tid">${r['Request ID']||'—'}</span> &nbsp;<strong>${rc['Recipient Name']||r['Recipient ID']}</strong>${rc['Address']?`<br><span style="font-size:0.74rem;color:var(--mu)">📍 ${rc['Address']}</span>`:''}<br><span style="font-size:0.74rem;color:var(--mu)">Item: <strong>${r['Item Requested']}</strong> · Qty: <strong>${r['Qty Requested']}</strong></span></div><div class="abtns"><button class="btn bg bsm" onclick="updR(${r._row},'Delivered')">✓ Mark Delivered</button></div></div>`;}).join('')
+    ?dp.map(r=>{
+      const idx=req.indexOf(r);
+      const rc=rm[r['Recipient ID']]||{};
+      return`<div class="arow"><div class="ainfo"><span class="tid">${r['Request ID']||'—'}</span>&nbsp;<strong>${rc['Recipient Name']||r['Recipient ID']}</strong>${rc['Address']?`<br><span style="font-size:0.74rem;color:var(--mu)">📍 ${rc['Address']}</span>`:''}<br><span style="font-size:0.74rem;color:var(--mu)">Item: <strong>${r['Item Requested']}</strong> · Qty: <strong>${r['Qty Requested']}</strong>${r['ETA']?' · ETA: '+r['ETA']:''}</span></div><div class="abtns"><button class="btn bg bsm" onclick="rAct(${idx},'deliver')">✓ Mark Delivered</button></div></div>`;
+    }).join('')
     :'<div class="no-data">No deliveries pending</div>';
+
   document.getElementById('allRC').textContent=req.length+' total';
-  document.getElementById('allRB2').innerHTML=req.map(r=>{
+  document.getElementById('allRB2').innerHTML=req.map((r,idx)=>{
     const s=(r['Status']||'pending').toLowerCase().replace(/ /g,'-');
     let nxt='';
     if(s==='pending'){
       const bal2=invMap2[r['Item Requested']]??null;
       const oos=bal2!==null&&bal2<1;
-      const ab=oos?`<button class="btn bsm" style="background:#e0e0e0;color:#aaa;cursor:not-allowed" disabled title="Out of stock">Approve</button>`
-        :`<button class="btn bg bsm" onclick="openApprove(${r._row},''+r['Item Requested']+' ('+r['Qty Requested']+')')">Approve</button>`;
-      nxt=ab+` <button class="btn br bsm" onclick="openReject('req',${r._row},''+r['Item Requested']+' ('+r['Qty Requested']+')')">Reject</button>`;
+      const ab=oos
+        ?`<button class="btn bsm" style="background:#e0e0e0;color:#aaa;cursor:not-allowed" disabled>Approve</button>`
+        :`<button class="btn bg bsm" onclick="rAct(${idx},'approve')">Approve</button>`;
+      nxt=ab+` <button class="btn br bsm" onclick="rAct(${idx},'reject')">Reject</button>`;
     }
-    else if(s==='approved')nxt=`<button class="btn bbl bsm" onclick="updR(${r._row},'Delivery Pending')">→ Delivery Pending</button>`;
-    else if(s==='delivery-pending')nxt=`<button class="btn bg bsm" onclick="updR(${r._row},'Delivered')">Mark Delivered</button>`;
+    else if(s==='approved')  nxt=`<button class="btn bbl bsm" onclick="rAct(${idx},'dp')">→ Delivery Pending</button>`;
+    else if(s==='delivery-pending') nxt=`<button class="btn bg bsm" onclick="rAct(${idx},'deliver')">Mark Delivered</button>`;
     else nxt=`<span style="font-size:0.75rem;color:var(--mu)">${r['Status']}</span>`;
-    return`<tr><td><span class="tid">${r['Request ID']||'—'}</span></td><td>${fd(r['Request Date'])}</td><td style="font-size:0.75rem;color:var(--mu)">${r['Recipient ID']||'—'}</td><td>${r['Item Requested']||'—'}</td><td>${r['Qty Requested']||0}</td><td><span class="pill ${s}">${r['Status']||'Pending'}</span></td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Pending On'])}</td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Approved On'])}</td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Delivered On'])}</td><td>${nxt}</td></tr>`;}).join()||'<tr><td colspan="10" class="no-data">No requests</td></tr>';
+    return`<tr><td><span class="tid">${r['Request ID']||'—'}</span></td><td>${fd(r['Request Date'])}</td><td style="font-size:0.75rem;color:var(--mu)">${r['Recipient ID']||'—'}</td><td>${r['Item Requested']||'—'}</td><td>${r['Qty Requested']||0}</td><td><span class="pill ${s}">${r['Status']||'Pending'}</span></td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Pending On'])}</td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Approved On'])}</td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Delivered On'])}</td><td>${nxt}</td></tr>`;
+  }).join()||'<tr><td colspan="10" class="no-data">No requests</td></tr>';
 }
 
 // ── STATUS UPDATES — instant refresh from server response ──
 async function updD(rowIdx,status,comment=''){
   if(!SU){sa('Not connected','red');return;}
   try{
-    const r=await fetch(SU+'?'+new URLSearchParams({action:'updateDonationStatus',rowIndex:rowIdx,status,comment}));
+    const params={action:'updateDonationStatus',rowIndex:String(rowIdx),status:String(status)};
+    if(comment)params.comment=comment;
+    const r=await fetch(SU+'?'+new URLSearchParams(params));
     const d=await r.json();
     if(d.success){
       sa('Donation '+status+'!','green');
@@ -632,10 +653,13 @@ async function updD(rowIdx,status,comment=''){
     }else sa('Error: '+(d.error||'Unknown'),'red');
   }catch(e){sa('Failed: '+e.message,'red');}
 }
-async function updR(rowIdx,status,comment='',eta='',appNote=''){
+async function updR(rowIdx,status,comment='',eta=''){
   if(!SU){sa('Not connected','red');return;}
   try{
-    const r=await fetch(SU+'?'+new URLSearchParams({action:'updateRequestStatus',rowIndex:rowIdx,status,comment:comment||(appNote||''),eta}));
+    const params={action:'updateRequestStatus',rowIndex:String(rowIdx),status:String(status)};
+    if(comment)params.comment=comment;
+    if(eta)params.eta=eta;
+    const r=await fetch(SU+'?'+new URLSearchParams(params));
     const d=await r.json();
     if(d.success){
       sa('Request '+status+'!',status==='Rejected'?'red':'green');
@@ -722,7 +746,7 @@ async function lookupD(){
   const recs=(LD.donations||[]).filter(r=>r['Donor ID']===d['Donor ID']);
   const col=recs.filter(r=>(r['Status']||'').toLowerCase()==='collected');
   const units=col.reduce((s,r)=>s+(parseInt(r['Quantity'])||0),0);
-  document.getElementById('hdres').innerHTML=`<div class="panel"><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.96rem;margin-bottom:4px">${d['Donor Name']} · <span class="tid">${d['Donor ID']}</span></div>${d['Address']?`<div style="font-size:0.77rem;color:var(--mu);margin-bottom:3px">📍 ${d['Address']}</div>`:''}<div style="font-size:0.77rem;color:var(--mu);margin-bottom:12px">${[d['Email'],d['Phone']].filter(Boolean).join(' · ')}</div><div style="display:flex;gap:18px;margin-bottom:12px"><div><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--ac)">${recs.length}</div><div style="font-size:0.68rem;color:var(--mu);text-transform:uppercase">Submitted</div></div><div><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--ac)">${col.length}</div><div style="font-size:0.68rem;color:var(--mu);text-transform:uppercase">Collected</div></div><div><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--ac)">${units}</div><div style="font-size:0.68rem;color:var(--mu);text-transform:uppercase">Units</div></div></div><div class="tw"><table><thead><tr><th>Donation ID</th><th>Date</th><th>Item</th><th>Qty</th><th>Status</th><th>Submitted On</th><th>Collected On</th></tr></thead><tbody>${recs.map(r=>`<tr><td><span class="tid">${r['Donation ID']||'—'}</span></td><td>${fd(r['Date'])}</td><td>${r['Item']||'—'}</td><td>${r['Quantity']||0}</td><td><span class="pill ${(r['Status']||'submitted').toLowerCase()}">${r['Status']||'Submitted'}</span></td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Submitted On'])}</td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Collected On'])}</td></tr>`).join()||'<tr><td colspan="7" class="no-data">No donations</td></tr>'}</tbody></table></div></div>`;
+  document.getElementById('hdres').innerHTML=`<div class="panel"><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.96rem;margin-bottom:4px">${d['Donor Name']} · <span class="tid">${d['Donor ID']}</span></div>${d['Address']?`<div style="font-size:0.77rem;color:var(--mu);margin-bottom:3px">📍 ${d['Address']}</div>`:''}<div style="font-size:0.77rem;color:var(--mu);margin-bottom:12px">${[d['Email'],d['Phone']].filter(Boolean).join(' · ')}</div><div style="display:flex;gap:18px;margin-bottom:12px"><div><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--ac)">${recs.length}</div><div style="font-size:0.68rem;color:var(--mu);text-transform:uppercase">Submitted</div></div><div><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--ac)">${col.length}</div><div style="font-size:0.68rem;color:var(--mu);text-transform:uppercase">Collected</div></div><div><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--ac)">${units}</div><div style="font-size:0.68rem;color:var(--mu);text-transform:uppercase">Units</div></div></div><div class="tw"><table><thead><tr><th>Donation ID</th><th>Item</th><th>Qty</th><th>Status</th><th>Submitted On</th><th>Collected On</th><th>Rejection Reason</th></tr></thead><tbody>${recs.map(r=>`<tr><td><span class="tid">${r['Donation ID']||'—'}</span></td><td><strong>${r['Item']||'—'}</strong></td><td>${r['Quantity']||0}</td><td><span class="pill ${(r['Status']||'submitted').toLowerCase()}">${r['Status']||'Submitted'}</span></td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Submitted On'])}</td><td style="font-size:0.74rem;color:${(r['Status']||'').toLowerCase()==='collected'?'var(--ac)':'var(--mu)'};font-weight:${(r['Status']||'').toLowerCase()==='collected'?'600':'400'}">${fd(r['Collected On'])||'Pending'}</td><td style="font-size:0.74rem;color:var(--re)">${r['Rejection Comment']||''}</td></tr>`).join()||'<tr><td colspan="7" class="no-data">No donations</td></tr>'}</tbody></table></div></div>`;
 }
 async function lookupR(){
   const q=document.getElementById('hrid').value.trim();if(!q||!LD)return;
@@ -731,7 +755,7 @@ async function lookupR(){
   const reqs=(LD.requests||[]).filter(r=>r['Recipient ID']===rc['Recipient ID']);
   const del=reqs.filter(r=>(r['Status']||'').toLowerCase()==='delivered');
   const units=del.reduce((s,r)=>s+(parseInt(r['Qty Requested'])||0),0);
-  document.getElementById('hrres').innerHTML=`<div class="panel"><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.96rem;margin-bottom:4px">${rc['Recipient Name']} · <span class="tid">${rc['Recipient ID']}</span></div>${rc['Address']?`<div style="font-size:0.77rem;color:var(--mu);margin-bottom:3px">📍 ${rc['Address']}</div>`:''}<div style="font-size:0.77rem;color:var(--mu);margin-bottom:12px">${[rc['Email'],rc['Phone']].filter(Boolean).join(' · ')}</div><div style="display:flex;gap:18px;margin-bottom:12px"><div><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--ac)">${reqs.length}</div><div style="font-size:0.68rem;color:var(--mu);text-transform:uppercase">Requests</div></div><div><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--ac)">${del.length}</div><div style="font-size:0.68rem;color:var(--mu);text-transform:uppercase">Delivered</div></div><div><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--ac)">${units}</div><div style="font-size:0.68rem;color:var(--mu);text-transform:uppercase">Units</div></div></div><div class="tw"><table><thead><tr><th>Request ID</th><th>Date</th><th>Item</th><th>Qty</th><th>Status</th><th>Pending On</th><th>Approved On</th><th>Delivered On</th></tr></thead><tbody>${reqs.map(r=>`<tr><td><span class="tid">${r['Request ID']||'—'}</span></td><td>${fd(r['Request Date'])}</td><td>${r['Item Requested']||'—'}</td><td>${r['Qty Requested']||0}</td><td><span class="pill ${(r['Status']||'pending').toLowerCase().replace(/ /g,'-')}">${r['Status']||'Pending'}</span></td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Pending On'])}</td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Approved On'])}</td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Delivered On'])}</td></tr>`).join()||'<tr><td colspan="8" class="no-data">No requests</td></tr>'}</tbody></table></div></div>`;
+  document.getElementById('hrres').innerHTML=`<div class="panel"><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.96rem;margin-bottom:4px">${rc['Recipient Name']} · <span class="tid">${rc['Recipient ID']}</span></div>${rc['Address']?`<div style="font-size:0.77rem;color:var(--mu);margin-bottom:3px">📍 ${rc['Address']}</div>`:''}<div style="font-size:0.77rem;color:var(--mu);margin-bottom:12px">${[rc['Email'],rc['Phone']].filter(Boolean).join(' · ')}</div><div style="display:flex;gap:18px;margin-bottom:12px"><div><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--ac)">${reqs.length}</div><div style="font-size:0.68rem;color:var(--mu);text-transform:uppercase">Requests</div></div><div><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--ac)">${del.length}</div><div style="font-size:0.68rem;color:var(--mu);text-transform:uppercase">Delivered</div></div><div><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--ac)">${units}</div><div style="font-size:0.68rem;color:var(--mu);text-transform:uppercase">Units</div></div></div><div class="tw"><table><thead><tr><th>Request ID</th><th>Item</th><th>Qty</th><th>Status</th><th>Requested On</th><th>Approved On</th><th>ETA</th><th>Delivered On</th><th>Feedback</th></tr></thead><tbody>${reqs.map(r=>`<tr><td><span class="tid">${r['Request ID']||'—'}</span></td><td><strong>${r['Item Requested']||'—'}</strong></td><td>${r['Qty Requested']||0}</td><td><span class="pill ${(r['Status']||'pending').toLowerCase().replace(/ /g,'-')}">${r['Status']||'Pending'}</span></td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Pending On']||r['Request Date'])}</td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Approved On'])||'—'}</td><td style="font-size:0.74rem;color:var(--bl)">${r['ETA']||'—'}</td><td style="font-size:0.74rem;color:${(r['Status']||'').toLowerCase()==='delivered'?'var(--ac)':'var(--mu)'};font-weight:${(r['Status']||'').toLowerCase()==='delivered'?'600':'400'}">${fd(r['Delivered On'])||'Pending'}</td><td style="font-size:0.74rem;font-style:italic;color:var(--ac)">${r['Feedback']||''}</td></tr>`).join()||'<tr><td colspan="9" class="no-data">No requests</td></tr>'}</tbody></table></div></div>`;
 }
 
 // ── REPORTS ──
@@ -765,7 +789,7 @@ function genRep(){
     const units=col.reduce((s,r)=>s+(parseInt(r['Quantity'])||0),0);
     html=pH(d['Donor Name']||pid,pid,d['Email'],d['Phone'],d['Address'])+
       pS([{v:recs.length,l:'Submissions'},{v:col.length,l:'Collected'},{v:units,l:'Units Donated'}])+
-      pT(['Donation ID','Date','Item','Qty','Status','Submitted On','Collected On'],recs.map(r=>[r['Donation ID']||'—',fd(r['Date']),r['Item']||'—',r['Quantity']||0,r['Status']||'Submitted',fd(r['Submitted On']),fd(r['Collected On'])]));
+      pT(['Donation ID','Item','Qty','Status','Submitted On','Collected On','Rejection Comment'],recs.map(r=>[r['Donation ID']||'—',r['Item']||'—',r['Quantity']||0,r['Status']||'Submitted',fd(r['Submitted On']),fd(r['Collected On'])||'Pending',r['Rejection Comment']||'']));
   }else if(type==='recipient'){
     const rc=rec.find(x=>x['Recipient ID']===pid)||{};
     const reqs=req.filter(r=>r['Recipient ID']===pid);
@@ -773,7 +797,7 @@ function genRep(){
     const units=del.reduce((s,r)=>s+(parseInt(r['Qty Requested'])||0),0);
     html=pH(rc['Recipient Name']||pid,pid,rc['Email'],rc['Phone'],rc['Address'])+
       pS([{v:reqs.length,l:'Requests'},{v:del.length,l:'Delivered'},{v:units,l:'Units Received'}])+
-      pT(['Request ID','Date','Item','Qty','Status','Pending On','Approved On','Delivered On'],reqs.map(r=>[r['Request ID']||'—',fd(r['Request Date']),r['Item Requested']||'—',r['Qty Requested']||0,r['Status']||'Pending',fd(r['Pending On']),fd(r['Approved On']),fd(r['Delivered On'])]));
+      pT(['Request ID','Date','Item','Qty','Status','Requested On','Approved On','ETA','Delivered On','Feedback'],reqs.map(r=>[r['Request ID']||'—',fd(r['Request Date']),r['Item Requested']||'—',r['Qty Requested']||0,r['Status']||'Pending',fd(r['Pending On']||r['Request Date']),fd(r['Approved On'])||'—',r['ETA']||'—',fd(r['Delivered On'])||'Pending',r['Feedback']||'']));
   }else if(type==='all-donors'){
     const dm={};don.forEach(r=>{if(!dm[r['Donor ID']])dm[r['Donor ID']]={tot:0,col:0,units:0};dm[r['Donor ID']].tot++;if((r['Status']||'').toLowerCase()==='collected'){dm[r['Donor ID']].col++;dm[r['Donor ID']].units+=(parseInt(r['Quantity'])||0);}});
     html=pT(['ID','Name','Email','Phone','Address','Submissions','Collected','Units'],donors.map(d=>{const s=dm[d['Donor ID']]||{tot:0,col:0,units:0};return[d['Donor ID'],d['Donor Name']||'—',d['Email']||'—',d['Phone']||'—',d['Address']||'—',s.tot,s.col,s.units];}));
@@ -841,7 +865,8 @@ async function confirmApprove(){
   const note=document.getElementById('appNote').value.trim();
   if(!eta){document.getElementById('appErr').style.display='block';return;}
   closeApprove();
-  await updR(_appRow,'Approved','',eta,note);
+  // note is passed as comment so it's included in the email
+  await updR(_appRow,'Approved',note,eta);
 }
 
 // ── NOTICE BOARD ──
