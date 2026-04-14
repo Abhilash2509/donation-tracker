@@ -583,8 +583,20 @@ function buildRequests(){
   const pending=req.filter(r=>(r['Status']||'').toLowerCase()==='pending');
   const dp=req.filter(r=>(r['Status']||'').toLowerCase()==='delivery pending');
   document.getElementById('pendRC').textContent=pending.length+' pending';
+  // Build inventory balance map for stock check
+  const invMap2={};(LD.inventory||[]).forEach(i=>invMap2[i.item]=i.balance);
   document.getElementById('pendRL').innerHTML=pending.length
-    ?pending.map(r=>{const rc=rm[r['Recipient ID']]||{};const notesI=r['Notes']?`<span class="info-ico">ℹ<span class="tip-bubble">${String(r['Notes']).replace(/</g,'&lt;')}</span></span>`:'';return`<div class="arow"><div class="ainfo"><span class="tid">${r['Request ID']||'—'}</span> &nbsp;<strong>${rc['Recipient Name']||r['Recipient ID']}</strong>${notesI}${rc['Address']?`<br><span style="font-size:0.74rem;color:var(--mu)">📍 ${rc['Address']}</span>`:''}<br><span style="font-size:0.74rem;color:var(--mu)">Item: <strong>${r['Item Requested']}</strong> · Qty: <strong>${r['Qty Requested']}</strong> · ${fd(r['Pending On']||r['Request Date'])}</span></div><div class="abtns"><button class="btn bg bsm" onclick="openApprove(${r._row},''+r['Item Requested']+' ('+r['Qty Requested']+')')">✓ Approve</button><button class="btn br bsm" onclick="openReject('req',${r._row},''+r['Item Requested']+' ('+r['Qty Requested']+')')">✗ Reject</button></div></div>`;}).join('')
+    ?pending.map(r=>{
+      const rc=rm[r['Recipient ID']]||{};
+      const notesI=r['Notes']?`<span class="info-ico">ℹ<span class="tip-bubble">${String(r['Notes']).replace(/</g,'&lt;')}</span></span>`:'';
+      const bal=invMap2[r['Item Requested']]??null;
+      const outOfStock=bal!==null&&bal<1;
+      const stockWarn=outOfStock?`<span style="font-size:0.72rem;color:var(--re);font-weight:600;margin-left:6px">⚠ Out of stock — stock item before approving</span>`:'';
+      const appBtn=outOfStock
+        ?`<button class="btn bsm" style="background:#e0e0e0;color:#888;cursor:not-allowed" disabled title="Item is out of stock. Add donations first.">✓ Approve</button>`
+        :`<button class="btn bg bsm" onclick="openApprove(${r._row},''+r['Item Requested']+' ('+r['Qty Requested']+')')">✓ Approve</button>`;
+      return`<div class="arow"><div class="ainfo"><span class="tid">${r['Request ID']||'—'}</span> &nbsp;<strong>${rc['Recipient Name']||r['Recipient ID']}</strong>${notesI}${stockWarn}${rc['Address']?`<br><span style="font-size:0.74rem;color:var(--mu)">📍 ${rc['Address']}</span>`:''}<br><span style="font-size:0.74rem;color:var(--mu)">Item: <strong>${r['Item Requested']}</strong> · Qty: <strong>${r['Qty Requested']}</strong> · ${fd(r['Pending On']||r['Request Date'])}</span></div><div class="abtns">${appBtn}<button class="btn br bsm" onclick="openReject('req',${r._row},''+r['Item Requested']+' ('+r['Qty Requested']+')')">✗ Reject</button></div></div>`;
+    }).join('')
     :'<div class="no-data">🎉 No pending requests</div>';
   document.getElementById('dpC').textContent=dp.length+' to deliver';
   document.getElementById('dpL').innerHTML=dp.length
@@ -594,7 +606,13 @@ function buildRequests(){
   document.getElementById('allRB2').innerHTML=req.map(r=>{
     const s=(r['Status']||'pending').toLowerCase().replace(/ /g,'-');
     let nxt='';
-    if(s==='pending')nxt=`<button class="btn bg bsm" onclick="updR(${r._row},'Approved')">Approve</button> <button class="btn br bsm" onclick="openReject('req',${r._row},''+r['Item Requested']+' ('+r['Qty Requested']+')')">Reject</button>`;
+    if(s==='pending'){
+      const bal2=invMap2[r['Item Requested']]??null;
+      const oos=bal2!==null&&bal2<1;
+      const ab=oos?`<button class="btn bsm" style="background:#e0e0e0;color:#aaa;cursor:not-allowed" disabled title="Out of stock">Approve</button>`
+        :`<button class="btn bg bsm" onclick="openApprove(${r._row},''+r['Item Requested']+' ('+r['Qty Requested']+')')">Approve</button>`;
+      nxt=ab+` <button class="btn br bsm" onclick="openReject('req',${r._row},''+r['Item Requested']+' ('+r['Qty Requested']+')')">Reject</button>`;
+    }
     else if(s==='approved')nxt=`<button class="btn bbl bsm" onclick="updR(${r._row},'Delivery Pending')">→ Delivery Pending</button>`;
     else if(s==='delivery-pending')nxt=`<button class="btn bg bsm" onclick="updR(${r._row},'Delivered')">Mark Delivered</button>`;
     else nxt=`<span style="font-size:0.75rem;color:var(--mu)">${r['Status']}</span>`;
@@ -775,12 +793,21 @@ function genRep(){
   }
   document.getElementById('repBody').innerHTML=html;
   document.getElementById('repContent').style.display='block';
-  document.getElementById('pA').innerHTML=`<div class="ph2">🛒 Grocery Donation Tracker &nbsp;·&nbsp; ${tlabels[type]||'Report'}</div><div class="pm">Generated: ${now}</div>${html}<div class="pf">Grocery Donation Tracker · Admin Report · ${now}</div>`;
+  // Prep print area
+  const pa=document.getElementById('pA');
+  if(pa) pa.innerHTML=`<div class="ph2">🛒 Grocery Donation Tracker &nbsp;·&nbsp; ${tlabels[type]||'Report'}</div><div class="pm">Generated: ${now}</div>${html}<div class="pf">Grocery Donation Tracker · Admin Report · ${now}</div>`;
 }
 function pH(name,id,email,phone,address){return`<div style="margin-bottom:12px"><strong style="font-size:1rem">${name}</strong> · <code style="font-size:0.82rem">${id}</code>${address?`<br><small style="color:var(--mu)">📍 ${address}</small>`:''}${(email||phone)?`<br><small style="color:var(--mu)">${[email,phone].filter(Boolean).join(' · ')}</small>`:''}</div>`;}
 function pS(items){return`<div class="rstat-row">${items.map(i=>`<div class="rstat"><div class="rstat-val">${i.v}</div><div class="rstat-lbl">${i.l}</div></div>`).join('')}</div>`;}
 function pT(headers,rows){return`<div class="tw"><table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join(''):'<tr><td colspan="'+headers.length+'" class="no-data">No data</td></tr>'}</tbody></table></div>`;}
-function printRep(){if(!document.getElementById('repBody').innerHTML){sa('Generate a report first.','amber');return;}window.print();}
+function printRep(){
+  const rb=document.getElementById('repBody');
+  if(!rb||!rb.innerHTML.trim()){sa('Please select a report type and generate it first.','amber');return;}
+  const pa=document.getElementById('pA');
+  if(pa)pa.style.display='block';
+  window.print();
+  if(pa)pa.style.display='none';
+}
 
 // ── MASTERS ──
 function buildMasters(){
