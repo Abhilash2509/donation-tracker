@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin · Grocery Donation Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+:root{--bg:#f4f1eb;--s:#fff;--b:#e2ddd4;--ac:#2d5a27;--al:#eaf3e8;--am:#c07c2e;--aml:#fdf3e3;--re:#b83232;--rl:#fdeaea;--bl:#1f5f8b;--bll:#e5f0f8;--tx:#1c1c1c;--mu:#888078;--ra:14px;--sh:0 2px 14px rgba(0,0,0,0.07)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+#LS{position:fixed;inset:0;background:linear-gradient(135deg,#1a3d16,var(--ac));display:flex;align-items:center;justify-content:center;z-index:9999}
+.lb{background:white;border-radius:20px;padding:38px;max-width:370px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center}
+.li{font-size:2.8rem;margin-bottom:14px}.lt{font-family:'Syne',sans-serif;font-size:1.45rem;font-weight:800;color:var(--ac);margin-bottom:5px}
+.ls{font-size:0.84rem;color:var(--mu);margin-bottom:22px}
+.lin{width:100%;padding:12px 15px;border:2px solid var(--b);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:1rem;text-align:center;letter-spacing:0.1em;outline:none;transition:border-color .15s;margin-bottom:11px}
+.lin:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--al)}
+.lbtn{width:100%;padding:12px;background:var(--ac);color:white;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.93rem;font-weight:700;cursor:pointer}
+.lbtn:hover{background:#1d3e19}
+.lerr{color:var(--re);font-size:0.82rem;margin-top:9px;display:none}
+.lhint{font-size:0.72rem;color:var(--mu);margin-top:14px;line-height:1.65;background:var(--bg);border-radius:8px;padding:10px 12px;text-align:left;word-break:break-all}
+#AS{display:none}
+nav{background:#1c1c1c;padding:12px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,0.3)}
+.brand{font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:white;display:flex;align-items:center;gap:8px}
+.bdg{background:var(--ac);color:white;font-size:0.62rem;padding:2px 7px;border-radius:999px;font-weight:600;letter-spacing:0.05em}
+.ntabs{display:flex;gap:5px;flex-wrap:wrap}
+.ntab{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.13);color:rgba(255,255,255,0.65);padding:5px 13px;border-radius:999px;font-size:0.77rem;font-weight:500;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.ntab:hover,.ntab.on{background:var(--ac);border-color:var(--ac);color:white}
+.nr{display:flex;align-items:center;gap:9px}
+.sc{font-size:0.71rem;color:rgba(255,255,255,0.5);display:flex;align-items:center;gap:5px;cursor:pointer}
+.sd{width:7px;height:7px;border-radius:50%;background:#aaa;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.blo{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.13);color:rgba(255,255,255,0.55);padding:4px 11px;border-radius:7px;font-size:0.74rem;cursor:pointer;font-family:'DM Sans',sans-serif}
+.blo:hover{border-color:var(--re);color:var(--re)}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:500;align-items:center;justify-content:center}
+.modal{background:#fff;border-radius:16px;padding:26px;max-width:500px;width:91%;box-shadow:0 12px 40px rgba(0,0,0,0.2)}
+.mhdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.mttl{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:700}
+.mcls{background:none;border:none;font-size:1.2rem;cursor:pointer;color:#888}
+.main{max-width:1280px;margin:0 auto;padding:26px}
+.pg{display:none}.pg.on{display:block}
+@media(max-width:860px){.main{padding:14px}}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:13px;margin-bottom:22px}
+.sc2{background:var(--s);border:1px solid var(--b);border-radius:var(--ra);padding:17px;box-shadow:var(--sh);position:relative;overflow:hidden;transition:transform .18s}
+.sc2:hover{transform:translateY(-2px)}
+.sc2::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.sc2.g::before{background:var(--ac)}.sc2.o::before{background:var(--am)}.sc2.bl::before{background:var(--bl)}.sc2.r::before{background:var(--re)}
+.sc-ico{font-size:1.2rem;margin-bottom:7px}.sc-lbl{font-size:0.69rem;color:var(--mu);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px}
+.sc-val{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;line-height:1}
+.sc2.g .sc-val{color:var(--ac)}.sc2.o .sc-val{color:var(--am)}.sc2.bl .sc-val{color:var(--bl)}.sc2.r .sc-val{color:var(--re)}
+.sc-sub{font-size:0.71rem;color:var(--mu);margin-top:3px}
+.row{display:grid;gap:16px;margin-bottom:16px}.row.c2{grid-template-columns:1fr 1.35fr}
+@media(max-width:800px){.row.c2{grid-template-columns:1fr}}
+.panel{background:var(--s);border:1px solid var(--b);border-radius:var(--ra);padding:20px;box-shadow:var(--sh);margin-bottom:16px}
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+.pt{font-family:'Syne',sans-serif;font-size:0.92rem;font-weight:700;display:flex;align-items:center;gap:6px}
+.pc{font-size:0.7rem;background:var(--bg);border:1px solid var(--b);border-radius:999px;padding:2px 9px;color:var(--mu)}
+.chart-wrap{position:relative;height:190px}
+.inv-item{margin-bottom:13px}.inv-item:last-child{margin-bottom:0}
+.inv-top{display:flex;justify-content:space-between;margin-bottom:5px;align-items:baseline}
+.inv-name{font-size:0.85rem;font-weight:600}.inv-nums{font-size:0.72rem;color:var(--mu)}
+.bar-track{height:7px;background:var(--bg);border-radius:4px;overflow:hidden;border:1px solid var(--b)}
+.bar-fill{height:100%;border-radius:4px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+.low-stock{color:var(--re);font-size:0.68rem;font-weight:600;margin-left:5px}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:0.82rem}
+th{text-align:left;font-size:0.67rem;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:0.07em;padding:0 7px 9px 0;border-bottom:1px solid var(--b);white-space:nowrap}
+td{padding:9px 7px 9px 0;border-bottom:1px solid var(--bg);vertical-align:middle}
+tr:last-child td{border-bottom:none}tbody tr:hover td{background:var(--bg)}
+.pill{display:inline-block;font-size:0.64rem;font-weight:600;padding:3px 8px;border-radius:999px;text-transform:uppercase}
+.pill.submitted,.pill.pending{background:var(--aml);color:var(--am)}
+.pill.collected,.pill.approved,.pill.delivered{background:var(--al);color:var(--ac)}
+.pill.delivery-pending{background:var(--bll);color:var(--bl)}
+.pill.rejected{background:var(--rl);color:var(--re)}
+.ava{display:inline-flex;width:24px;height:24px;border-radius:50%;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;margin-right:5px;vertical-align:middle;flex-shrink:0}
+.av0{background:var(--al);color:var(--ac)}.av1{background:var(--aml);color:var(--am)}.av2{background:var(--bll);color:var(--bl)}.av3{background:var(--rl);color:var(--re)}
+.tid{font-family:monospace;font-size:0.75rem;color:var(--mu);background:var(--bg);border:1px solid var(--b);border-radius:5px;padding:1px 6px}
+input,select,textarea{padding:9px 12px;border:1px solid var(--b);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--bg);color:var(--tx);outline:none;transition:border-color .15s;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--al)}
+label{font-size:0.72rem;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:0.05em}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.84rem;font-weight:600;cursor:pointer;transition:all .18s}
+.bg{background:var(--ac);color:white}.bg:hover{background:#1d3e19}
+.ba{background:var(--am);color:white}.ba:hover{background:#9a621f}
+.bbl{background:var(--bl);color:white}.bbl:hover{background:#174a6e}
+.br{background:var(--rl);color:var(--re);border:1px solid #f5c0c0}.br:hover{background:#fad4d4}
+.bdk{background:#1c1c1c;color:white}.bdk:hover{background:#333}
+.bsm{padding:5px 11px;font-size:0.76rem;border-radius:7px}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.arow{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--bg);flex-wrap:wrap}
+.arow:last-child{border-bottom:none}
+.ainfo{font-size:0.83rem;line-height:1.65;flex:1}
+.abtns{display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap}
+.item-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:16px}
+.item-card{background:var(--bg);border:1px solid var(--b);border-radius:10px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.item-name{font-size:0.86rem;font-weight:600}.item-cat{font-size:0.7rem;color:var(--mu)}
+.add-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.add-row input{flex:1;min-width:150px}
+.htabs{display:flex;gap:7px;margin-bottom:16px;flex-wrap:wrap}
+.htab{padding:6px 16px;border-radius:999px;border:1px solid var(--b);background:transparent;color:var(--mu);font-size:0.81rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.htab.on{background:var(--ac);border-color:var(--ac);color:white;font-weight:600}
+.taw{position:relative}
+.tal{position:absolute;top:calc(100% + 2px);left:0;right:0;background:white;border:1px solid var(--b);border-radius:9px;box-shadow:0 4px 18px rgba(0,0,0,0.1);z-index:300;max-height:220px;overflow-y:auto;display:none}
+.tai{padding:9px 12px;cursor:pointer;font-size:0.83rem;border-bottom:1px solid var(--bg);display:flex;align-items:center;gap:8px}
+.tai:last-child{border-bottom:none}.tai:hover{background:var(--al)}
+.tai-id{font-family:monospace;font-size:0.75rem;color:var(--mu)}
+.tai-name{font-size:0.82rem}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:580px;margin-bottom:18px}
+@media(max-width:560px){.g2{grid-template-columns:1fr}}
+.rstat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin-bottom:14px}
+.rstat{background:var(--bg);border:1px solid var(--b);border-radius:10px;padding:12px;text-align:center}
+.rstat-val{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--ac)}
+.rstat-lbl{font-size:0.68rem;color:var(--mu);text-transform:uppercase;margin-top:2px}
+.no-data{color:var(--mu);font-size:0.82rem;text-align:center;padding:18px 0}
+.tip{padding:12px 16px;background:var(--aml);border:1px solid #e8c87a;border-radius:9px;font-size:0.8rem;color:#7a5010;line-height:1.6;margin-top:14px}
+.sp{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.alert{position:fixed;top:18px;right:18px;padding:11px 18px;border-radius:var(--ra);font-size:0.82rem;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,0.2);z-index:9998;transform:translateX(140%);transition:transform .3s ease;max-width:300px}
+.alert.show{transform:translateX(0)}.alert.green{background:var(--ac);color:white}.alert.red{background:var(--re);color:white}.alert.amber{background:var(--am);color:white}
+.sm-msg{margin-top:11px;font-size:0.8rem;display:none;padding:8px 12px;border-radius:7px}
+
+
+/* RESOLVE CUSTOM REQUEST MODAL */
+.res-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:600;align-items:center;justify-content:center}
+.res-box{background:#fff;border-radius:14px;padding:26px;max-width:460px;width:92%;box-shadow:0 12px 40px rgba(0,0,0,0.22)}
+.res-ttl{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:4px}
+.res-sub{font-size:0.81rem;color:var(--mu);margin-bottom:14px;line-height:1.5}
+.res-ta{width:100%;padding:10px 12px;border:1.5px solid var(--b);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.85rem;resize:vertical;min-height:75px;outline:none;transition:border-color .15s;background:var(--bg);color:var(--tx)}
+.res-ta:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--al)}
+.res-actions{display:flex;gap:9px;margin-top:14px;flex-wrap:wrap}
+/* REJECT MODAL */
+.rej-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:600;align-items:center;justify-content:center}
+.rej-box{background:#fff;border-radius:14px;padding:26px;max-width:440px;width:92%;box-shadow:0 12px 40px rgba(0,0,0,0.22)}
+.rej-ttl{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:4px;color:var(--re)}
+.rej-sub{font-size:0.81rem;color:var(--mu);margin-bottom:14px;line-height:1.5}
+.rej-ta{width:100%;padding:10px 12px;border:1.5px solid var(--b);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.85rem;resize:vertical;min-height:80px;outline:none;transition:border-color .15s;background:var(--bg);color:var(--tx)}
+.rej-ta:focus{border-color:var(--re);box-shadow:0 0 0 3px var(--rl)}
+.rej-actions{display:flex;gap:9px;margin-top:14px;flex-wrap:wrap}
+/* NOTES TOOLTIP */
+.info-ico{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--bl);color:white;font-size:0.65rem;font-weight:700;cursor:help;position:relative;flex-shrink:0;vertical-align:middle;margin-left:4px}
+.info-ico .tip-bubble{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1c1c1c;color:white;font-size:0.75rem;font-weight:400;padding:7px 10px;border-radius:8px;white-space:pre-wrap;min-width:160px;max-width:260px;z-index:400;line-height:1.5;text-align:left;font-family:'DM Sans',sans-serif}
+.info-ico:hover .tip-bubble{display:block}
+footer{text-align:center;color:var(--mu);font-size:0.7rem;padding:14px;border-top:1px solid var(--b);margin-top:8px}
+@media print{
+  body *{visibility:hidden}
+  #pA,#pA *{visibility:visible}
+  #pA{position:fixed;inset:0;background:white;padding:30px;font-family:'DM Sans',sans-serif;color:#1c1c1c;font-size:0.84rem}
+  .ph2{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:#2d5a27;border-bottom:2px solid #2d5a27;padding-bottom:12px;margin-bottom:16px}
+  .pm{font-size:0.77rem;color:#888;margin-bottom:18px}
+  table{width:100%;border-collapse:collapse;font-size:0.77rem}
+  th{background:#eaf3e8;color:#2d5a27;padding:6px 8px;font-weight:700;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.05em;text-align:left}
+  td{padding:7px 8px;border-bottom:1px solid #f0ede6}
+  .pf{margin-top:20px;font-size:0.7rem;color:#aaa;text-align:center;border-top:1px solid #e2ddd4;padding-top:10px}
+  nav,#LS,.alert,.overlay,footer,button{display:none!important}
+}
+</style>
+</head>
+<body>
+<div id="LS">
+  <div class="lb">
+    <div class="li">🔐</div>
+    <div class="lt">Admin Access</div>
+    <div class="ls">Grocery Donation Tracker · Admin Portal</div>
+    <input type="password" class="lin" id="pin" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')chk()"/>
+    <button class="lbtn" onclick="chk()">Unlock Dashboard →</button>
+    <div class="lerr" id="lerr">❌ Incorrect password. Please try again.</div>
+    <div class="lhint"><strong>To change password</strong>, run in browser console (F12):<br>
+    <code style="font-size:0.67rem">crypto.subtle.digest('SHA-256',new TextEncoder().encode('YourNewPass')).then(b=>console.log([...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')))</code><br>
+    Replace ADMIN_HASH in this file.</div>
+  </div>
+</div>
+<div class="overlay" id="sOv">
+  <div class="modal">
+    <div class="mhdr"><div class="mttl">⚙️ Google Sheet Connection</div><button class="mcls" onclick="cS()">✕</button></div>
+    <p style="font-size:0.82rem;color:#888;margin-bottom:14px;line-height:1.6">Paste your Google Apps Script Web App URL. All portals share this URL.</p>
+    <div style="margin-bottom:13px"><label style="display:block;margin-bottom:5px">Web App URL</label><input type="text" id="sui" placeholder="https://script.google.com/macros/s/…/exec"/></div>
+    <div style="display:flex;gap:9px;flex-wrap:wrap">
+      <button onclick="saveSU()" class="btn bg">Connect →</button>
+      <button onclick="discSU()" class="btn br bsm" style="padding:8px 14px">Disconnect</button>
+      <button onclick="cS()" style="background:var(--bg);color:#888;border:1px solid var(--b);padding:8px 14px;border-radius:9px;font-size:0.84rem;cursor:pointer;font-family:inherit;margin-left:auto">Cancel</button>
+    </div>
+    <div id="sm" class="sm-msg"></div>
+  </div>
+</div>
+<div id="pA" style="display:none"></div>
+
+<!-- RESOLVE CUSTOM REQUEST MODAL -->
+<div class="res-overlay" id="resOverlay">
+  <div class="res-box">
+    <div class="res-ttl" id="resTtl">Resolve Custom Request</div>
+    <div class="res-sub" id="resSub"></div>
+    <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px">Admin Note <small style="text-transform:none;font-weight:400;font-size:0.72rem">(will be emailed to recipient)</small></label>
+    <textarea class="res-ta" id="resNote" placeholder="Add a note for the recipient…"></textarea>
+    <div id="resErr" style="color:var(--re);font-size:0.79rem;margin-top:6px;display:none">Please enter a note before resolving.</div>
+    <div class="res-actions">
+      <button class="btn bg" id="resFulfilBtn" onclick="confirmCustom('Fulfilled')">✅ Mark Fulfilled</button>
+      <button class="btn br" id="resNaBtn" onclick="confirmCustom('Not Available')">❌ Not Available</button>
+      <button onclick="closeResolve()" style="background:var(--bg);color:var(--mu);border:1px solid var(--b);padding:8px 16px;border-radius:9px;font-size:0.84rem;cursor:pointer;font-family:inherit">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- APPROVE WITH ETA MODAL -->
+<div class="rej-overlay" id="appOverlay">
+  <div class="rej-box">
+    <div class="rej-ttl" style="color:var(--ac)">✅ Approve Request</div>
+    <div class="rej-sub" id="appSub"></div>
+    <div style="margin-bottom:10px">
+      <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px">Estimated Delivery Date/Time *</label>
+      <input type="text" id="appEta" placeholder="e.g. Wednesday 14 Jan, 3–5pm" style="padding:10px 12px;border:1.5px solid var(--b);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--bg);color:var(--tx);outline:none;width:100%;transition:border-color .15s"/>
+    </div>
+    <div style="margin-bottom:4px">
+      <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--mu);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px">Note to Recipient (optional)</label>
+      <textarea class="rej-ta" id="appNote" placeholder="Any additional instructions or information for the recipient…" style="min-height:60px"></textarea>
+    </div>
+    <div id="appErr" style="color:var(--re);font-size:0.79rem;margin-top:6px;display:none">Please enter an estimated delivery date/time.</div>
+    <div class="rej-actions">
+      <button class="btn bg" onclick="confirmApprove()">✅ Approve &amp; Notify Recipient</button>
+      <button onclick="closeApprove()" style="background:var(--bg);color:var(--mu);border:1px solid var(--b);padding:8px 16px;border-radius:9px;font-size:0.84rem;cursor:pointer;font-family:inherit">Cancel</button>
+    </div>
+  </div>
+</div>
+<!-- REJECT MODAL -->
+<div class="rej-overlay" id="rejOverlay">
+  <div class="rej-box">
+    <div class="rej-ttl">❌ Reject — Comment Required</div>
+    <div class="rej-sub" id="rejSub">Please provide a reason for rejection. This will be emailed to the donor/recipient.</div>
+    <textarea class="rej-ta" id="rejComment" placeholder="Enter rejection reason…"></textarea>
+    <div id="rejErr" style="color:var(--re);font-size:0.79rem;margin-top:6px;display:none">Please enter a rejection comment before confirming.</div>
+    <div class="rej-actions">
+      <button class="btn br" id="rejConfirmBtn" onclick="confirmReject()">Confirm Rejection</button>
+      <button onclick="closeReject()" style="background:var(--bg);color:var(--mu);border:1px solid var(--b);padding:8px 16px;border-radius:9px;font-size:0.84rem;cursor:pointer;font-family:inherit">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="AS">
+<nav>
+  <div class="brand">🛒 Grocery Donation Tracker <span class="bdg">ADMIN</span></div>
+  <div class="ntabs">
+    <button class="ntab on" onclick="go('dashboard',this)">📊 Dashboard</button>
+    <button class="ntab" onclick="go('collections',this)">📦 Collections</button>
+    <button class="ntab" onclick="go('requests',this)">✅ Requests</button>
+    <button class="ntab" onclick="go('items',this)">🗂 Items</button>
+    <button class="ntab" onclick="go('custom',this)">🔍 Custom Requests</button>
+    <button class="ntab" onclick="go('notices',this)">📌 Notices</button>
+    <button class="ntab" onclick="go('history',this)">🕓 History</button>
+    <button class="ntab" onclick="go('reports',this)">📄 Reports</button>
+    <button class="ntab" onclick="go('masters',this)">👥 Masters</button>
+  </div>
+  <div class="nr">
+    <div class="sc" onclick="oS()"><div class="sd" id="sd" style="background:#aaa"></div><span id="sl">Not connected</span></div>
+    <button onclick="oS()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.13);color:rgba(255,255,255,0.55);padding:5px 11px;border-radius:7px;font-size:0.74rem;cursor:pointer;font-family:inherit">⚙ Settings</button>
+    <button class="blo" onclick="logout()">Sign Out</button>
+  </div>
+</nav>
+<div class="alert" id="alert"></div>
+<div class="main">
+
+<!-- DASHBOARD -->
+<div class="pg on" id="pg-dashboard">
+  <div class="stats" id="statsRow"><div class="no-data" style="grid-column:1/-1">Click ⚙ Settings to connect your Google Sheet →</div></div>
+  <div class="row c2">
+    <div class="panel"><div class="ph"><div class="pt">🥫 Donations by Item</div></div><div class="chart-wrap"><canvas id="pie"></canvas></div></div>
+    <div class="panel"><div class="ph"><div class="pt">📦 Live Inventory</div></div><div id="invBars"><div class="no-data">—</div></div></div>
+  </div>
+
+</div>
+
+<!-- COLLECTIONS -->
+<div class="pg" id="pg-collections">
+  <div class="panel" style="margin-bottom:16px">
+    <div class="ph"><div class="pt">📬 Submitted — Awaiting Collection</div><div class="pc" id="subCnt">—</div></div>
+    <div id="subList"><div class="no-data">No pending collections</div></div>
+  </div>
+  <div class="panel">
+    <div class="ph"><div class="pt">✅ All Donations</div><div class="pc" id="allDC">—</div></div>
+    <div class="tw"><table><thead><tr><th>Donation ID</th><th>Date</th><th>Donor ID</th><th>Item</th><th>Qty</th><th>Status</th><th>Submitted On</th><th>Collected On</th><th>Notes</th><th>Action</th></tr></thead><tbody id="allDB2"></tbody></table></div>
+  </div>
+  <div class="tip">💡 Once you've physically collected the donation, click <strong>Mark Collected</strong>. This updates inventory and sends an email notification to the donor.</div>
+</div>
+
+<!-- REQUESTS -->
+<div class="pg" id="pg-requests">
+  <div class="panel" style="margin-bottom:16px">
+    <div class="ph"><div class="pt">⏳ Pending Approval</div><div class="pc" id="pendRC">—</div></div>
+    <div id="pendRL"><div class="no-data">No pending requests</div></div>
+  </div>
+  <div class="panel" style="margin-bottom:16px">
+    <div class="ph"><div class="pt">🚚 Approved — Delivery Pending</div><div class="pc" id="dpC">—</div></div>
+    <div id="dpL"><div class="no-data">None</div></div>
+  </div>
+  <div class="panel">
+    <div class="ph"><div class="pt">📋 All Requests</div><div class="pc" id="allRC">—</div></div>
+    <div class="tw"><table><thead><tr><th>Request ID</th><th>Date</th><th>Recipient ID</th><th>Item</th><th>Qty</th><th>Status</th><th>Pending On</th><th>Approved On</th><th>Delivered On</th><th>Next Action</th></tr></thead><tbody id="allRB2"></tbody></table></div>
+  </div>
+  <div class="tip">💡 <strong>Workflow:</strong> Pending → Approve → Delivery Pending → Mark Delivered. Email sent at each stage.</div>
+</div>
+
+<!-- ITEMS -->
+<div class="pg" id="pg-items">
+  <div class="panel">
+    <div class="ph"><div class="pt">🗂 Item Master List <span style="font-size:0.71rem;color:var(--mu);font-weight:400">(donors &amp; recipients see only this list)</span></div><div class="pc" id="itemCnt">—</div></div>
+    <div class="add-row">
+      <input type="text" id="newItem" placeholder="Item name e.g. Rice 10kg"/>
+      <input type="text" id="newCat" placeholder="Category e.g. Grains" style="max-width:180px"/>
+      <button class="btn bg" onclick="addItem()">+ Add Item</button>
+    </div>
+    <div id="itemGrid" class="item-grid"><div class="no-data">No items yet</div></div>
+  </div>
+  <div class="tip">💡 Deleting an item marks it inactive — existing donation records are preserved. Donors and recipients will no longer see deleted items.</div>
+</div>
+
+
+<!-- CUSTOM REQUESTS -->
+<div class="pg" id="pg-custom">
+  <div class="panel" style="margin-bottom:16px">
+    <div class="ph">
+      <div class="pt">🔍 Custom Item Requests — Pending</div>
+      <div class="pc" id="custPendCnt">—</div>
+    </div>
+    <p style="font-size:0.82rem;color:var(--mu);margin-bottom:14px;line-height:1.6">Recipients have requested items not in your list. Fulfil by adding the item to Item Master, or mark as Not Available with a note — recipient will be emailed automatically.</p>
+    <div id="custPendList"><div class="no-data">No pending custom requests</div></div>
+  </div>
+  <div class="panel">
+    <div class="ph">
+      <div class="pt">📋 All Custom Requests</div>
+      <div class="pc" id="custAllCnt">—</div>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Custom ID</th><th>Date</th><th>Recipient ID</th><th>Item Requested</th><th>Notes</th><th>Status</th><th>Admin Note</th><th>Resolved On</th></tr></thead>
+        <tbody id="custAllBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div class="pg" id="pg-history">
+  <div class="htabs">
+    <button class="htab on" onclick="sHT('donors')">🧑 Donors</button>
+    <button class="htab" onclick="sHT('recipients')">🤲 Recipients</button>
+    <button class="htab" onclick="sHT('all')">📋 Full Log</button>
+  </div>
+  <div id="ht-donors">
+    <div style="margin-bottom:14px">
+      <label style="display:block;margin-bottom:5px">Search by Donor ID or Name</label>
+      <div class="taw">
+        <input type="text" id="hdid" placeholder="Type Donor ID or name…" autocomplete="off" oninput="tfAdmin('hdid','donors')"/>
+        <div class="tal" id="ta-hdid"></div>
+      </div>
+    </div>
+    <div id="hdres"></div>
+    <div class="panel" style="margin-top:14px">
+      <div class="ph"><div class="pt">All Donors</div></div>
+      <div class="tw"><table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Address</th><th>Donations</th><th>Collected</th><th>Units</th></tr></thead><tbody id="allDB3"></tbody></table></div>
+    </div>
+  </div>
+  <div id="ht-recipients" style="display:none">
+    <div style="margin-bottom:14px">
+      <label style="display:block;margin-bottom:5px">Search by Recipient ID or Name</label>
+      <div class="taw">
+        <input type="text" id="hrid" placeholder="Type Recipient ID or name…" autocomplete="off" oninput="tfAdmin('hrid','recipients')"/>
+        <div class="tal" id="ta-hrid"></div>
+      </div>
+    </div>
+    <div id="hrres"></div>
+    <div class="panel" style="margin-top:14px">
+      <div class="ph"><div class="pt">All Recipients</div></div>
+      <div class="tw"><table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Address</th><th>Requests</th><th>Delivered</th><th>Units</th></tr></thead><tbody id="allRB3"></tbody></table></div>
+    </div>
+  </div>
+  <div id="ht-all" style="display:none">
+    <input type="text" id="actS" placeholder="Search activity log…" oninput="filtAct()" style="margin-bottom:13px;padding:9px 12px;border:1px solid var(--b);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--bg);color:var(--tx);outline:none;width:100%"/>
+    <div class="panel">
+      <div class="ph"><div class="pt">📋 Full Activity Log</div><div class="pc" id="logCnt">—</div></div>
+      <div class="tw"><table><thead><tr><th>Timestamp</th><th>Type</th><th>Transaction ID</th><th>Person ID</th><th>Item</th><th>Qty</th><th>Status</th></tr></thead><tbody id="logBody"></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- NOTICE BOARD -->
+<div class="pg" id="pg-notices">
+  <div class="panel">
+    <div class="ph"><div class="pt">📌 Notice Board <span style="font-size:0.72rem;font-weight:400;color:var(--mu)">— visible to all recipients &amp; public dashboard</span></div></div>
+    <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
+      <textarea id="newNotice" placeholder="Type an announcement, upcoming event, or important message for recipients…" style="flex:1;min-width:200px;min-height:70px;padding:9px 12px;border:1px solid var(--b);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--bg);color:var(--tx);outline:none;resize:vertical"></textarea>
+      <button class="btn bg" onclick="postNotice()" style="align-self:flex-end;white-space:nowrap">📌 Post Notice</button>
+    </div>
+    <div id="noticeList"><div class="no-data">No notices yet</div></div>
+  </div>
+  <div class="tip">💡 Notices appear on the public dashboard and on the recipient portal. Use this to announce upcoming drives, collection dates, or important updates.</div>
+</div>
+
+<!-- REPORTS -->
+<div class="pg" id="pg-reports">
+  <div class="panel">
+    <div class="ph"><div class="pt">📄 Generate PDF Report</div></div>
+    <div class="g2">
+      <div><label style="display:block;margin-bottom:5px">Report Type</label>
+        <select id="rtype" onchange="onRT()">
+          <option value="">— Select type —</option>
+          <option value="donor">Individual Donor</option>
+          <option value="recipient">Individual Recipient</option>
+          <option value="all-donors">All Donors Summary</option>
+          <option value="all-recipients">All Recipients Summary</option>
+          <option value="inventory">Inventory Status</option>
+          <option value="collections">Collection Queue</option>
+          <option value="full">Full Activity Log</option>
+        </select>
+      </div>
+      <div id="pWrap" style="display:none">
+        <label id="pLbl" style="display:block;margin-bottom:5px">Select Person</label>
+        <select id="pSel" onchange="genRep()"></select>
+      </div>
+    </div>
+    <div id="repContent" style="display:none">
+      <div id="repBody" style="margin-bottom:14px"></div>
+      <button class="btn bdk" onclick="printRep()">🖨 Download as PDF</button>
+      <span style="font-size:0.77rem;color:var(--mu);margin-left:10px">Browser print → Save as PDF</span>
+    </div>
+  </div>
+</div>
+
+<!-- MASTERS -->
+<div class="pg" id="pg-masters">
+  <div class="panel" style="margin-bottom:16px">
+    <div class="ph"><div class="pt">🧑‍🤝‍🧑 Donor Master List</div><div class="pc" id="dmC">—</div></div>
+    <div class="tw"><table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Address</th><th>Registered</th><th>Donations</th><th>Collected</th><th>Units</th></tr></thead><tbody id="dmB"></tbody></table></div>
+  </div>
+  <div class="panel">
+    <div class="ph"><div class="pt">🙋 Recipient Master List</div><div class="pc" id="rmC">—</div></div>
+    <div class="tw"><table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Address</th><th>Registered</th><th>Requests</th><th>Delivered</th><th>Units</th></tr></thead><tbody id="rmB"></tbody></table></div>
+  </div>
+</div>
+
+</div>
+<footer>Admin Portal · Grocery Donation Tracker 🔐</footer>
+</div>
+
+<script>
+// ── PASSWORD HASH (default: Admin@Grocery2025) ──
+const ADMIN_HASH='daa45e577d68b1d2e63bf2068f448c8f10bc6f6c4dee90efefdb5c9c07e46346';
+let SU=localStorage.getItem('donationScriptUrl')||'';
+let LD=null,PC=null,hTab='donors';
+const PAL=['#2d5a27','#c07c2e','#1f5f8b','#b83232','#6c3483','#117a65'];
+
+// ── AUTH ──
+async function chk(){
+  const p=document.getElementById('pin').value;if(!p)return;
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(p));
+  const h=[...new Uint8Array(buf)].map(x=>x.toString(16).padStart(2,'0')).join('');
+  if(h===ADMIN_HASH){
+    document.getElementById('LS').style.display='none';
+    document.getElementById('AS').style.display='block';
+    sessionStorage.setItem('adm','1');
+    if(SU)loadData();else oS();
+  }else{
+    document.getElementById('lerr').style.display='block';
+    document.getElementById('pin').value='';
+    setTimeout(()=>document.getElementById('lerr').style.display='none',3000);
+  }
+}
+document.getElementById('pin').addEventListener('keydown',e=>{if(e.key==='Enter')chk();});
+function logout(){sessionStorage.removeItem('adm');document.getElementById('LS').style.display='flex';document.getElementById('AS').style.display='none';document.getElementById('pin').value='';}
+if(sessionStorage.getItem('adm')==='1'){document.getElementById('LS').style.display='none';document.getElementById('AS').style.display='block';if(SU)loadData();else oS();}
+
+// ── SETTINGS ──
+function oS(){document.getElementById('sui').value=SU||'';document.getElementById('sOv').style.display='flex';document.getElementById('sm').style.display='none';setTimeout(()=>document.getElementById('sui').focus(),100);}
+function cS(){document.getElementById('sOv').style.display='none';}
+document.getElementById('sOv').addEventListener('click',function(e){if(e.target===this)cS();});
+function saveSU(){
+  const v=document.getElementById('sui').value.trim();
+  if(!v||!v.startsWith('https://script.google.com')){ssm('⚠️ Please paste a valid Google Apps Script URL.','err');return;}
+  SU=v;localStorage.setItem('donationScriptUrl',v);ssm('✅ Connected! Loading data…','ok');setTimeout(cS,900);loadData();
+}
+function discSU(){SU='';localStorage.removeItem('donationScriptUrl');document.getElementById('sui').value='';setSS('error');ssm('Disconnected.','err');}
+function ssm(msg,type){const el=document.getElementById('sm');el.textContent=msg;el.style.display='block';el.style.color=type==='ok'?'#2d5a27':'#b83232';el.style.background=type==='ok'?'#eaf3e8':'#fdeaea';}
+
+// ── NAV ──
+function go(n,b){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('pg-'+n).classList.add('on');
+  if(b)b.classList.add('on');
+  if(n==='history'&&LD)buildHistory();
+  if(n==='masters'&&LD)buildMasters();
+  if(n==='items'&&LD)buildItems();
+  if(n==='custom'&&LD)buildCustom();
+  if(n==='notices'&&LD)buildNotices();
+  if(n==='collections'&&LD)buildCollections();
+  if(n==='requests'&&LD)buildRequests();
+}
+
+// ── DATA ──
+async function loadData(){
+  if(!SU)return;setSS('syncing');
+  try{
+    const r=await fetch(SU+'?action=getData&t='+Date.now());
+    const d=await r.json();if(d.error)throw new Error(d.error);
+    LD=d;renderDash(d);setSS('live');
+    document.getElementById('sl').textContent='Live · '+new Date().toLocaleTimeString();
+    const ap=document.querySelector('.pg.on')?.id;
+    if(ap==='pg-collections')buildCollections();
+    if(ap==='pg-requests')buildRequests();
+    if(ap==='pg-history')buildHistory();
+    if(ap==='pg-masters')buildMasters();
+    if(ap==='pg-items')buildItems();
+    if(ap==='pg-custom')buildCustom();
+    if(ap==='pg-notices')buildNotices();
+  }catch(e){setSS('error');sa('Could not reach Google Sheet.','red');console.error(e);}
+}
+setInterval(()=>{if(SU&&sessionStorage.getItem('adm'))loadData();},30000);
+
+function setSS(s){
+  const dot=document.getElementById('sd'),lbl=document.getElementById('sl');
+  if(s==='live'){dot.style.background='#a8e6a0';}
+  if(s==='syncing'){dot.style.background='#f5c842';}
+  if(s==='error'){dot.style.background='#e57373';lbl.textContent='Error';}
+}
+
+// Use server-computed inventory directly
+function getInv(){return LD?.inventory||[];}
+
+// ── DASHBOARD ──
+function renderDash(data){
+  const don=data.donations||[],donors=data.donors||[],rec=data.recipients||[],req=data.requests||[];
+  const dm={},rm={};
+  donors.forEach(d=>dm[d['Donor ID']]=d['Donor Name']);
+  rec.forEach(r=>rm[r['Recipient ID']]=r['Recipient Name']);
+  const totalU=don.reduce((s,r)=>s+(parseInt(r['Quantity'])||0),0);
+  const pendReq=req.filter(r=>(r['Status']||'').toLowerCase()==='pending').length;
+  const submitted=don.filter(r=>(r['Status']||'submitted').toLowerCase()==='submitted').length;
+
+  document.getElementById('statsRow').innerHTML=`
+    <div class="sc2 g"><div class="sc-ico">🧑‍🤝‍🧑</div><div class="sc-lbl">Donors</div><div class="sc-val">${donors.length}</div><div class="sc-sub">Registered</div></div>
+    <div class="sc2 o"><div class="sc-ico">🎁</div><div class="sc-lbl">Donations</div><div class="sc-val">${don.length}</div><div class="sc-sub">${totalU} total units</div></div>
+    <div class="sc2 bl"><div class="sc-ico">🤲</div><div class="sc-lbl">Recipients</div><div class="sc-val">${rec.length}</div><div class="sc-sub">Registered</div></div>
+    <div class="sc2 r"><div class="sc-ico">⏳</div><div class="sc-lbl">Action Needed</div><div class="sc-val">${submitted+pendReq}</div><div class="sc-sub">${submitted} to collect · ${pendReq} to approve</div></div>`;
+
+  // Pie
+  const it={};don.forEach(r=>{const k=r['Item']||'';it[k]=(it[k]||0)+(parseInt(r['Quantity'])||0);});
+  const labels=Object.keys(it),vals=Object.values(it);
+  if(PC)PC.destroy();
+  if(labels.length)PC=new Chart(document.getElementById('pie').getContext('2d'),{type:'doughnut',data:{labels,datasets:[{data:vals,backgroundColor:PAL.slice(0,labels.length),borderColor:'#fff',borderWidth:3,hoverOffset:5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{font:{family:'DM Sans',size:11},padding:10,color:'#1c1c1c',boxWidth:10}},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.parsed} units`}}},animation:{duration:700}}});
+
+  // Live inventory from server
+  const inv=getInv();
+  const maxD=Math.max(...inv.map(i=>i.donated),1);
+  document.getElementById('invBars').innerHTML=inv.length
+    ?inv.map((i,idx)=>`<div class="inv-item"><div class="inv-top"><span class="inv-name">${i.item}${i.balance<=1?'<span class="low-stock">⚠ Low</span>':''}</span><span class="inv-nums">In: ${i.donated} · Out: ${i.distributed} · <strong>Bal: ${i.balance}</strong></span></div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(2,Math.round(i.balance/maxD*100))}%;background:${PAL[idx%PAL.length]}"></div></div></div>`).join('')
+    :'<div class="no-data">No collected donations yet</div>';
+
+  // Dashboard quick lists
+  const subDons=don.filter(r=>(r['Status']||'submitted').toLowerCase()==='submitted').slice(0,5);
+
+}
+
+// ── COLLECTIONS ──
+function buildCollections(){
+  if(!LD)return;
+  const don=LD.donations||[],donors=LD.donors||[];
+  const dm={};donors.forEach(d=>dm[d['Donor ID']]=d);
+  const sub=don.filter(r=>(r['Status']||'submitted').toLowerCase()==='submitted');
+  document.getElementById('subCnt').textContent=sub.length+' pending';
+  document.getElementById('subList').innerHTML=sub.length
+    ?sub.map(r=>{const d=dm[r['Donor ID']]||{};const notesIcon=r['Notes']?`<span class="info-ico">ℹ<span class="tip-bubble">${String(r['Notes']).replace(/</g,'&lt;')}</span></span>`:'';return`<div class="arow"><div class="ainfo"><span class="tid">${r['Donation ID']||'—'}</span> &nbsp;<strong>${d['Donor Name']||r['Donor ID']}</strong>${notesIcon}<br>${d['Address']?`<span style="font-size:0.74rem;color:var(--mu)">📍 ${d['Address']}</span><br>`:''}<span style="font-size:0.74rem;color:var(--mu)">${d['Phone']?'📞 '+d['Phone']+' · ':''}<strong>${r['Item']}</strong> · Qty <strong>${r['Quantity']}</strong> · ${fd(r['Submitted On']||r['Date'])}</span></div><div class="abtns"><button class="btn bg bsm" onclick="updD(${r._row},'Collected')">✓ Mark Collected</button><button class="btn br bsm" onclick="openReject('don',${r._row},''+r['Item']+' ('+r['Quantity']+')')">✗ Reject</button></div></div>`;}).join('')
+    :'<div class="no-data">🎉 No collections pending</div>';
+  document.getElementById('allDC').textContent=don.length+' total';
+  document.getElementById('allDB2').innerHTML=don.map(r=>{
+    const s=(r['Status']||'submitted').toLowerCase();
+    const notes=r['Notes']?`<span class="info-ico">ℹ<span class="tip-bubble">${String(r['Notes']).replace(/</g,'&lt;')}</span></span>`:'';
+    const nxt=s==='submitted'?`<button class="btn bg bsm" onclick="updD(${r._row},'Collected')">Mark Collected</button> <button class="btn br bsm" onclick="openReject('don',${r._row},''+r['Item']+' ('+r['Quantity']+')')">Reject</button>`:`<span style="font-size:0.75rem;color:var(--mu)">${r['Status']}</span>`;
+    return`<tr><td><span class="tid">${r['Donation ID']||'—'}</span></td><td>${fd(r['Date'])}</td><td style="font-size:0.75rem;color:var(--mu)">${r['Donor ID']||'—'}</td><td>${r['Item']||'—'}</td><td>${r['Quantity']||0}</td><td><span class="pill ${s}">${r['Status']||'Submitted'}</span></td><td style="font-size:0.75rem;color:var(--mu)">${fd(r['Submitted On'])}</td><td style="font-size:0.75rem;color:var(--mu)">${fd(r['Collected On'])}</td><td>${notes}</td><td>${nxt}</td></tr>`;}).join()||'<tr><td colspan="9" class="no-data">No donations</td></tr>';
+}
+
+// ── REQUESTS ──
+// Store row refs globally to avoid quote escaping in onclick
+let _reqRows=[];
+function rAct(i,action){
+  const r=_reqRows[i];if(!r)return;
+  if(action==='approve')  openApprove(r._row, r['Item Requested']+' ('+r['Qty Requested']+')');
+  if(action==='reject')   openReject('req',r._row, r['Item Requested']+' ('+r['Qty Requested']+')');
+  if(action==='dp')       updR(r._row,'Delivery Pending');
+  if(action==='deliver')  updR(r._row,'Delivered');
+}
+function buildRequests(){
+  if(!LD)return;
+  const req=LD.requests||[],rec=LD.recipients||[];
+  const rm={};rec.forEach(r=>rm[r['Recipient ID']]=r);
+  _reqRows=req; // store globally for rAct
+  const pending=req.filter(r=>(r['Status']||'').toLowerCase()==='pending');
+  const dp=req.filter(r=>(r['Status']||'').toLowerCase()==='delivery pending');
+  const invMap2={};(LD.inventory||[]).forEach(i=>invMap2[i.item]=i.balance);
+
+  document.getElementById('pendRC').textContent=pending.length+' pending';
+  document.getElementById('pendRL').innerHTML=pending.length
+    ?pending.map((r,gi)=>{
+      const idx=req.indexOf(r);
+      const rc=rm[r['Recipient ID']]||{};
+      const notesI=r['Notes']?`<span class="info-ico">ℹ<span class="tip-bubble">${String(r['Notes']).replace(/</g,'&lt;')}</span></span>`:'';
+      const bal=invMap2[r['Item Requested']]??null;
+      const outOfStock=bal!==null&&bal<1;
+      const stockWarn=outOfStock?`<span style="font-size:0.72rem;color:var(--re);font-weight:600;margin-left:6px">⚠ Out of stock</span>`:'';
+      const appBtn=outOfStock
+        ?`<button class="btn bsm" style="background:#e0e0e0;color:#888;cursor:not-allowed" disabled>✓ Approve</button>`
+        :`<button class="btn bg bsm" onclick="rAct(${idx},'approve')">✓ Approve</button>`;
+      return`<div class="arow"><div class="ainfo"><span class="tid">${r['Request ID']||'—'}</span>&nbsp;<strong>${rc['Recipient Name']||r['Recipient ID']}</strong>${notesI}${stockWarn}${rc['Address']?`<br><span style="font-size:0.74rem;color:var(--mu)">📍 ${rc['Address']}</span>`:''}<br><span style="font-size:0.74rem;color:var(--mu)">Item: <strong>${r['Item Requested']}</strong> · Qty: <strong>${r['Qty Requested']}</strong> · ${fd(r['Pending On']||r['Request Date'])}</span></div><div class="abtns">${appBtn}<button class="btn br bsm" onclick="rAct(${idx},'reject')">✗ Reject</button></div></div>`;
+    }).join('')
+    :'<div class="no-data">🎉 No pending requests</div>';
+
+  document.getElementById('dpC').textContent=dp.length+' to deliver';
+  document.getElementById('dpL').innerHTML=dp.length
+    ?dp.map(r=>{
+      const idx=req.indexOf(r);
+      const rc=rm[r['Recipient ID']]||{};
+      return`<div class="arow"><div class="ainfo"><span class="tid">${r['Request ID']||'—'}</span>&nbsp;<strong>${rc['Recipient Name']||r['Recipient ID']}</strong>${rc['Address']?`<br><span style="font-size:0.74rem;color:var(--mu)">📍 ${rc['Address']}</span>`:''}<br><span style="font-size:0.74rem;color:var(--mu)">Item: <strong>${r['Item Requested']}</strong> · Qty: <strong>${r['Qty Requested']}</strong>${r['ETA']?' · ETA: '+r['ETA']:''}</span></div><div class="abtns"><button class="btn bg bsm" onclick="rAct(${idx},'deliver')">✓ Mark Delivered</button></div></div>`;
+    }).join('')
+    :'<div class="no-data">No deliveries pending</div>';
+
+  document.getElementById('allRC').textContent=req.length+' total';
+  document.getElementById('allRB2').innerHTML=req.map((r,idx)=>{
+    const s=(r['Status']||'pending').toLowerCase().replace(/ /g,'-');
+    let nxt='';
+    if(s==='pending'){
+      const bal2=invMap2[r['Item Requested']]??null;
+      const oos=bal2!==null&&bal2<1;
+      const ab=oos
+        ?`<button class="btn bsm" style="background:#e0e0e0;color:#aaa;cursor:not-allowed" disabled>Approve</button>`
+        :`<button class="btn bg bsm" onclick="rAct(${idx},'approve')">Approve</button>`;
+      nxt=ab+` <button class="btn br bsm" onclick="rAct(${idx},'reject')">Reject</button>`;
+    }
+    else if(s==='approved')  nxt=`<button class="btn bbl bsm" onclick="rAct(${idx},'dp')">→ Delivery Pending</button>`;
+    else if(s==='delivery-pending') nxt=`<button class="btn bg bsm" onclick="rAct(${idx},'deliver')">Mark Delivered</button>`;
+    else nxt=`<span style="font-size:0.75rem;color:var(--mu)">${r['Status']}</span>`;
+    return`<tr><td><span class="tid">${r['Request ID']||'—'}</span></td><td>${fd(r['Request Date'])}</td><td style="font-size:0.75rem;color:var(--mu)">${r['Recipient ID']||'—'}</td><td>${r['Item Requested']||'—'}</td><td>${r['Qty Requested']||0}</td><td><span class="pill ${s}">${r['Status']||'Pending'}</span></td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Pending On'])}</td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Approved On'])}</td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Delivered On'])}</td><td>${nxt}</td></tr>`;
+  }).join()||'<tr><td colspan="10" class="no-data">No requests</td></tr>';
+}
+
+// ── STATUS UPDATES — instant refresh from server response ──
+async function updD(rowIdx,status,comment=''){
+  if(!SU){sa('Not connected','red');return;}
+  try{
+    const params={action:'updateDonationStatus',rowIndex:String(rowIdx),status:String(status)};
+    if(comment)params.comment=comment;
+    const r=await fetch(SU+'?'+new URLSearchParams(params));
+    const d=await r.json();
+    if(d.success){
+      sa('Donation '+status+'!','green');
+      if(d.data){LD=d.data;renderDash(LD);buildCollections();}
+      else setTimeout(loadData,800);
+    }else sa('Error: '+(d.error||'Unknown'),'red');
+  }catch(e){sa('Failed: '+e.message,'red');}
+}
+async function updR(rowIdx,status,comment='',eta=''){
+  if(!SU){sa('Not connected','red');return;}
+  try{
+    const params={action:'updateRequestStatus',rowIndex:String(rowIdx),status:String(status)};
+    if(comment)params.comment=comment;
+    if(eta)params.eta=eta;
+    const r=await fetch(SU+'?'+new URLSearchParams(params));
+    const d=await r.json();
+    if(d.success){
+      sa('Request '+status+'!',status==='Rejected'?'red':'green');
+      if(d.data){LD=d.data;renderDash(LD);buildRequests();}
+      else setTimeout(loadData,800);
+    }else sa('Error: '+(d.error||'Unknown'),'red');
+  }catch(e){sa('Failed: '+e.message,'red');}
+}
+
+// ── ITEMS ──
+function buildItems(){
+  if(!LD)return;
+  const items=LD.items||[];
+  document.getElementById('itemCnt').textContent=items.length+' items';
+  document.getElementById('itemGrid').innerHTML=items.length
+    ?items.map(i=>`<div class="item-card"><div><div class="item-name">${i['Item Name']||''}</div><div class="item-cat">${i['Category']||'General'}</div></div><button class="btn br bsm" onclick="delItem('${es(i['Item Name']||'')}')">✕</button></div>`).join('')
+    :'<div class="no-data">No items yet</div>';
+}
+async function addItem(){
+  const name=document.getElementById('newItem').value.trim();
+  const cat=document.getElementById('newCat').value.trim();
+  if(!name){sa('Please enter an item name.','amber');return;}
+  if(!SU){sa('Not connected','red');return;}
+  try{
+    const r=await fetch(SU+'?'+new URLSearchParams({action:'addItem',itemName:name,category:cat||'General'}));
+    const d=await r.json();
+    if(d.success){sa('Item added: '+name,'green');document.getElementById('newItem').value='';document.getElementById('newCat').value='';if(d.data){LD=d.data;buildItems();}else setTimeout(loadData,800);}
+    else sa(d.error||'Could not add item','red');
+  }catch(e){sa('Failed: '+e.message,'red');}
+}
+async function delItem(name){
+  if(!confirm(`Remove "${name}" from the item list?\nExisting records won't be affected.`))return;
+  if(!SU){sa('Not connected','red');return;}
+  try{
+    const r=await fetch(SU+'?'+new URLSearchParams({action:'deleteItem',itemName:name}));
+    const d=await r.json();
+    if(d.success){sa('Item removed: '+name,'amber');if(d.data){LD=d.data;buildItems();}else setTimeout(loadData,800);}
+    else sa(d.error||'Could not remove item','red');
+  }catch(e){sa('Failed: '+e.message,'red');}
+}
+
+// ── HISTORY ──
+function sHT(t){
+  hTab=t;
+  document.querySelectorAll('.htab').forEach((b,i)=>b.classList.toggle('on',['donors','recipients','all'][i]===t));
+  ['donors','recipients','all'].forEach(n=>document.getElementById('ht-'+n).style.display=n===t?'block':'none');
+  if(LD)buildHistory();
+}
+function buildHistory(){
+  if(!LD)return;
+  const don=LD.donations||[],donors=LD.donors||[],rec=LD.recipients||[],req=LD.requests||[];
+  const dm={};don.forEach(r=>{if(!dm[r['Donor ID']])dm[r['Donor ID']]={tot:0,col:0,units:0};dm[r['Donor ID']].tot++;if((r['Status']||'').toLowerCase()==='collected'){dm[r['Donor ID']].col++;dm[r['Donor ID']].units+=(parseInt(r['Quantity'])||0);}});
+  document.getElementById('allDB3').innerHTML=donors.map((d,i)=>{const s=dm[d['Donor ID']]||{tot:0,col:0,units:0};return`<tr><td style="color:var(--mu);font-size:0.75rem">${d['Donor ID']}</td><td><span class="ava av${i%4}">${ini(d['Donor Name'])}</span>${d['Donor Name']||'—'}</td><td style="font-size:0.77rem;color:var(--mu)">${d['Email']||'—'}</td><td style="font-size:0.77rem;color:var(--mu)">${d['Phone']||'—'}</td><td style="font-size:0.74rem;color:var(--mu);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d['Address']||'—'}</td><td>${s.tot}</td><td>${s.col}</td><td><strong>${s.units}</strong></td></tr>`;}).join()||'<tr><td colspan="8" class="no-data">No donors</td></tr>';
+  const rm={};req.forEach(r=>{if(!rm[r['Recipient ID']])rm[r['Recipient ID']]={tot:0,del:0,units:0};rm[r['Recipient ID']].tot++;if((r['Status']||'').toLowerCase()==='delivered'){rm[r['Recipient ID']].del++;rm[r['Recipient ID']].units+=(parseInt(r['Qty Requested'])||0);}});
+  document.getElementById('allRB3').innerHTML=rec.map((r,i)=>{const s=rm[r['Recipient ID']]||{tot:0,del:0,units:0};return`<tr><td style="color:var(--mu);font-size:0.75rem">${r['Recipient ID']}</td><td><span class="ava av${(i+1)%4}">${ini(r['Recipient Name'])}</span>${r['Recipient Name']||'—'}</td><td style="font-size:0.77rem;color:var(--mu)">${r['Email']||'—'}</td><td style="font-size:0.77rem;color:var(--mu)">${r['Phone']||'—'}</td><td style="font-size:0.74rem;color:var(--mu);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r['Address']||'—'}</td><td>${s.tot}</td><td>${s.del}</td><td><strong>${s.units}</strong></td></tr>`;}).join()||'<tr><td colspan="8" class="no-data">No recipients</td></tr>';
+  renderLog(LD.history||[]);
+}
+function renderLog(h){document.getElementById('logCnt').textContent=h.length+' entries';document.getElementById('logBody').innerHTML=[...h].reverse().map(r=>`<tr><td style="color:var(--mu);font-size:0.74rem;white-space:nowrap">${r['Timestamp']||'—'}</td><td><span class="pill ${pCls(r['Type'])}" style="font-size:0.62rem">${r['Type']||'—'}</span></td><td><span class="tid">${r['Transaction ID']||'—'}</span></td><td style="color:var(--mu);font-size:0.78rem">${r['Person ID']||'—'}</td><td>${r['Item']||'—'}</td><td>${r['Quantity']||0}</td><td style="font-size:0.78rem;color:var(--mu)">${r['Status']||''}</td></tr>`).join()||'<tr><td colspan="7" class="no-data">No activity yet</td></tr>';}
+function filtAct(){if(!LD)return;const q=document.getElementById('actS').value.toLowerCase();renderLog((LD.history||[]).filter(h=>JSON.stringify(h).toLowerCase().includes(q)));}
+function pCls(t){const l=(t||'').toLowerCase();return l.includes('collect')||l.includes('deliver')||l.includes('approv')?'approved':l.includes('submit')||l.includes('pending')?'pending':'submitted';}
+
+// ── Admin typeahead — shows both ID and name ──
+function tfAdmin(inp,lk){
+  const v=document.getElementById(inp).value.toLowerCase().trim();
+  const el=document.getElementById('ta-'+inp);
+  const list=LD?.[lk];
+  if(!list||!v){el.style.display='none';return;}
+  const idF=lk==='donors'?'Donor ID':'Recipient ID';
+  const nmF=lk==='donors'?'Donor Name':'Recipient Name';
+  const m=list.filter(r=>String(r[idF]||'').toLowerCase().includes(v)||String(r[nmF]||'').toLowerCase().includes(v)).slice(0,10);
+  if(!m.length){el.style.display='none';return;}
+  el.innerHTML=m.map(r=>`<div class="tai" onmousedown="tsAdmin('${inp}','${es(String(r[idF]||''))}')"><span class="tai-id">${r[idF]||''}</span><span class="tai-name">${r[nmF]||''}</span></div>`).join('');
+  el.style.display='block';
+}
+function tsAdmin(i,v){document.getElementById(i).value=v;cta();if(i==='hdid')lookupD();else lookupR();}
+function cta(){document.querySelectorAll('.tal').forEach(e=>e.style.display='none');}
+document.addEventListener('click',e=>{if(!e.target.closest('.taw'))cta();});
+function es(s){return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
+
+async function lookupD(){
+  const q=document.getElementById('hdid').value.trim();if(!q||!LD)return;
+  const d=(LD.donors||[]).find(x=>x['Donor ID'].toLowerCase()===q.toLowerCase()||(x['Donor Name']||'').toLowerCase().includes(q.toLowerCase()));
+  if(!d){document.getElementById('hdres').innerHTML='<div class="panel"><div class="no-data">Donor not found.</div></div>';return;}
+  const recs=(LD.donations||[]).filter(r=>r['Donor ID']===d['Donor ID']);
+  const col=recs.filter(r=>(r['Status']||'').toLowerCase()==='collected');
+  const units=col.reduce((s,r)=>s+(parseInt(r['Quantity'])||0),0);
+  document.getElementById('hdres').innerHTML=`<div class="panel"><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.96rem;margin-bottom:4px">${d['Donor Name']} · <span class="tid">${d['Donor ID']}</span></div>${d['Address']?`<div style="font-size:0.77rem;color:var(--mu);margin-bottom:3px">📍 ${d['Address']}</div>`:''}<div style="font-size:0.77rem;color:var(--mu);margin-bottom:12px">${[d['Email'],d['Phone']].filter(Boolean).join(' · ')}</div><div style="display:flex;gap:18px;margin-bottom:12px"><div><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--ac)">${recs.length}</div><div style="font-size:0.68rem;color:var(--mu);text-transform:uppercase">Submitted</div></div><div><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--ac)">${col.length}</div><div style="font-size:0.68rem;color:var(--mu);text-transform:uppercase">Collected</div></div><div><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--ac)">${units}</div><div style="font-size:0.68rem;color:var(--mu);text-transform:uppercase">Units</div></div></div><div class="tw"><table><thead><tr><th>Donation ID</th><th>Item</th><th>Qty</th><th>Status</th><th>Submitted On</th><th>Collected On</th><th>Rejection Reason</th></tr></thead><tbody>${recs.map(r=>`<tr><td><span class="tid">${r['Donation ID']||'—'}</span></td><td><strong>${r['Item']||'—'}</strong></td><td>${r['Quantity']||0}</td><td><span class="pill ${(r['Status']||'submitted').toLowerCase()}">${r['Status']||'Submitted'}</span></td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Submitted On'])}</td><td style="font-size:0.74rem;color:${(r['Status']||'').toLowerCase()==='collected'?'var(--ac)':'var(--mu)'};font-weight:${(r['Status']||'').toLowerCase()==='collected'?'600':'400'}">${fd(r['Collected On'])||'Pending'}</td><td style="font-size:0.74rem;color:var(--re)">${r['Rejection Comment']||''}</td></tr>`).join()||'<tr><td colspan="7" class="no-data">No donations</td></tr>'}</tbody></table></div></div>`;
+}
+async function lookupR(){
+  const q=document.getElementById('hrid').value.trim();if(!q||!LD)return;
+  const rc=(LD.recipients||[]).find(x=>x['Recipient ID'].toLowerCase()===q.toLowerCase()||(x['Recipient Name']||'').toLowerCase().includes(q.toLowerCase()));
+  if(!rc){document.getElementById('hrres').innerHTML='<div class="panel"><div class="no-data">Recipient not found.</div></div>';return;}
+  const reqs=(LD.requests||[]).filter(r=>r['Recipient ID']===rc['Recipient ID']);
+  const del=reqs.filter(r=>(r['Status']||'').toLowerCase()==='delivered');
+  const units=del.reduce((s,r)=>s+(parseInt(r['Qty Requested'])||0),0);
+  document.getElementById('hrres').innerHTML=`<div class="panel"><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.96rem;margin-bottom:4px">${rc['Recipient Name']} · <span class="tid">${rc['Recipient ID']}</span></div>${rc['Address']?`<div style="font-size:0.77rem;color:var(--mu);margin-bottom:3px">📍 ${rc['Address']}</div>`:''}<div style="font-size:0.77rem;color:var(--mu);margin-bottom:12px">${[rc['Email'],rc['Phone']].filter(Boolean).join(' · ')}</div><div style="display:flex;gap:18px;margin-bottom:12px"><div><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--ac)">${reqs.length}</div><div style="font-size:0.68rem;color:var(--mu);text-transform:uppercase">Requests</div></div><div><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--ac)">${del.length}</div><div style="font-size:0.68rem;color:var(--mu);text-transform:uppercase">Delivered</div></div><div><div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--ac)">${units}</div><div style="font-size:0.68rem;color:var(--mu);text-transform:uppercase">Units</div></div></div><div class="tw"><table><thead><tr><th>Request ID</th><th>Item</th><th>Qty</th><th>Status</th><th>Requested On</th><th>Approved On</th><th>ETA</th><th>Delivered On</th><th>Feedback</th></tr></thead><tbody>${reqs.map(r=>`<tr><td><span class="tid">${r['Request ID']||'—'}</span></td><td><strong>${r['Item Requested']||'—'}</strong></td><td>${r['Qty Requested']||0}</td><td><span class="pill ${(r['Status']||'pending').toLowerCase().replace(/ /g,'-')}">${r['Status']||'Pending'}</span></td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Pending On']||r['Request Date'])}</td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Approved On'])||'—'}</td><td style="font-size:0.74rem;color:var(--bl)">${r['ETA']||'—'}</td><td style="font-size:0.74rem;color:${(r['Status']||'').toLowerCase()==='delivered'?'var(--ac)':'var(--mu)'};font-weight:${(r['Status']||'').toLowerCase()==='delivered'?'600':'400'}">${fd(r['Delivered On'])||'Pending'}</td><td style="font-size:0.74rem;font-style:italic;color:var(--ac)">${r['Feedback']||''}</td></tr>`).join()||'<tr><td colspan="9" class="no-data">No requests</td></tr>'}</tbody></table></div></div>`;
+}
+
+// ── REPORTS ──
+function onRT(){
+  const type=document.getElementById('rtype').value;
+  const wrap=document.getElementById('pWrap');
+  const sel=document.getElementById('pSel');
+  document.getElementById('repContent').style.display='none';
+  document.getElementById('repBody').innerHTML='';
+  if(type==='donor'){
+    wrap.style.display='block';document.getElementById('pLbl').textContent='Select Donor';
+    sel.innerHTML='<option value="">— Select —</option>'+(LD?.donors||[]).map(d=>`<option value="${d['Donor ID']}">${d['Donor ID']} · ${d['Donor Name']}</option>`).join('');
+  }else if(type==='recipient'){
+    wrap.style.display='block';document.getElementById('pLbl').textContent='Select Recipient';
+    sel.innerHTML='<option value="">— Select —</option>'+(LD?.recipients||[]).map(r=>`<option value="${r['Recipient ID']}">${r['Recipient ID']} · ${r['Recipient Name']}</option>`).join('');
+  }else{wrap.style.display='none';if(type)genRep();}
+}
+function genRep(){
+  if(!LD)return;
+  const type=document.getElementById('rtype').value;
+  const pid=document.getElementById('pSel').value;
+  if((type==='donor'||type==='recipient')&&!pid)return;
+  const don=LD.donations||[],donors=LD.donors||[],rec=LD.recipients||[],req=LD.requests||[];
+  const now=new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const tlabels={donor:'Individual Donor Report',recipient:'Individual Recipient Report','all-donors':'All Donors Summary','all-recipients':'All Recipients Summary',inventory:'Inventory Status',collections:'Collection Queue',full:'Full Activity Log'};
+  let html='';
+  if(type==='donor'){
+    const d=donors.find(x=>x['Donor ID']===pid)||{};
+    const recs=don.filter(r=>r['Donor ID']===pid);
+    const col=recs.filter(r=>(r['Status']||'').toLowerCase()==='collected');
+    const units=col.reduce((s,r)=>s+(parseInt(r['Quantity'])||0),0);
+    html=pH(d['Donor Name']||pid,pid,d['Email'],d['Phone'],d['Address'])+
+      pS([{v:recs.length,l:'Submissions'},{v:col.length,l:'Collected'},{v:units,l:'Units Donated'}])+
+      pT(['Donation ID','Item','Qty','Status','Submitted On','Collected On','Rejection Comment'],recs.map(r=>[r['Donation ID']||'—',r['Item']||'—',r['Quantity']||0,r['Status']||'Submitted',fd(r['Submitted On']),fd(r['Collected On'])||'Pending',r['Rejection Comment']||'']));
+  }else if(type==='recipient'){
+    const rc=rec.find(x=>x['Recipient ID']===pid)||{};
+    const reqs=req.filter(r=>r['Recipient ID']===pid);
+    const del=reqs.filter(r=>(r['Status']||'').toLowerCase()==='delivered');
+    const units=del.reduce((s,r)=>s+(parseInt(r['Qty Requested'])||0),0);
+    html=pH(rc['Recipient Name']||pid,pid,rc['Email'],rc['Phone'],rc['Address'])+
+      pS([{v:reqs.length,l:'Requests'},{v:del.length,l:'Delivered'},{v:units,l:'Units Received'}])+
+      pT(['Request ID','Date','Item','Qty','Status','Requested On','Approved On','ETA','Delivered On','Feedback'],reqs.map(r=>[r['Request ID']||'—',fd(r['Request Date']),r['Item Requested']||'—',r['Qty Requested']||0,r['Status']||'Pending',fd(r['Pending On']||r['Request Date']),fd(r['Approved On'])||'—',r['ETA']||'—',fd(r['Delivered On'])||'Pending',r['Feedback']||'']));
+  }else if(type==='all-donors'){
+    const dm={};don.forEach(r=>{if(!dm[r['Donor ID']])dm[r['Donor ID']]={tot:0,col:0,units:0};dm[r['Donor ID']].tot++;if((r['Status']||'').toLowerCase()==='collected'){dm[r['Donor ID']].col++;dm[r['Donor ID']].units+=(parseInt(r['Quantity'])||0);}});
+    html=pT(['ID','Name','Email','Phone','Address','Submissions','Collected','Units'],donors.map(d=>{const s=dm[d['Donor ID']]||{tot:0,col:0,units:0};return[d['Donor ID'],d['Donor Name']||'—',d['Email']||'—',d['Phone']||'—',d['Address']||'—',s.tot,s.col,s.units];}));
+  }else if(type==='all-recipients'){
+    const rm={};req.forEach(r=>{if(!rm[r['Recipient ID']])rm[r['Recipient ID']]={tot:0,del:0,units:0};rm[r['Recipient ID']].tot++;if((r['Status']||'').toLowerCase()==='delivered'){rm[r['Recipient ID']].del++;rm[r['Recipient ID']].units+=(parseInt(r['Qty Requested'])||0);}});
+    html=pT(['ID','Name','Email','Phone','Address','Requests','Delivered','Units'],rec.map(r=>{const s=rm[r['Recipient ID']]||{tot:0,del:0,units:0};return[r['Recipient ID'],r['Recipient Name']||'—',r['Email']||'—',r['Phone']||'—',r['Address']||'—',s.tot,s.del,s.units];}));
+  }else if(type==='inventory'){
+    const inv=getInv();
+    html=pT(['Item','Total Donated','Distributed','Balance','Status'],inv.map(i=>[i.item,i.donated,i.distributed,i.balance,i.balance>0?'In Stock':'Out of Stock']));
+  }else if(type==='collections'){
+    const sub=don.filter(r=>(r['Status']||'submitted').toLowerCase()==='submitted');
+    const dm2={};donors.forEach(d=>dm2[d['Donor ID']]=d);
+    html=pT(['Donation ID','Date','Donor ID','Phone','Address','Item','Qty'],sub.map(r=>{const d=dm2[r['Donor ID']]||{};return[r['Donation ID']||'—',fd(r['Date']),r['Donor ID'],d['Phone']||'—',d['Address']||'—',r['Item']||'—',r['Quantity']||0];}));
+  }else if(type==='full'){
+    const hist=LD.history||[];
+    html=`<p style="font-size:0.79rem;color:var(--mu);margin-bottom:10px">${hist.length} entries</p>`+pT(['Timestamp','Type','Transaction ID','Person ID','Item','Qty','Status'],[...hist].reverse().map(r=>[r['Timestamp']||'—',r['Type']||'—',r['Transaction ID']||'—',r['Person ID']||'—',r['Item']||'—',r['Quantity']||0,r['Status']||'']));
+  }
+  document.getElementById('repBody').innerHTML=html;
+  document.getElementById('repContent').style.display='block';
+  // Prep print area
+  const pa=document.getElementById('pA');
+  if(pa) pa.innerHTML=`<div class="ph2">🛒 Grocery Donation Tracker &nbsp;·&nbsp; ${tlabels[type]||'Report'}</div><div class="pm">Generated: ${now}</div>${html}<div class="pf">Grocery Donation Tracker · Admin Report · ${now}</div>`;
+}
+function pH(name,id,email,phone,address){return`<div style="margin-bottom:12px"><strong style="font-size:1rem">${name}</strong> · <code style="font-size:0.82rem">${id}</code>${address?`<br><small style="color:var(--mu)">📍 ${address}</small>`:''}${(email||phone)?`<br><small style="color:var(--mu)">${[email,phone].filter(Boolean).join(' · ')}</small>`:''}</div>`;}
+function pS(items){return`<div class="rstat-row">${items.map(i=>`<div class="rstat"><div class="rstat-val">${i.v}</div><div class="rstat-lbl">${i.l}</div></div>`).join('')}</div>`;}
+function pT(headers,rows){return`<div class="tw"><table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join(''):'<tr><td colspan="'+headers.length+'" class="no-data">No data</td></tr>'}</tbody></table></div>`;}
+function printRep(){
+  const rb=document.getElementById('repBody');
+  if(!rb||!rb.innerHTML.trim()){sa('Please select a report type and generate it first.','amber');return;}
+  const pa=document.getElementById('pA');
+  if(pa)pa.style.display='block';
+  window.print();
+  if(pa)pa.style.display='none';
+}
+
+// ── MASTERS ──
+function buildMasters(){
+  if(!LD)return;
+  const don=LD.donations||[],donors=LD.donors||[],rec=LD.recipients||[],req=LD.requests||[];
+  const dm={};don.forEach(r=>{if(!dm[r['Donor ID']])dm[r['Donor ID']]={tot:0,col:0,units:0};dm[r['Donor ID']].tot++;if((r['Status']||'').toLowerCase()==='collected'){dm[r['Donor ID']].col++;dm[r['Donor ID']].units+=(parseInt(r['Quantity'])||0);}});
+  document.getElementById('dmC').textContent=donors.length+' donors';
+  document.getElementById('dmB').innerHTML=donors.map((d,i)=>{const s=dm[d['Donor ID']]||{tot:0,col:0,units:0};return`<tr><td style="color:var(--mu);font-size:0.74rem">${d['Donor ID']}</td><td><span class="ava av${i%4}">${ini(d['Donor Name'])}</span>${d['Donor Name']||'—'}</td><td style="font-size:0.76rem;color:var(--mu)">${d['Email']||'—'}</td><td style="font-size:0.76rem;color:var(--mu)">${d['Phone']||'—'}</td><td style="font-size:0.74rem;color:var(--mu);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d['Address']||'—'}</td><td style="font-size:0.76rem;color:var(--mu)">${fd(d['Registered On'])}</td><td>${s.tot}</td><td>${s.col}</td><td><strong>${s.units}</strong></td></tr>`;}).join()||'<tr><td colspan="9" class="no-data">No donors</td></tr>';
+  const rm={};req.forEach(r=>{if(!rm[r['Recipient ID']])rm[r['Recipient ID']]={tot:0,del:0,units:0};rm[r['Recipient ID']].tot++;if((r['Status']||'').toLowerCase()==='delivered'){rm[r['Recipient ID']].del++;rm[r['Recipient ID']].units+=(parseInt(r['Qty Requested'])||0);}});
+  document.getElementById('rmC').textContent=rec.length+' recipients';
+  document.getElementById('rmB').innerHTML=rec.map((r,i)=>{const s=rm[r['Recipient ID']]||{tot:0,del:0,units:0};return`<tr><td style="color:var(--mu);font-size:0.74rem">${r['Recipient ID']}</td><td><span class="ava av${(i+1)%4}">${ini(r['Recipient Name'])}</span>${r['Recipient Name']||'—'}</td><td style="font-size:0.76rem;color:var(--mu)">${r['Email']||'—'}</td><td style="font-size:0.76rem;color:var(--mu)">${r['Phone']||'—'}</td><td style="font-size:0.74rem;color:var(--mu);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r['Address']||'—'}</td><td style="font-size:0.76rem;color:var(--mu)">${fd(r['Registered On'])}</td><td>${s.tot}</td><td>${s.del}</td><td><strong>${s.units}</strong></td></tr>`;}).join()||'<tr><td colspan="9" class="no-data">No recipients</td></tr>';
+}
+
+
+
+// ── APPROVE WITH ETA MODAL ──
+let _appRow=0,_appLabel='';
+function openApprove(row,label){
+  _appRow=row;_appLabel=label;
+  document.getElementById('appSub').textContent='Approving: '+label+'. Enter an estimated delivery date/time — this will be emailed to the recipient.';
+  document.getElementById('appEta').value='';
+  document.getElementById('appNote').value='';
+  document.getElementById('appErr').style.display='none';
+  document.getElementById('appOverlay').style.display='flex';
+  setTimeout(()=>document.getElementById('appEta').focus(),100);
+}
+function closeApprove(){document.getElementById('appOverlay').style.display='none';}
+document.getElementById('appOverlay').addEventListener('click',function(e){if(e.target===this)closeApprove();});
+async function confirmApprove(){
+  const eta=document.getElementById('appEta').value.trim();
+  const note=document.getElementById('appNote').value.trim();
+  if(!eta){document.getElementById('appErr').style.display='block';return;}
+  closeApprove();
+  // note is passed as comment so it's included in the email
+  await updR(_appRow,'Approved',note,eta);
+}
+
+// ── NOTICE BOARD ──
+function buildNotices(){
+  if(!LD)return;
+  const notices=(LD.notices||[]).filter(n=>n['Active']!=='No').reverse();
+  document.getElementById('noticeList').innerHTML=notices.length
+    ?notices.map(n=>`<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--bg)"><div><div style="font-size:0.72rem;color:var(--mu);margin-bottom:3px">${fd(n['Date'])}</div><div style="font-size:0.86rem;line-height:1.6">${n['Notice']||''}</div></div><button class="btn br bsm" onclick="removeNotice(${n._row})">✕</button></div>`).join('')
+    :'<div class="no-data">No notices posted yet</div>';
+}
+async function postNotice(){
+  const text=document.getElementById('newNotice').value.trim();
+  if(!text){sa('Please write a notice before posting.','amber');return;}
+  if(!SU){sa('Not connected','red');return;}
+  try{
+    const r=await fetch(SU+'?'+new URLSearchParams({action:'addNotice',notice:text}));
+    const d=await r.json();
+    if(d.success){sa('Notice posted!','green');document.getElementById('newNotice').value='';if(d.data){LD=d.data;buildNotices();}else setTimeout(loadData,800);}
+    else sa(d.error||'Error posting','red');
+  }catch(e){sa('Failed: '+e.message,'red');}
+}
+async function removeNotice(rowIdx){
+  if(!SU)return;
+  try{
+    const r=await fetch(SU+'?'+new URLSearchParams({action:'deleteNotice',rowIndex:rowIdx}));
+    const d=await r.json();
+    if(d.success){sa('Notice removed','amber');if(d.data){LD=d.data;buildNotices();}else setTimeout(loadData,800);}
+  }catch(e){sa('Failed: '+e.message,'red');}
+}
+
+// ── REJECT MODAL ──
+let _rejType='',_rejRow=0,_rejLabel='';
+function openReject(type,row,label){
+  _rejType=type;_rejRow=row;_rejLabel=label;
+  document.getElementById('rejComment').value='';
+  document.getElementById('rejErr').style.display='none';
+  document.getElementById('rejSub').textContent='Reason for rejecting: '+label+'. This comment will be emailed to the '+(type==='don'?'donor':'recipient')+'.';
+  document.getElementById('rejOverlay').style.display='flex';
+  setTimeout(()=>document.getElementById('rejComment').focus(),100);
+}
+function closeReject(){document.getElementById('rejOverlay').style.display='none';}
+document.getElementById('rejOverlay').addEventListener('click',function(e){if(e.target===this)closeReject();});
+async function confirmReject(){
+  const comment=document.getElementById('rejComment').value.trim();
+  if(!comment){document.getElementById('rejErr').style.display='block';return;}
+  closeReject();
+  if(_rejType==='don') await updD(_rejRow,'Rejected',comment);
+  else                 await updR(_rejRow,'Rejected',comment);
+}
+
+// ── CUSTOM REQUESTS ──
+function buildCustom(){
+  if(!LD)return;
+  const cr=LD.customRequests||[];
+  const pending=cr.filter(r=>(r['Status']||'').toLowerCase()==='pending');
+  document.getElementById('custPendCnt').textContent=pending.length+' pending';
+  document.getElementById('custPendList').innerHTML=pending.length
+    ?pending.map(r=>`<div class="arow"><div class="ainfo"><span class="tid">${r['Custom ID']||'—'}</span> &nbsp;<strong>${r['Recipient ID']||'—'}</strong><br><span style="font-weight:600;color:var(--tx)">${r['Item Requested']||'—'}</span>${r['Notes']?`<br><span style="font-size:0.74rem;color:var(--mu)">Notes: ${r['Notes']}</span>`:''}<br><span style="font-size:0.74rem;color:var(--mu)">${fd(r['Date'])}</span></div><div class="abtns"><button class="btn bg bsm" onclick="openResolve(${r._row},'${es(r['Custom ID']||'')}','${es(r['Item Requested']||'')}')">Resolve</button></div></div>`).join('')
+    :'<div class="no-data">🎉 No pending custom requests</div>';
+  document.getElementById('custAllCnt').textContent=cr.length+' total';
+  document.getElementById('custAllBody').innerHTML=cr.length
+    ?cr.map(r=>`<tr><td><span class="tid">${r['Custom ID']||'—'}</span></td><td>${fd(r['Date'])}</td><td style="font-size:0.75rem;color:var(--mu)">${r['Recipient ID']||'—'}</td><td><strong>${r['Item Requested']||'—'}</strong></td><td style="font-size:0.77rem;color:var(--mu)">${r['Notes']||'—'}</td><td><span class="pill ${(r['Status']||'pending').toLowerCase().replace(/ /g,'-').replace('not-available','rejected').replace('fulfilled','approved').replace('pending','pending')}">${r['Status']||'Pending'}</span></td><td style="font-size:0.77rem;color:var(--mu)">${r['Admin Note']||'—'}</td><td style="font-size:0.75rem;color:var(--mu)">${fd(r['Resolved On'])}</td></tr>`).join('')
+    :'<tr><td colspan="8" class="no-data">No custom requests yet</td></tr>';
+}
+
+let _resRow=0,_resId='',_resItem='';
+function openResolve(row,id,item){
+  _resRow=row;_resId=id;_resItem=item;
+  document.getElementById('resTtl').textContent='Resolve: '+item;
+  document.getElementById('resSub').textContent='Custom ID: '+id+' · Add a note that will be emailed to the recipient explaining the outcome.';
+  document.getElementById('resNote').value='';
+  document.getElementById('resErr').style.display='none';
+  document.getElementById('resOverlay').style.display='flex';
+  setTimeout(()=>document.getElementById('resNote').focus(),100);
+}
+function closeResolve(){document.getElementById('resOverlay').style.display='none';}
+document.getElementById('resOverlay').addEventListener('click',function(e){if(e.target===this)closeResolve();});
+async function confirmCustom(status){
+  const note=document.getElementById('resNote').value.trim();
+  if(!note){document.getElementById('resErr').style.display='block';return;}
+  if(!SU){sa('Not connected','red');return;}
+  closeResolve();
+  try{
+    const r=await fetch(SU+'?'+new URLSearchParams({action:'updateCustomRequest',rowIndex:_resRow,status,adminNote:note}));
+    const d=await r.json();
+    if(d.success){sa('Custom request '+status+'!',status==='Fulfilled'?'green':'amber');if(d.data){LD=d.data;buildCustom();}else setTimeout(loadData,800);}
+    else sa('Error: '+(d.error||'Unknown'),'red');
+  }catch(e){sa('Failed: '+e.message,'red');}
+}
+
+// ── UTILS ──
+function fd(d){if(!d)return'—';try{const dt=new Date(d);return isNaN(dt)?String(d):dt.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch{return String(d)||'—';}}
+function ini(n){if(!n)return'?';return n.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);}
+function sa(msg,type='green'){const el=document.getElementById('alert');el.textContent=msg;el.className='alert '+type+' show';setTimeout(()=>el.classList.remove('show'),3500);}
+</script>
+</body>
+</html>
