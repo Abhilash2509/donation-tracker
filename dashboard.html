@@ -287,11 +287,18 @@ footer{text-align:center;color:var(--mu);font-size:0.69rem;padding:14px;border-t
     <div class="panel"><div class="pt">📦 Live Inventory</div><div id="invBars"><div class="no-data">—</div></div></div>
   </div>
 
-  <!-- WHAT'S NEEDED + NOTICES + FEEDBACK -->
+  <!-- WHAT'S NEEDED + NOTICES + ACTIVITY -->
   <div class="row3" style="margin-bottom:16px">
     <div class="panel"><div class="pt">⚠️ What's Needed</div><div id="needsList"><div class="no-data">—</div></div></div>
     <div class="panel"><div class="pt">📋 Notice Board</div><div id="noticeBoard"><div class="no-data">No notices yet</div></div></div>
-    <div class="panel"><div class="pt">💬 Community Feedback</div><div id="feedbackList"><div class="no-data">No feedback yet</div></div></div>
+    <div class="panel">
+      <div class="pt">📊 Recent Activity</div>
+      <div id="activityList"><div class="no-data">Loading…</div></div>
+      <div style="margin-top:12px;border-top:1px solid var(--b);padding-top:12px">
+        <div class="pt" style="margin-bottom:10px">💬 Community Feedback</div>
+        <div id="feedbackList"><div class="no-data">No feedback yet</div></div>
+      </div>
+    </div>
   </div>
 
   <!-- PORTALS + ICON DOWNLOADS -->
@@ -386,16 +393,23 @@ function render(d){
     options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{font:{family:'DM Sans',size:11},padding:10,color:'#1c1c1c',boxWidth:10}}},animation:{duration:800}}
   });
 
-  // Inventory bars — anonymous
+  // Inventory bars — show all admin items, use collected donations as baseline
   const invBalMap={};inv.forEach(i=>invBalMap[i.item]=i.balance);
-  const maxB=Math.max(...inv.map(i=>i.donated),1);
-  document.getElementById('invBars').innerHTML=inv.length
-    ?inv.map((i,idx)=>{
-      const pct=i.donated>0?Math.max(2,Math.round(i.balance/i.donated*100)):0;
-      const badge=i.balance<=0?'<span class="pill-need">None</span>':i.balance<5?'<span class="pill-low">Low</span>':'';
-      return`<div class="inv-item"><div class="inv-top"><span class="inv-name">${i.item}${badge}</span><span class="inv-nums">${i.balance} available</span></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${PAL[idx%PAL.length]}"></div></div></div>`;
+  const allItemNames=(d.items||[]).map(r=>String(r['Item Name']||'').trim()).filter(Boolean);
+  // Merge: items in inventory + items in master not yet donated
+  const allInvItems=allItemNames.map((name,idx)=>{
+    const invEntry=inv.find(i=>i.item===name);
+    return invEntry||{item:name,donated:0,distributed:0,balance:0};
+  });
+  const maxBal=Math.max(...allInvItems.map(i=>i.donated),1);
+  document.getElementById('invBars').innerHTML=allInvItems.length
+    ?allInvItems.map((i,idx)=>{
+      const pct=i.donated>0?Math.max(3,Math.round(i.balance/i.donated*100)):0;
+      const badge=i.donated===0?'<span class="pill-need">Not stocked</span>':i.balance<=0?'<span class="pill-need">None</span>':i.balance<5?'<span class="pill-low">Low</span>':'';
+      const balText=i.donated===0?'No donations yet':(i.balance+' available');
+      return`<div class="inv-item"><div class="inv-top"><span class="inv-name">${i.item}${badge}</span><span class="inv-nums">${balText}</span></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${PAL[idx%PAL.length]}"></div></div></div>`;
     }).join('')
-    :'<div class="no-data">No donations collected yet</div>';
+    :'<div class="no-data">No items configured yet</div>';
 
   // What's needed — combine low stock + custom requests (no recipient info shown)
   // 1. Items with low/zero balance from inventory
@@ -426,6 +440,33 @@ function render(d){
   document.getElementById('needsList').innerHTML=needsHtml.length
     ?needsHtml.join('')
     :'<div class="no-data" style="color:var(--ac)">✅ All items well stocked</div>';
+
+  // Recent activity — anonymous, show item + status + dates (no names/IDs)
+  const recentDon=don.slice(-8).reverse();
+  const recentReq=req.filter(r=>['approved','delivery pending','delivered'].includes((r['Status']||'').toLowerCase())).slice(-6).reverse();
+  const actHtml=[
+    ...recentDon.map(r=>{
+      const s=(r['Status']||'submitted').toLowerCase();
+      const badge=s==='collected'?'<span style="font-size:0.64rem;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--al);color:var(--ac);border:1px solid #b8d9b2">Collected ✓</span>':'<span style="font-size:0.64rem;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--aml);color:var(--am);border:1px solid #e8c87a">Submitted</span>';
+      const dateStr=s==='collected'?fd(r['Collected On']):fd(r['Submitted On']||r['Date']);
+      return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bg)"><span style="font-size:1rem">🎁</span><div style="flex:1"><div style="font-size:0.83rem;font-weight:600">${r['Item']||'—'} ×${r['Quantity']||0}</div><div style="font-size:0.71rem;color:var(--mu)">${dateStr}</div></div>${badge}</div>`;
+    }),
+    ...recentReq.map(r=>{
+      const s=(r['Status']||'').toLowerCase().replace(/ /g,'-');
+      const badgeMap={'approved':'<span style="font-size:0.64rem;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--al);color:var(--ac);border:1px solid #b8d9b2">Approved</span>','delivery-pending':'<span style="font-size:0.64rem;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--bll);color:var(--bl);border:1px solid #9fc3de">On the way</span>','delivered':'<span style="font-size:0.64rem;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--al);color:var(--ac);border:1px solid #b8d9b2">Delivered ✓</span>'};
+      const badge=badgeMap[s]||'';
+      const fb=r['Feedback']?`<span class="info-ico" style="width:18px;height:18px;border-radius:50%;background:var(--bl);color:white;font-size:0.6rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;cursor:help;position:relative;margin-left:4px">ℹ<span style="display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1c1c1c;color:white;font-size:0.74rem;padding:7px 10px;border-radius:8px;white-space:pre-wrap;min-width:160px;max-width:240px;z-index:400;line-height:1.5">"${r['Feedback']}"</span></span>`:'';
+      const d2=s==='delivered'?fd(r['Delivered On']):fd(r['Approved On']||r['Request Date']);
+      return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bg)"><span style="font-size:1rem">🤲</span><div style="flex:1"><div style="font-size:0.83rem;font-weight:600">${r['Item Requested']||'—'} ×${r['Qty Requested']||0}${fb}</div><div style="font-size:0.71rem;color:var(--mu)">${d2}</div></div>${badge}</div>`;
+    })
+  ].slice(0,10).join('')||'<div class="no-data">No activity yet</div>';
+  document.getElementById('activityList').innerHTML=actHtml;
+
+  // Make feedback tooltips work on hover
+  document.querySelectorAll('#activityList .info-ico').forEach(el=>{
+    el.addEventListener('mouseenter',()=>el.querySelector('span').style.display='block');
+    el.addEventListener('mouseleave',()=>el.querySelector('span').style.display='none');
+  });
 
   // Notice board
   const notices=(d.notices||[]).filter(n=>n['Active']!=='No').slice(-5).reverse();
