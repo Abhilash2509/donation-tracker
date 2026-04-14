@@ -2,118 +2,430 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Community Dashboard · Grocery Donation Tracker</title>
+<title>Community Dashboard · Grocery Donation Drive</title>
+<link rel="apple-touch-icon" href="icon-dashboard.svg"/>
+<link rel="icon" type="image/svg+xml" href="icon-dashboard.svg"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
-:root{--bg:#f4f1eb;--s:#fff;--b:#e2ddd4;--ac:#2d5a27;--al:#eaf3e8;--am:#c07c2e;--aml:#fdf3e3;--re:#b83232;--bl:#1f5f8b;--tx:#1c1c1c;--mu:#888078;--ra:14px;--sh:0 2px 14px rgba(0,0,0,0.07)}
+:root{--bg:#f4f1eb;--s:#fff;--b:#e2ddd4;--ac:#2d5a27;--al:#eaf3e8;--am:#c07c2e;--aml:#fdf3e3;--re:#b83232;--rl:#fdeaea;--bl:#1f5f8b;--bll:#e5f0f8;--tx:#1c1c1c;--mu:#888078;--ra:14px;--sh:0 2px 14px rgba(0,0,0,0.07)}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
-header{background:linear-gradient(135deg,var(--ac),#1a3d16);padding:20px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
-.htitle{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:white}
-.hsub{font-size:0.74rem;color:rgba(255,255,255,0.7)}
-.badge{background:rgba(255,255,255,0.2);color:white;font-size:0.7rem;padding:4px 12px;border-radius:999px;border:1px solid rgba(255,255,255,0.3)}
-.sc{font-size:0.72rem;color:rgba(255,255,255,0.7);display:flex;align-items:center;gap:5px}
-.sd{width:7px;height:7px;border-radius:50%;background:#aaa;animation:pulse 2s infinite}
+
+/* HEADER */
+header{background:linear-gradient(135deg,var(--ac),#1a3d16);padding:18px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.htitle{font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:800;color:white}
+.hsub{font-size:0.72rem;color:rgba(255,255,255,0.65)}
+.badge{background:rgba(255,255,255,0.15);color:white;font-size:0.68rem;padding:3px 11px;border-radius:999px;border:1px solid rgba(255,255,255,0.25)}
+.sync{font-size:0.7rem;color:rgba(255,255,255,0.65);display:flex;align-items:center;gap:5px}
+.sdot{width:7px;height:7px;border-radius:50%;background:#aaa;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.main{max-width:1100px;margin:0 auto;padding:28px}
-@media(max-width:700px){.main{padding:14px}}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:13px;margin-bottom:24px}
-.sc2{background:var(--s);border:1px solid var(--b);border-radius:var(--ra);padding:18px;box-shadow:var(--sh);text-align:center;position:relative;overflow:hidden}
+
+/* LAYOUT */
+.main{max-width:1100px;margin:0 auto;padding:24px}
+@media(max-width:700px){.main{padding:12px}}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+@media(max-width:740px){.row2{grid-template-columns:1fr}}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+@media(max-width:860px){.row3{grid-template-columns:1fr 1fr}}
+@media(max-width:540px){.row3{grid-template-columns:1fr}}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px}
+.sc2{background:var(--s);border:1px solid var(--b);border-radius:var(--ra);padding:16px;box-shadow:var(--sh);text-align:center;position:relative;overflow:hidden}
 .sc2::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
 .sc2.g::before{background:var(--ac)}.sc2.o::before{background:var(--am)}.sc2.b::before{background:var(--bl)}.sc2.r::before{background:var(--re)}
-.sc-val{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;line-height:1;margin:8px 0 4px}
+.sc-val{font-family:'Syne',sans-serif;font-size:1.9rem;font-weight:800;line-height:1;margin:7px 0 3px}
 .sc2.g .sc-val{color:var(--ac)}.sc2.o .sc-val{color:var(--am)}.sc2.b .sc-val{color:var(--bl)}.sc2.r .sc-val{color:var(--re)}
-.sc-lbl{font-size:0.7rem;color:var(--mu);text-transform:uppercase;letter-spacing:0.06em}
-.sc-ico{font-size:1.3rem}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
-@media(max-width:760px){.row2{grid-template-columns:1fr}}
-.panel{background:var(--s);border:1px solid var(--b);border-radius:var(--ra);padding:20px;box-shadow:var(--sh);margin-bottom:18px}
-.pt{font-family:'Syne',sans-serif;font-size:0.93rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:7px}
-.chart-wrap{position:relative;height:220px}
-.inv-item{margin-bottom:13px}.inv-item:last-child{margin-bottom:0}
-.inv-top{display:flex;justify-content:space-between;margin-bottom:5px;align-items:baseline}
-.inv-name{font-size:0.86rem;font-weight:600}.inv-nums{font-size:0.73rem;color:var(--mu)}
+.sc-lbl{font-size:0.68rem;color:var(--mu);text-transform:uppercase;letter-spacing:0.06em}
+.sc-ico{font-size:1.2rem}
+
+/* PANELS */
+.panel{background:var(--s);border:1px solid var(--b);border-radius:var(--ra);padding:18px;box-shadow:var(--sh);margin-bottom:0}
+.pt{font-family:'Syne',sans-serif;font-size:0.9rem;font-weight:700;margin-bottom:13px;display:flex;align-items:center;gap:6px}
+.chart-wrap{position:relative;height:200px}
+
+/* INVENTORY */
+.inv-item{margin-bottom:12px}.inv-item:last-child{margin-bottom:0}
+.inv-top{display:flex;justify-content:space-between;margin-bottom:4px;align-items:center;flex-wrap:wrap;gap:4px}
+.inv-name{font-size:0.84rem;font-weight:600}
+.inv-nums{font-size:0.72rem;color:var(--mu)}
 .bar-track{height:8px;background:var(--bg);border-radius:4px;overflow:hidden;border:1px solid var(--b)}
 .bar-fill{height:100%;border-radius:4px;transition:width 1s cubic-bezier(.4,0,.2,1)}
-.low-badge{display:inline-block;font-size:0.64rem;font-weight:600;padding:1px 7px;border-radius:999px;background:#fff3cd;color:#856404;margin-left:6px;border:1px solid #ffc107}
-.notice-item{padding:12px 0;border-bottom:1px solid var(--bg);line-height:1.6}
+.pill-low{display:inline-block;font-size:0.62rem;font-weight:700;padding:2px 7px;border-radius:999px;background:#fff3cd;color:#856404;border:1px solid #ffc107;margin-left:5px}
+.pill-need{display:inline-block;font-size:0.62rem;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--rl);color:var(--re);border:1px solid #f5c0c0;margin-left:5px}
+.pill-wanted{display:inline-block;font-size:0.62rem;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--bll);color:var(--bl);border:1px solid #9fc3de;margin-left:5px}
+
+/* NOTICES */
+.notice-item{padding:10px 0;border-bottom:1px solid var(--bg);line-height:1.6}
 .notice-item:last-child{border-bottom:none}
-.notice-date{font-size:0.72rem;color:var(--mu);margin-bottom:3px}
-.notice-txt{font-size:0.84rem}
-.feedback-item{padding:10px 0;border-bottom:1px solid var(--bg)}
-.feedback-item:last-child{border-bottom:none}
-.fb-quote{font-size:0.83rem;color:var(--tx);line-height:1.5;font-style:italic}
-.fb-meta{font-size:0.72rem;color:var(--mu);margin-top:3px}
-.no-data{color:var(--mu);font-size:0.82rem;text-align:center;padding:18px 0}
-footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-top:1px solid var(--b);margin-top:10px}
+.notice-date{font-size:0.7rem;color:var(--mu);margin-bottom:2px}
+.notice-txt{font-size:0.83rem}
+
+/* FEEDBACK */
+.fb-item{padding:10px 0;border-bottom:1px solid var(--bg)}
+.fb-item:last-child{border-bottom:none}
+.fb-quote{font-size:0.82rem;font-style:italic;line-height:1.5;color:var(--tx)}
+.fb-meta{font-size:0.7rem;color:var(--mu);margin-top:3px}
+
+/* NEEDS */
+.need-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bg)}
+.need-item:last-child{border-bottom:none}
+.need-icon{font-size:1.2rem;flex-shrink:0}
+.need-name{font-size:0.84rem;font-weight:600}
+.need-reason{font-size:0.76rem;color:var(--mu);margin-top:2px;line-height:1.4}
+.need-badge{font-size:0.65rem;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;flex-shrink:0}
+.need-badge.custom{background:var(--bll);color:var(--bl);border:1px solid #9fc3de}
+.need-badge.low{background:#fff3cd;color:#856404;border:1px solid #ffc107}
+.need-badge.empty{background:var(--rl);color:var(--re);border:1px solid #f5c0c0}
+
+/* PLAY CARD MODAL */
+.pc-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:900;align-items:center;justify-content:center;padding:16px}
+.pc-overlay.show{display:flex}
+.pc-box{background:white;border-radius:18px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.4)}
+.pc-close{position:absolute;top:14px;right:14px;background:rgba(0,0,0,0.2);color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.pc-inner{padding:28px}
+.pc-header{background:linear-gradient(135deg,var(--ac),#1a3d16);color:white;border-radius:12px;padding:20px;margin-bottom:18px;text-align:center}
+.pc-title{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;margin-bottom:4px}
+.pc-sub{font-size:0.82rem;opacity:0.85}
+.pc-section{margin-bottom:16px}
+.pc-section-title{font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--mu);margin-bottom:10px}
+.pc-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:480px){.pc-cards{grid-template-columns:1fr}}
+.pc-card{border-radius:10px;padding:14px;border:1.5px solid}
+.pc-card.green{background:#f0f7ee;border-color:#b8d4b3}
+.pc-card.amber{background:#fdf4e8;border-color:#e8c87a}
+.pc-card-label{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px}
+.pc-card.green .pc-card-label{color:var(--ac)}.pc-card.amber .pc-card-label{color:var(--am)}
+.pc-card-title{font-family:'Syne',sans-serif;font-size:0.95rem;font-weight:700;color:var(--tx);margin-bottom:8px}
+.pc-steps{list-style:none}
+.pc-steps li{font-size:0.79rem;color:#4a3822;padding:2px 0;display:flex;gap:7px;line-height:1.4}
+.pc-steps li::before{content:'→';font-weight:700;flex-shrink:0}
+.pc-card.green .pc-steps li::before{color:var(--ac)}.pc-card.amber .pc-steps li::before{color:var(--am)}
+.wf-row{display:flex;align-items:center;flex-wrap:wrap;gap:4px;padding:8px 0}
+.wf-step{font-size:0.7rem;font-weight:600;padding:3px 9px;border-radius:999px;border:1px solid}
+.wf-step.amber{background:var(--aml);border-color:#e8c87a;color:var(--am)}
+.wf-step.green{background:var(--al);border-color:#b8d9b2;color:var(--ac)}
+.wf-step.blue{background:var(--bll);border-color:#9fc3de;color:var(--bl)}
+.wf-step.final{background:var(--ac);border-color:var(--ac);color:white}
+.wf-arr{font-size:0.65rem;color:var(--b);font-weight:700}
+.tips-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+@media(max-width:400px){.tips-grid{grid-template-columns:1fr 1fr}}
+.tip-card{background:var(--bg);border:1px solid var(--b);border-radius:9px;padding:10px;text-align:center}
+.tip-ico{font-size:1.2rem;margin-bottom:4px}
+.tip-t{font-size:0.72rem;font-weight:700;color:var(--tx);margin-bottom:2px}
+.tip-d{font-size:0.67rem;color:var(--mu);line-height:1.4}
+
+/* PORTALS SECTION */
+.portals{margin-bottom:18px}
+.portal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:480px){.portal-grid{grid-template-columns:1fr}}
+.portal-card{border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;text-decoration:none;border:1.5px solid;transition:transform .15s,box-shadow .15s}
+.portal-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.12)}
+.portal-card.green{background:#f0f7ee;border-color:#b8d4b3}
+.portal-card.amber{background:#fdf4e8;border-color:#e8c87a}
+.portal-card.dark{background:#f0f0ee;border-color:#ccc}
+.portal-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+.portal-card.green .portal-icon{background:var(--ac)}.portal-card.amber .portal-icon{background:var(--am)}.portal-card.dark .portal-icon{background:#444}
+.portal-name{font-size:0.86rem;font-weight:700;color:var(--tx)}
+.portal-desc{font-size:0.72rem;color:var(--mu);margin-top:1px}
+.portal-add{font-size:0.67rem;color:var(--bl);margin-top:3px;font-weight:600}
+
+/* ICON DOWNLOADS */
+.icon-dl-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:480px){.icon-dl-grid{grid-template-columns:repeat(2,1fr)}}
+.icon-dl{background:var(--bg);border:1px solid var(--b);border-radius:10px;padding:12px 8px;text-align:center;text-decoration:none;transition:transform .15s}
+.icon-dl:hover{transform:translateY(-2px);box-shadow:var(--sh)}
+.icon-dl img{width:52px;height:52px;border-radius:12px;margin-bottom:6px;display:block;margin-left:auto;margin-right:auto}
+.icon-dl-name{font-size:0.72rem;font-weight:600;color:var(--tx)}
+.icon-dl-hint{font-size:0.65rem;color:var(--mu);margin-top:2px}
+
+/* MISC */
+.no-data{color:var(--mu);font-size:0.82rem;text-align:center;padding:16px 0}
+.about-btn{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);color:white;padding:5px 14px;border-radius:999px;font-size:0.74rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .15s}
+.about-btn:hover{background:rgba(255,255,255,0.25)}
+footer{text-align:center;color:var(--mu);font-size:0.69rem;padding:14px;border-top:1px solid var(--b);margin-top:10px}
 </style>
 </head>
 <body>
+
+<!-- PLAY CARD MODAL -->
+<div class="pc-overlay" id="pcOverlay" onclick="if(event.target===this)closePC()">
+  <div class="pc-box" style="position:relative">
+    <button class="pc-close" onclick="closePC()">✕</button>
+    <div class="pc-inner">
+      <div class="pc-header">
+        <div style="font-size:2rem;margin-bottom:8px">🛒</div>
+        <div class="pc-title">Community Grocery Donation Drive</div>
+        <div class="pc-sub">A free service connecting generous donors with students who need support</div>
+      </div>
+
+      <div class="pc-section">
+        <div class="pc-section-title">Who is this for?</div>
+        <div class="pc-cards">
+          <div class="pc-card green">
+            <div class="pc-card-label">If you want to give</div>
+            <div class="pc-card-title">🎁 Donor</div>
+            <ul class="pc-steps">
+              <li>Register — get a Donor ID</li>
+              <li>Select an item &amp; submit donation</li>
+              <li>Admin collects from your address</li>
+              <li>Track your donation any time</li>
+            </ul>
+          </div>
+          <div class="pc-card amber">
+            <div class="pc-card-label">If you need support</div>
+            <div class="pc-card-title">🤲 Recipient</div>
+            <ul class="pc-steps">
+              <li>Register — get a Recipient ID</li>
+              <li>Request 1 item at a time</li>
+              <li>Item delivered to your address</li>
+              <li>Leave feedback for the donor</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="pc-section">
+        <div class="pc-section-title">How it works — step by step</div>
+        <div style="background:var(--bg);border-radius:10px;padding:12px 14px">
+          <div style="font-size:0.73rem;font-weight:600;color:var(--am);margin-bottom:4px">🎁 DONATION</div>
+          <div class="wf-row">
+            <span class="wf-step amber">You Submit</span><span class="wf-arr">›</span>
+            <span class="wf-step amber">Awaiting Collection</span><span class="wf-arr">›</span>
+            <span class="wf-step final">✓ Collected</span>
+          </div>
+          <div style="font-size:0.73rem;font-weight:600;color:var(--ac);margin-top:10px;margin-bottom:4px">🤲 REQUEST</div>
+          <div class="wf-row">
+            <span class="wf-step amber">Pending</span><span class="wf-arr">›</span>
+            <span class="wf-step green">Approved</span><span class="wf-arr">›</span>
+            <span class="wf-step blue">Delivery Pending</span><span class="wf-arr">›</span>
+            <span class="wf-step final">✓ Delivered</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pc-section">
+        <div class="pc-section-title">Good to know</div>
+        <div class="tips-grid">
+          <div class="tip-card"><div class="tip-ico">🆔</div><div class="tip-t">Save Your ID</div><div class="tip-d">You need it every visit. Check your welcome email.</div></div>
+          <div class="tip-card"><div class="tip-ico">📧</div><div class="tip-t">Email Updates</div><div class="tip-d">Notifications sent at every stage automatically.</div></div>
+          <div class="tip-card"><div class="tip-ico">🔍</div><div class="tip-t">Track Anytime</div><div class="tip-d">Use the Track tab with your ID for live status.</div></div>
+          <div class="tip-card"><div class="tip-ico">📋</div><div class="tip-t">Custom Requests</div><div class="tip-d">Item not listed? Submit a custom request.</div></div>
+          <div class="tip-card"><div class="tip-ico">📝</div><div class="tip-t">Feedback</div><div class="tip-d">After delivery, leave a note — donors love to hear!</div></div>
+          <div class="tip-card"><div class="tip-ico">📱</div><div class="tip-t">Works on Mobile</div><div class="tip-d">Add the link to your home screen for quick access.</div></div>
+        </div>
+      </div>
+
+      <div class="pc-section">
+        <div class="pc-section-title">Get started — tap your portal</div>
+        <div class="portal-grid" id="pcPortals">
+          <a href="donor.html" class="portal-card green" target="_blank">
+            <div class="portal-icon">🎁</div>
+            <div><div class="portal-name">Donor Portal</div><div class="portal-desc">Register &amp; Donate</div><div class="portal-add">Tap to open →</div></div>
+          </a>
+          <a href="recipient.html" class="portal-card amber" target="_blank">
+            <div class="portal-icon">🤲</div>
+            <div><div class="portal-name">Recipient Portal</div><div class="portal-desc">Register &amp; Request</div><div class="portal-add">Tap to open →</div></div>
+          </a>
+        </div>
+      </div>
+
+      <div class="pc-section">
+        <div class="pc-section-title">Download app icon to your phone</div>
+        <div class="icon-dl-grid" id="pcIcons">
+          <a href="icon-donor.svg" download="icon-donor.svg" class="icon-dl">
+            <img src="icon-donor.svg" alt="Donor icon"/>
+            <div class="icon-dl-name">🎁 Donor</div>
+            <div class="icon-dl-hint">Download icon</div>
+          </a>
+          <a href="icon-recipient.svg" download="icon-recipient.svg" class="icon-dl">
+            <img src="icon-recipient.svg" alt="Recipient icon"/>
+            <div class="icon-dl-name">🤲 Recipient</div>
+            <div class="icon-dl-hint">Download icon</div>
+          </a>
+          <a href="icon-dashboard.svg" download="icon-dashboard.svg" class="icon-dl">
+            <img src="icon-dashboard.svg" alt="Dashboard icon"/>
+            <div class="icon-dl-name">📊 Dashboard</div>
+            <div class="icon-dl-hint">Download icon</div>
+          </a>
+          <a href="icon-admin.svg" download="icon-admin.svg" class="icon-dl">
+            <img src="icon-admin.svg" alt="Admin icon"/>
+            <div class="icon-dl-name">🔐 Admin</div>
+            <div class="icon-dl-hint">Download icon</div>
+          </a>
+        </div>
+        <div style="margin-top:10px;padding:10px 12px;background:var(--bll);border-radius:9px;font-size:0.77rem;color:var(--bl);line-height:1.6">
+          📱 <strong>How to add to home screen:</strong> Open your portal in Safari/Chrome → Share button → "Add to Home Screen" → Done
+        </div>
+      </div>
+
+      <button onclick="closePC()" style="width:100%;padding:12px;background:var(--ac);color:white;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer;margin-top:4px">Got it! Close ✕</button>
+    </div>
+  </div>
+</div>
+
 <header>
   <div>
     <div class="htitle">🛒 Community Grocery Drive</div>
-    <div class="hsub">Live public dashboard — read only</div>
+    <div class="hsub">Live public dashboard · read only · auto-refreshes</div>
   </div>
-  <span class="badge">🔓 Public View</span>
-  <div class="sc"><div class="sd" id="sd"></div><span id="sl">Loading…</span></div>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <button class="about-btn" onclick="openPC()">ℹ About this drive</button>
+    <span class="badge">🔓 Public</span>
+    <div class="sync"><div class="sdot" id="sd"></div><span id="sl">Loading…</span></div>
+  </div>
 </header>
+
 <div class="main">
-  <div class="stats" id="statsRow"><div class="no-data" style="grid-column:1/-1">Loading data…</div></div>
-  <div class="row2">
-    <div class="panel"><div class="pt">🥫 Items Donated</div><div class="chart-wrap"><canvas id="pieChart"></canvas></div></div>
+  <!-- STATS -->
+  <div class="stats" id="statsRow"><div class="no-data" style="grid-column:1/-1">Loading…</div></div>
+
+  <!-- CHART + INVENTORY -->
+  <div class="row2" style="margin-bottom:16px">
+    <div class="panel"><div class="pt">🥫 Donations by Item</div><div class="chart-wrap"><canvas id="pieChart"></canvas></div></div>
     <div class="panel"><div class="pt">📦 Live Inventory</div><div id="invBars"><div class="no-data">—</div></div></div>
   </div>
-  <div class="row2">
-    <div class="panel"><div class="pt">📋 Notice Board</div><div id="noticeBoard"><div class="no-data">No notices posted yet</div></div></div>
-    <div class="panel"><div class="pt">💬 Recipient Feedback</div><div id="feedbackList"><div class="no-data">No feedback yet</div></div></div>
+
+  <!-- WHAT'S NEEDED + NOTICES + FEEDBACK -->
+  <div class="row3" style="margin-bottom:16px">
+    <div class="panel"><div class="pt">⚠️ What's Needed</div><div id="needsList"><div class="no-data">—</div></div></div>
+    <div class="panel"><div class="pt">📋 Notice Board</div><div id="noticeBoard"><div class="no-data">No notices yet</div></div></div>
+    <div class="panel"><div class="pt">💬 Community Feedback</div><div id="feedbackList"><div class="no-data">No feedback yet</div></div></div>
+  </div>
+
+  <!-- PORTALS + ICON DOWNLOADS -->
+  <div class="row2" style="margin-bottom:16px">
+    <div class="panel">
+      <div class="pt">🚪 Access Portals</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <a href="donor.html" class="portal-card green" style="padding:11px 13px">
+          <div class="portal-icon" style="width:34px;height:34px;font-size:1.1rem">🎁</div>
+          <div><div class="portal-name" style="font-size:0.82rem">Donor Portal</div><div class="portal-desc">Register &amp; Donate</div></div>
+        </a>
+        <a href="recipient.html" class="portal-card amber" style="padding:11px 13px">
+          <div class="portal-icon" style="width:34px;height:34px;font-size:1.1rem;background:var(--am)">🤲</div>
+          <div><div class="portal-name" style="font-size:0.82rem">Recipient Portal</div><div class="portal-desc">Register &amp; Request</div></div>
+        </a>
+        <a href="dashboard.html" class="portal-card" style="border-color:#9fc3de;background:var(--bll);padding:11px 13px">
+          <div class="portal-icon" style="width:34px;height:34px;font-size:1.1rem;background:var(--bl)">📊</div>
+          <div><div class="portal-name" style="font-size:0.82rem">Dashboard</div><div class="portal-desc">This page · public</div></div>
+        </a>
+        <a href="admin.html" class="portal-card dark" style="padding:11px 13px">
+          <div class="portal-icon" style="width:34px;height:34px;font-size:1.1rem">🔐</div>
+          <div><div class="portal-name" style="font-size:0.82rem">Admin</div><div class="portal-desc">Admin access only</div></div>
+        </a>
+      </div>
+      <div style="padding:10px 12px;background:var(--bll);border-radius:9px;font-size:0.76rem;color:var(--bl);line-height:1.6">
+        📱 <strong>Add to home screen:</strong> Open portal in Safari/Chrome → Share → "Add to Home Screen"
+      </div>
+    </div>
+    <div class="panel">
+      <div class="pt">📲 Download App Icons</div>
+      <div class="icon-dl-grid" style="margin-bottom:10px">
+        <a href="icon-donor.svg" download="icon-donor.svg" class="icon-dl">
+          <img src="icon-donor.svg" alt="Donor"/><div class="icon-dl-name">Donor</div><div class="icon-dl-hint">↓ Download</div>
+        </a>
+        <a href="icon-recipient.svg" download="icon-recipient.svg" class="icon-dl">
+          <img src="icon-recipient.svg" alt="Recipient"/><div class="icon-dl-name">Recipient</div><div class="icon-dl-hint">↓ Download</div>
+        </a>
+        <a href="icon-dashboard.svg" download="icon-dashboard.svg" class="icon-dl">
+          <img src="icon-dashboard.svg" alt="Dashboard"/><div class="icon-dl-name">Dashboard</div><div class="icon-dl-hint">↓ Download</div>
+        </a>
+        <a href="icon-admin.svg" download="icon-admin.svg" class="icon-dl">
+          <img src="icon-admin.svg" alt="Admin"/><div class="icon-dl-name">Admin</div><div class="icon-dl-hint">↓ Download</div>
+        </a>
+      </div>
+      <div style="font-size:0.74rem;color:var(--mu);line-height:1.6">Save icon → open portal → Share → Add to Home Screen → set saved icon as custom image</div>
+    </div>
   </div>
 </div>
-<footer>Community Grocery Donation Drive · Public Dashboard · Auto-refreshes every 60 seconds</footer>
+
+<footer>Community Grocery Donation Drive · Public Dashboard · Data is anonymous — no personal information shown</footer>
+
 <script>
 const SU=localStorage.getItem('donationScriptUrl')||'';
 const PAL=['#2d5a27','#c07c2e','#1f5f8b','#b83232','#6c3483','#117a65'];
-let PC=null;
+let PC2=null;
+
+function openPC(){document.getElementById('pcOverlay').classList.add('show');}
+function closePC(){document.getElementById('pcOverlay').classList.remove('show');}
 
 async function load(){
-  if(!SU){document.getElementById('sl').textContent='Script URL not set in admin portal';return;}
+  if(!SU){document.getElementById('sl').textContent='Not configured — set URL in admin portal';return;}
   try{
     const r=await fetch(SU+'?action=getData&t='+Date.now());
     const d=await r.json();if(d.error)throw new Error(d.error);
     render(d);
     document.getElementById('sd').style.background='#a8e6a0';
     document.getElementById('sl').textContent='Live · '+new Date().toLocaleTimeString();
-  }catch(e){document.getElementById('sd').style.background='#e57373';document.getElementById('sl').textContent='Error loading';}
+  }catch(e){document.getElementById('sd').style.background='#e57373';document.getElementById('sl').textContent='Error — retrying…';}
 }
 setInterval(load,60000);load();
 
 function render(d){
   const don=d.donations||[],req=d.requests||[],donors=d.donors||[],rec=d.recipients||[];
-  const inv=d.inventory||[];
+  const inv=d.inventory||[],items=d.items||[],cr=d.customRequests||[];
   const totalU=don.reduce((s,r)=>s+(parseInt(r['Quantity'])||0),0);
   const delivered=req.filter(r=>(r['Status']||'').toLowerCase()==='delivered').length;
 
+  // Stats
   document.getElementById('statsRow').innerHTML=`
     <div class="sc2 g"><div class="sc-ico">🧑‍🤝‍🧑</div><div class="sc-val">${donors.length}</div><div class="sc-lbl">Donors</div></div>
     <div class="sc2 o"><div class="sc-ico">🎁</div><div class="sc-val">${totalU}</div><div class="sc-lbl">Units Donated</div></div>
     <div class="sc2 b"><div class="sc-ico">🤲</div><div class="sc-val">${rec.length}</div><div class="sc-lbl">Recipients</div></div>
-    <div class="sc2 r"><div class="sc-ico">📦</div><div class="sc-val">${delivered}</div><div class="sc-lbl">Deliveries Made</div></div>`;
+    <div class="sc2 r"><div class="sc-ico">📦</div><div class="sc-val">${delivered}</div><div class="sc-lbl">Delivered</div></div>`;
 
-  // Pie chart
+  // Pie — by item (anonymous, no donor info)
   const it={};don.forEach(r=>{const k=r['Item']||'';it[k]=(it[k]||0)+(parseInt(r['Quantity'])||0);});
   const labels=Object.keys(it),vals=Object.values(it);
-  if(PC)PC.destroy();
-  if(labels.length)PC=new Chart(document.getElementById('pieChart').getContext('2d'),{
+  if(PC2)PC2.destroy();
+  if(labels.length)PC2=new Chart(document.getElementById('pieChart').getContext('2d'),{
     type:'doughnut',
     data:{labels,datasets:[{data:vals,backgroundColor:PAL.slice(0,labels.length),borderColor:'#fff',borderWidth:3,hoverOffset:5}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{font:{family:'DM Sans',size:11},padding:10,color:'#1c1c1c',boxWidth:10}}},animation:{duration:800}}
   });
 
-  // Inventory bars
-  const maxD=Math.max(...inv.map(i=>i.donated),1);
+  // Inventory bars — anonymous
+  const invBalMap={};inv.forEach(i=>invBalMap[i.item]=i.balance);
+  const maxB=Math.max(...inv.map(i=>i.donated),1);
   document.getElementById('invBars').innerHTML=inv.length
-    ?inv.map((i,idx)=>`<div class="inv-item"><div class="inv-top"><span class="inv-name">${i.item}${i.balance<5?'<span class="low-badge">Low</span>':''}</span><span class="inv-nums">Available: <strong>${i.balance}</strong> of ${i.donated}</span></div><div class="bar-track"><div class="bar-fill" style="width:${i.donated>0?Math.max(2,Math.round(i.balance/i.donated*100)):0}%;background:${PAL[idx%PAL.length]}"></div></div></div>`).join('')
+    ?inv.map((i,idx)=>{
+      const pct=i.donated>0?Math.max(2,Math.round(i.balance/i.donated*100)):0;
+      const badge=i.balance<=0?'<span class="pill-need">None</span>':i.balance<5?'<span class="pill-low">Low</span>':'';
+      return`<div class="inv-item"><div class="inv-top"><span class="inv-name">${i.item}${badge}</span><span class="inv-nums">${i.balance} available</span></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${PAL[idx%PAL.length]}"></div></div></div>`;
+    }).join('')
     :'<div class="no-data">No donations collected yet</div>';
+
+  // What's needed — combine low stock + custom requests (no recipient info shown)
+  // 1. Items with low/zero balance from inventory
+  const lowInv=inv.filter(i=>i.balance<5);
+  // 2. Items requested but NOT in inventory at all (from Item Master)
+  const itemNames=items.map(r=>String(r['Item Name']||'').trim());
+  const notInInv=itemNames.filter(name=>!invBalMap.hasOwnProperty(name));
+  // 3. Pending custom requests (no recipient ID shown — just item and reason)
+  const pendingCR=cr.filter(r=>(r['Status']||'').toLowerCase()==='pending');
+
+  const needsHtml=[];
+  // Custom requests first (priority)
+  pendingCR.forEach(r=>{
+    needsHtml.push(`<div class="need-item"><div class="need-icon">🔍</div><div style="flex:1"><div class="need-name">${r['Item Requested']||'—'}</div><div class="need-reason">"${r['Notes']||'No reason given'}"</div></div><span class="need-badge custom">Requested</span></div>`);
+  });
+  // Low inventory items
+  lowInv.forEach(i=>{
+    if(!pendingCR.find(r=>String(r['Item Requested']||'').toLowerCase()===i.item.toLowerCase())){
+      const badge=i.balance<=0?'<span class="need-badge empty">None left</span>':'<span class="need-badge low">Only '+i.balance+'</span>';
+      needsHtml.push(`<div class="need-item"><div class="need-icon">📦</div><div style="flex:1"><div class="need-name">${i.item}</div><div class="need-reason">Running low in inventory</div></div>${badge}</div>`);
+    }
+  });
+  // Items never donated
+  notInInv.slice(0,3).forEach(name=>{
+    needsHtml.push(`<div class="need-item"><div class="need-icon">⭕</div><div style="flex:1"><div class="need-name">${name}</div><div class="need-reason">No donations received yet</div></div><span class="need-badge empty">Not stocked</span></div>`);
+  });
+
+  document.getElementById('needsList').innerHTML=needsHtml.length
+    ?needsHtml.join('')
+    :'<div class="no-data" style="color:var(--ac)">✅ All items well stocked</div>';
 
   // Notice board
   const notices=(d.notices||[]).filter(n=>n['Active']!=='No').slice(-5).reverse();
@@ -121,11 +433,11 @@ function render(d){
     ?notices.map(n=>`<div class="notice-item"><div class="notice-date">${fd(n['Date'])}</div><div class="notice-txt">${n['Notice']||''}</div></div>`).join('')
     :'<div class="no-data">No notices posted yet</div>';
 
-  // Feedback (only show delivered items with feedback)
-  const fbs=(d.requests||[]).filter(r=>(r['Status']||'').toLowerCase()==='delivered'&&r['Feedback']).slice(-6).reverse();
+  // Feedback — item name + date only, no recipient info
+  const fbs=req.filter(r=>(r['Status']||'').toLowerCase()==='delivered'&&r['Feedback']).slice(-6).reverse();
   document.getElementById('feedbackList').innerHTML=fbs.length
-    ?fbs.map(r=>`<div class="feedback-item"><div class="fb-quote">"${r['Feedback']}"</div><div class="fb-meta">${r['Item Requested']} · ${fd(r['Delivered On'])}</div></div>`).join('')
-    :'<div class="no-data">No feedback submitted yet</div>';
+    ?fbs.map(r=>`<div class="fb-item"><div class="fb-quote">"${r['Feedback']}"</div><div class="fb-meta">for ${r['Item Requested']||'an item'} · ${fd(r['Delivered On'])}</div></div>`).join('')
+    :'<div class="no-data">No feedback yet</div>';
 }
 
 function fd(d){if(!d)return'—';try{return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch{return String(d)||'—';}}

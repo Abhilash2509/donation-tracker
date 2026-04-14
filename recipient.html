@@ -77,6 +77,57 @@ footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-t
 </style>
 </head>
 <body>
+
+<!-- PLAY CARD MODAL -->
+<div id="pcOv" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:900;align-items:center;justify-content:center;padding:16px;overflow-y:auto">
+  <div style="background:white;border-radius:18px;max-width:620px;width:100%;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.4)">
+    <button onclick="document.getElementById('pcOv').style.display='none'" style="position:absolute;top:12px;right:12px;background:rgba(0,0,0,0.15);border:none;border-radius:50%;width:30px;height:30px;font-size:1rem;cursor:pointer;color:#333">✕</button>
+    <div style="padding:24px">
+      <div style="background:linear-gradient(135deg,#2d5a27,#1a3d16);color:white;border-radius:12px;padding:18px;text-align:center;margin-bottom:16px">
+        <div style="font-size:1.8rem;margin-bottom:6px">🛒</div>
+        <div style="font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:800;margin-bottom:4px">Community Grocery Donation Drive</div>
+        <div style="font-size:0.8rem;opacity:0.85">Connecting generous donors with students who need support · 100% free</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div style="background:#f0f7ee;border:1.5px solid #b8d4b3;border-radius:10px;padding:13px">
+          <div style="font-size:0.63rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#2d5a27;margin-bottom:3px">If you want to give</div>
+          <div style="font-family:'Syne',sans-serif;font-size:0.92rem;font-weight:700;margin-bottom:7px">🎁 Donor</div>
+          <div style="font-size:0.77rem;color:#4a3822;line-height:1.6">→ Register once, get Donor ID<br>→ Select item &amp; submit<br>→ Admin collects from you<br>→ Track donation any time</div>
+        </div>
+        <div style="background:#fdf4e8;border:1.5px solid #e8c87a;border-radius:10px;padding:13px">
+          <div style="font-size:0.63rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#c07c2e;margin-bottom:3px">If you need support</div>
+          <div style="font-family:'Syne',sans-serif;font-size:0.92rem;font-weight:700;margin-bottom:7px">🤲 Recipient</div>
+          <div style="font-size:0.77rem;color:#4a3822;line-height:1.6">→ Register once, get Recipient ID<br>→ Request 1 item at a time<br>→ Delivered to your address<br>→ Leave feedback for donor</div>
+        </div>
+      </div>
+      <div style="background:#f4f1eb;border-radius:10px;padding:12px 14px;margin-bottom:14px">
+        <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#888;margin-bottom:8px">Workflows</div>
+        <div style="font-size:0.7rem;font-weight:600;color:#c07c2e;margin-bottom:4px">🎁 Donation: Submit → Collected</div>
+        <div style="font-size:0.7rem;font-weight:600;color:#2d5a27;margin-top:8px;margin-bottom:4px">🤲 Request: Pending → Approved → Delivery Pending → Delivered</div>
+        <div style="font-size:0.74rem;color:#6a5030;margin-top:8px;line-height:1.6">📧 Email notifications sent at every stage &nbsp;·&nbsp; 🆔 Save your ID from welcome email &nbsp;·&nbsp; 📱 Works on mobile</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <a href="donor.html" style="background:#f0f7ee;border:1.5px solid #b8d4b3;border-radius:10px;padding:11px 13px;display:flex;align-items:center;gap:10px;text-decoration:none">
+          <div style="width:32px;height:32px;background:#2d5a27;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">🎁</div>
+          <div><div style="font-size:0.82rem;font-weight:700;color:#1c1c1c">Donor Portal</div><div style="font-size:0.7rem;color:#888">Tap to open →</div></div>
+        </a>
+        <a href="recipient.html" style="background:#fdf4e8;border:1.5px solid #e8c87a;border-radius:10px;padding:11px 13px;display:flex;align-items:center;gap:10px;text-decoration:none">
+          <div style="width:32px;height:32px;background:#c07c2e;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">🤲</div>
+          <div><div style="font-size:0.82rem;font-weight:700;color:#1c1c1c">Recipient Portal</div><div style="font-size:0.7rem;color:#888">Tap to open →</div></div>
+        </a>
+        <a href="dashboard.html" style="background:#e5f0f8;border:1.5px solid #9fc3de;border-radius:10px;padding:11px 13px;display:flex;align-items:center;gap:10px;text-decoration:none">
+          <div style="width:32px;height:32px;background:#1f5f8b;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">📊</div>
+          <div><div style="font-size:0.82rem;font-weight:700;color:#1c1c1c">Public Dashboard</div><div style="font-size:0.7rem;color:#888">Live inventory →</div></div>
+        </a>
+        <a href="icon-recipient.svg" download style="background:#f4f1eb;border:1.5px solid #e2ddd4;border-radius:10px;padding:11px 13px;display:flex;align-items:center;gap:10px;text-decoration:none">
+          <div style="width:32px;height:32px;background:#888;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">📲</div>
+          <div><div style="font-size:0.82rem;font-weight:700;color:#1c1c1c">App Icon</div><div style="font-size:0.7rem;color:#888">Download for home screen</div></div>
+        </a>
+      </div>
+      <button onclick="document.getElementById('pcOv').style.display='none'" style="width:100%;padding:11px;background:#2d5a27;color:white;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.88rem;font-weight:700;cursor:pointer">Got it! Close ✕</button>
+    </div>
+  </div>
+</div>
 <nav>
   <div><div class="brand">🤲 Recipient Portal</div><div class="bsub">Grocery Donation Tracker</div></div>
   <div class="ntabs">
@@ -85,6 +136,7 @@ footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-t
     <button class="ntab" onclick="go('track',this)">📍 Track</button>
     <button class="ntab" onclick="go('register',this)">📋 Register</button>
   </div>
+  <button onclick="document.getElementById('pcOv').style.display='flex'" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:white;padding:5px 12px;border-radius:999px;font-size:0.75rem;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif">ℹ About</button>
   <div class="sc"><div class="sd" id="sd"></div><span id="sl">Connecting…</span></div>
 </nav>
 <div class="al2" id="al"></div>
