@@ -207,10 +207,10 @@ footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-t
 
 <!-- TRACK -->
 <div class="pg" id="pg-track">
-  <div class="hero"><h2>📍 Track Your Request</h2><p>Enter your Request ID to see current status and workflow.</p></div>
+  <div class="hero"><h2>📍 Track Your Request</h2><p>Enter your Request ID or Custom Request ID to see current status and full workflow.</p></div>
   <div class="panel">
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <input type="text" id="trackId" placeholder="Request ID e.g. RCP001_R001" style="flex:1;min-width:180px"/>
+      <input type="text" id="trackId" placeholder="Request ID (e.g. RCP001_R001) or Custom ID (e.g. CRQ001)" style="flex:1;min-width:180px"/>
       <button class="btn ba" onclick="trackRequest()" style="white-space:nowrap">Track →</button>
     </div>
   </div>
@@ -355,39 +355,78 @@ function trackRequest(){
   const fbSection=document.getElementById('feedbackSection');
   fbSection.style.display='none';
   trackingReqId='';
-  if(!id||!LD){document.getElementById('trackResult').innerHTML='<div class="panel" style="color:var(--mu);text-align:center;padding:20px">Please enter a Request ID.</div>';return;}
+  const res=document.getElementById('trackResult');
+  if(!id||!LD){res.innerHTML='<div class="panel" style="color:var(--mu);text-align:center;padding:20px">Please enter a Request ID or Custom Request ID.</div>';return;}
+
+  // Check regular requests first
   const req=(LD.requests||[]).find(r=>String(r['Request ID']||'').toUpperCase()===id);
-  if(!req){document.getElementById('trackResult').innerHTML='<div class="panel" style="color:var(--mu);text-align:center;padding:20px">Request ID not found. Check and try again.</div>';return;}
-  const steps=['Pending','Approved','Delivery Pending','Delivered'];
-  const cur=String(req['Status']||'Pending');
-  const curIdx=steps.findIndex(s=>s.toLowerCase()===cur.toLowerCase());
-  const stepsHtml=steps.map((s,i)=>`${i>0?'<span class="wf-arrow">›</span>':''}<span class="wf-step ${i<curIdx?'done':i===curIdx?'cur':''}">${s}</span>`).join('');
-  const etaLine=req['ETA']?`<br>🚚 <strong>Estimated delivery:</strong> ${req['ETA']}`:'';
-  // Show status dates only — NOT Notes (delivery schedule is internal)
-  const dates=[
-    req['Pending On']&&('📋 Requested: '+fd(req['Pending On'])),
-    req['Approved On']&&('✅ Approved: '+fd(req['Approved On'])),
-    req['Delivery Pending On']&&('🚚 Out for delivery: '+fd(req['Delivery Pending On'])),
-    req['Delivered On']&&('📦 Delivered: '+fd(req['Delivered On'])),
-  ].filter(Boolean).join('<br>');
-  // Only show Feedback if it exists and is not the same as Notes (delivery schedule)
-  // This guards against column misalignment in the Google Sheet
-  const rawFeedback=req['Feedback']||'';
-  const rawNotes=req['Notes']||'';
-  const realFeedback=(rawFeedback&&rawFeedback!==rawNotes)?rawFeedback:'';
-  const feedbackLine=realFeedback?`<div style="margin-top:8px;font-size:0.81rem;background:var(--gl);color:var(--gr);padding:8px 12px;border-radius:8px">✅ Feedback submitted: ${realFeedback}</div>`:'';
-  const rejComment=req['Rejection Comment']?`<div style="margin-top:8px;font-size:0.81rem;background:var(--rl);color:var(--re);padding:8px 12px;border-radius:8px">Rejection reason: ${req['Rejection Comment']}</div>`:'';
-  document.getElementById('trackResult').innerHTML=`<div class="wf-wrap">
-    <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:10px">${req['Request ID']} · ${req['Item Requested']} ×${req['Qty Requested']}</div>
-    <div class="wf-steps">${stepsHtml}</div>
-    <div class="wf-detail" style="line-height:1.8">${dates}${etaLine}</div>
-    ${feedbackLine}${rejComment}
-  </div>`;
-  // Show feedback form if delivered and no feedback yet
-  if(cur.toLowerCase()==='delivered'&&!req['Feedback']){
-    trackingReqId=req['Request ID'];
-    fbSection.style.display='block';
+  if(req){
+    const steps=['Pending','Approved','Delivery Pending','Delivered'];
+    const cur=String(req['Status']||'Pending');
+    const curIdx=steps.findIndex(s=>s.toLowerCase()===cur.toLowerCase());
+    const stepsHtml=steps.map((s,i)=>`${i>0?'<span class="wf-arrow">›</span>':''}<span class="wf-step ${i<curIdx?'done':i===curIdx?'cur':''}">${s}</span>`).join('');
+    const etaLine=req['ETA']?`<br>🚚 <strong>Estimated delivery:</strong> ${req['ETA']}`:'';
+    const dates=[
+      req['Pending On']&&('📋 Requested: '+fd(req['Pending On'])),
+      req['Approved On']&&('✅ Approved: '+fd(req['Approved On'])),
+      req['Delivery Pending On']&&('🚚 Out for delivery: '+fd(req['Delivery Pending On'])),
+      req['Delivered On']&&('📦 Delivered: '+fd(req['Delivered On'])),
+    ].filter(Boolean).join('<br>');
+    const rejComment=req['Rejection Comment']?`<div style="margin-top:8px;font-size:0.81rem;background:var(--rl);color:var(--re);padding:8px 12px;border-radius:8px">Rejection reason: ${req['Rejection Comment']}</div>`:'';
+    const isDelivered=cur.toLowerCase()==='delivered';
+
+    // Feedback: only show "submitted" confirmation if Feedback field has a value
+    // AND it was explicitly submitted (not the same as delivery Notes)
+    // We check: Feedback field is non-empty AND different from Notes field
+    const storedFb=String(req['Feedback']||'').trim();
+    const storedNotes=String(req['Notes']||'').trim();
+    const hasFeedback=storedFb.length>0 && storedFb!==storedNotes;
+    const feedbackConfirm=hasFeedback
+      ?`<div style="margin-top:10px;padding:10px 13px;background:var(--gl);color:var(--gr);border-radius:8px;font-size:0.82rem">
+          💬 <strong>Your feedback:</strong> "${storedFb}"
+        </div>`
+      :'';
+
+    res.innerHTML=`<div class="wf-wrap">
+      <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:10px">${req['Request ID']} · ${req['Item Requested']} ×${req['Qty Requested']}</div>
+      <div class="wf-steps">${stepsHtml}</div>
+      <div class="wf-detail" style="line-height:1.8">${dates}${etaLine}</div>
+      ${rejComment}${feedbackConfirm}
+    </div>`;
+
+    // Show feedback input form only when: delivered AND no feedback yet
+    if(isDelivered && !hasFeedback){
+      trackingReqId=req['Request ID'];
+      fbSection.style.display='block';
+    }
+    return;
   }
+
+  // Check custom requests
+  const cr=(LD.customRequests||[]).find(r=>String(r['Custom ID']||'').toUpperCase()===id);
+  if(cr){
+    const s=String(cr['Status']||'Pending').toLowerCase();
+    const steps=['Pending','Fulfilled'];
+    const altSteps=['Pending','Not Available'];
+    const isFulfilled=s==='fulfilled';
+    const isNA=s==='not available';
+    const stepsHtml=`<span class="wf-step ${s==='pending'?'cur':'done'}">Pending</span><span class="wf-arrow">›</span><span class="wf-step ${isFulfilled?'done':isNA?'':''}" style="${isFulfilled?'background:var(--ac);color:white;border-color:var(--ac)':isNA?'background:var(--rl);color:var(--re);border-color:#f5c0c0':''}">${isFulfilled?'✓ Fulfilled':isNA?'Not Available':'Awaiting Review'}</span>`;
+    const adminNote=cr['Admin Note']?`<div style="margin-top:8px;font-size:0.81rem;background:${isFulfilled?'var(--gl)':'var(--rl)'};color:${isFulfilled?'var(--gr)':'var(--re)'};padding:8px 12px;border-radius:8px">${isFulfilled?'✅':'ℹ'} Admin note: ${cr['Admin Note']}</div>`:'';
+    const resolvedDate=cr['Resolved On']?`<br>📅 Resolved: ${fd(cr['Resolved On'])}`:'';
+    res.innerHTML=`<div class="wf-wrap">
+      <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:6px">${cr['Custom ID']} · ${cr['Item Requested']}</div>
+      <div style="font-size:0.78rem;color:var(--mu);margin-bottom:10px">Recipient: ${cr['Recipient ID']||'—'} · Submitted: ${fd(cr['Date'])}</div>
+      <div class="wf-steps">${stepsHtml}</div>
+      <div class="wf-detail" style="line-height:1.8;margin-top:8px">
+        📋 Submitted: ${fd(cr['Date'])}${resolvedDate}
+        ${isFulfilled?'<br>✅ This item has been added to the list. You can now request it via the Request tab!':''}
+      </div>
+      ${adminNote}
+    </div>`;
+    return;
+  }
+
+  res.innerHTML='<div class="panel" style="color:var(--mu);text-align:center;padding:20px">ID not found. Check your Request ID (e.g. RCP001_R001) or Custom Request ID (e.g. CRQ001).</div>';
 }
 
 async function submitFeedback(){

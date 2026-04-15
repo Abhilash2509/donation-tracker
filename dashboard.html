@@ -21,6 +21,13 @@ header{background:linear-gradient(135deg,var(--ac),#1a3d16);padding:18px 28px;di
 .sdot{width:7px;height:7px;border-radius:50%;background:#aaa;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
+/* FLASH ANIMATION for zero-stock items */
+@keyframes urgentFlash{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.6;transform:scale(1.04)}}
+@keyframes badgeFlash{0%,100%{background:#b83232;box-shadow:0 0 0 0 rgba(184,50,50,0.4)}50%{background:#d63031;box-shadow:0 0 0 6px rgba(184,50,50,0)}}
+.need-flash{animation:urgentFlash 1.4s ease-in-out infinite}
+.badge-flash{animation:badgeFlash 1.2s ease-in-out infinite;border-radius:999px;padding:3px 9px;color:white;font-size:0.64rem;font-weight:800}
+
+
 /* LAYOUT */
 .main{max-width:1100px;margin:0 auto;padding:24px}
 @media(max-width:700px){.main{padding:12px}}
@@ -431,8 +438,12 @@ function render(d){
   // Low inventory items
   lowInv.forEach(i=>{
     if(!pendingCR.find(r=>String(r['Item Requested']||'').toLowerCase()===i.item.toLowerCase())){
-      const badge=i.balance<=0?'<span class="need-badge empty">None left</span>':'<span class="need-badge low">Only '+i.balance+'</span>';
-      needsHtml.push(`<div class="need-item"><div class="need-icon">📦</div><div style="flex:1"><div class="need-name">${i.item}</div><div class="need-reason">Running low in inventory</div></div>${badge}</div>`);
+      const isNone=i.balance<=0;
+      const badge=isNone
+        ?'<span class="badge-flash">⚠ NONE LEFT</span>'
+        :'<span class="need-badge low">Only '+i.balance+'</span>';
+      const flashClass=isNone?'need-flash':'';
+      needsHtml.push(`<div class="need-item ${flashClass}"><div class="need-icon">${isNone?'🚨':'📦'}</div><div style="flex:1"><div class="need-name" style="${isNone?'color:var(--re);font-weight:700':''}">${i.item}</div><div class="need-reason">${isNone?'<strong style=\"color:var(--re)\">Urgently needed — completely out of stock</strong>':'Running low in inventory'}</div></div>${badge}</div>`);
     }
   });
   // Items never donated
@@ -521,10 +532,16 @@ function render(d){
   }
 
   // Feedback — item name + date only, no recipient info
-  const fbs=req.filter(r=>(r['Status']||'').toLowerCase()==='delivered'&&r['Feedback']).slice(-6).reverse();
+  // Only show real feedback — guard against Notes/Feedback column misalignment
+  const fbs=req.filter(r=>{
+    const s=(r['Status']||'').toLowerCase();
+    const fb=String(r['Feedback']||'').trim();
+    const notes=String(r['Notes']||'').trim();
+    return s==='delivered' && fb && fb!==notes;
+  }).slice(-6).reverse();
   document.getElementById('feedbackList').innerHTML=fbs.length
     ?fbs.map(r=>`<div class="fb-item"><div class="fb-quote">"${r['Feedback']}"</div><div class="fb-meta">for ${r['Item Requested']||'an item'} · ${fd(r['Delivered On'])}</div></div>`).join('')
-    :'<div class="no-data">No feedback yet</div>';
+    :'<div class="no-data">No feedback submitted yet</div>';
 }
 
 function connectSU(){

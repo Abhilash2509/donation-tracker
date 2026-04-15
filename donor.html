@@ -167,7 +167,7 @@ footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-t
   <div class="hero"><h2>🔍 Track Your Donation</h2><p>Enter your Donation ID to see the current status and workflow.</p></div>
   <div class="panel">
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <input type="text" id="trackId" placeholder="Donation ID e.g. DON001_D001" style="flex:1;min-width:180px"/>
+      <input type="text" id="trackId" placeholder="Donation ID e.g. DON001_D001 or Custom ID e.g. CRQ001" style="flex:1;min-width:180px"/>
       <button class="btn bg" onclick="trackDonation()" style="white-space:nowrap">Track →</button>
     </div>
   </div>
@@ -217,13 +217,22 @@ setInterval(init,30000);init();
 function popItems(d){
   const inv=d.inventory||[];
   const balMap={};inv.forEach(i=>balMap[i.item]=i.balance);
-  // Only show admin items where inventory balance < SURPLUS
-  const items=(d.items||[]).map(r=>r['Item Name']||'').filter(name=>{
-    const bal=balMap[name]??0;
-    return name && bal<SURPLUS; // hide if already >= 10 in stock
-  });
+  // Show ALL active admin items — hide only those already well-stocked (>= SURPLUS)
+  // This ensures newly fulfilled custom request items always appear
+  const items=(d.items||[])
+    .map(r=>r['Item Name']||'')
+    .filter(name=>{
+      if(!name) return false;
+      const bal=balMap[name]; // undefined means never donated yet — always show
+      if(bal===undefined) return true; // new item, needs donations
+      return bal < SURPLUS; // hide only when well-stocked
+    });
   const s=document.getElementById('ditem'),c=s.value;
-  s.innerHTML='<option value="">Select item…</option>'+items.map(i=>`<option value="${i}">${i}</option>`).join('');
+  s.innerHTML='<option value="">Select item…</option>'+items.map(i=>{
+    const bal=balMap[i];
+    const hint=bal===undefined?' (new — not yet donated)':bal<=0?' (out of stock)':bal<5?' (only '+bal+' left)':'';
+    return`<option value="${i}">${i}${hint}</option>`;
+  }).join('');
   if(c&&items.includes(c))s.value=c;
 }
 
