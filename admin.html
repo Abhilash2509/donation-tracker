@@ -62,6 +62,17 @@ nav{background:#1c1c1c;padding:12px 28px;display:flex;align-items:center;justify
 .bar-track{height:7px;background:var(--bg);border-radius:4px;overflow:hidden;border:1px solid var(--b)}
 .bar-fill{height:100%;border-radius:4px;transition:width .8s cubic-bezier(.4,0,.2,1)}
 .low-stock{color:var(--re);font-size:0.68rem;font-weight:600;margin-left:5px}
+
+/* PAGINATION */
+.pgn{display:flex;align-items:center;gap:6px;margin-top:14px;flex-wrap:wrap}
+.pgn-btn{padding:5px 11px;border:1px solid var(--b);border-radius:7px;background:var(--bg);color:var(--mu);font-size:0.78rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.pgn-btn:hover{border-color:var(--ac);color:var(--ac)}
+.pgn-btn.on{background:var(--ac);border-color:var(--ac);color:white;font-weight:600}
+.pgn-btn:disabled{opacity:0.4;cursor:not-allowed}
+.pgn-info{font-size:0.76rem;color:var(--mu);margin-left:4px}
+/* SCROLLABLE TABLE */
+.tw{overflow-x:auto;max-height:480px;overflow-y:auto}
+.tw table thead th{position:sticky;top:0;background:var(--s);z-index:2;box-shadow:0 1px 0 var(--b)}
 .tw{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:0.82rem}
 th{text-align:left;font-size:0.67rem;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:0.07em;padding:0 7px 9px 0;border-bottom:1px solid var(--b);white-space:nowrap}
@@ -274,7 +285,7 @@ footer{text-align:center;color:var(--mu);font-size:0.7rem;padding:14px;border-to
   </div>
   <div class="panel">
     <div class="ph"><div class="pt">✅ All Donations</div><div class="pc" id="allDC">—</div></div>
-    <div class="tw"><table><thead><tr><th>Donation ID</th><th>Date</th><th>Donor ID</th><th>Item</th><th>Qty</th><th>Status</th><th>Submitted On</th><th>Collected On</th><th>Notes</th><th>Action</th></tr></thead><tbody id="allDB2"></tbody></table></div>
+    <div class="tw"><table><thead><tr><th>Donation ID</th><th>Date</th><th>Donor ID</th><th>Item</th><th>Qty</th><th>Status</th><th>Submitted On</th><th>Collected On</th><th>Notes</th><th>Action</th></tr></thead><tbody id="allDB2"></tbody></table></div><div class="pgn" id="donPgn"></div>
   </div>
   <div class="tip">💡 Once you've physically collected the donation, click <strong>Mark Collected</strong>. This updates inventory and sends an email notification to the donor.</div>
 </div>
@@ -291,7 +302,7 @@ footer{text-align:center;color:var(--mu);font-size:0.7rem;padding:14px;border-to
   </div>
   <div class="panel">
     <div class="ph"><div class="pt">📋 All Requests</div><div class="pc" id="allRC">—</div></div>
-    <div class="tw"><table><thead><tr><th>Request ID</th><th>Date</th><th>Recipient ID</th><th>Item</th><th>Qty</th><th>Status</th><th>Pending On</th><th>Approved On</th><th>Delivered On</th><th>Next Action</th></tr></thead><tbody id="allRB2"></tbody></table></div>
+    <div class="tw"><table><thead><tr><th>Request ID</th><th>Date</th><th>Recipient ID</th><th>Item</th><th>Qty</th><th>Status</th><th>Pending On</th><th>Approved On</th><th>Delivered On</th><th>Next Action</th></tr></thead><tbody id="allRB2"></tbody></table></div><div class="pgn" id="reqPgn"></div>
   </div>
   <div class="tip">💡 <strong>Workflow:</strong> Pending → Approve → Delivery Pending → Mark Delivered. Email sent at each stage.</div>
 </div>
@@ -371,10 +382,23 @@ footer{text-align:center;color:var(--mu);font-size:0.7rem;padding:14px;border-to
     </div>
   </div>
   <div id="ht-all" style="display:none">
-    <input type="text" id="actS" placeholder="Search activity log…" oninput="filtAct()" style="margin-bottom:13px;padding:9px 12px;border:1px solid var(--b);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--bg);color:var(--tx);outline:none;width:100%"/>
+    <div style="display:flex;gap:8px;margin-bottom:13px;flex-wrap:wrap">
+      <input type="text" id="actS" placeholder="Search by item, ID, type, status…" oninput="filtAct()" style="flex:1;min-width:180px;padding:9px 12px;border:1px solid var(--b);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--bg);color:var(--tx);outline:none"/>
+      <input type="text" id="actTxn" placeholder="Filter by Transaction ID e.g. DON001_D001" oninput="filtAct()" style="flex:1;min-width:200px;padding:9px 12px;border:1px solid var(--b);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.85rem;background:var(--bg);color:var(--tx);outline:none"/>
+      <button onclick="clearActFilters()" style="padding:9px 14px;border:1px solid var(--b);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.84rem;background:var(--bg);cursor:pointer;color:var(--mu)">✕ Clear</button>
+    </div>
+    <!-- Drilldown panel — hidden until TxnID clicked -->
+    <div id="drillPanel" style="display:none;margin-bottom:14px;background:var(--bll);border:1.5px solid #9fc3de;border-radius:var(--ra);padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="pt" style="color:var(--bl)">🔍 Transaction Detail: <span id="drillId" class="tid"></span></div>
+        <button onclick="closeDrill()" style="background:none;border:none;cursor:pointer;font-size:1rem;color:var(--mu)">✕</button>
+      </div>
+      <div id="drillBody"></div>
+    </div>
     <div class="panel">
       <div class="ph"><div class="pt">📋 Full Activity Log</div><div class="pc" id="logCnt">—</div></div>
       <div class="tw"><table><thead><tr><th>Timestamp</th><th>Type</th><th>Transaction ID</th><th>Person ID</th><th>Item</th><th>Qty</th><th>Status</th></tr></thead><tbody id="logBody"></tbody></table></div>
+      <div class="pgn" id="logPgn"></div>
     </div>
   </div>
 </div>
@@ -416,6 +440,12 @@ footer{text-align:center;color:var(--mu);font-size:0.7rem;padding:14px;border-to
       </div>
     </div>
     <div id="repContent" style="display:none">
+      <div id="repChartArea" style="display:none;margin-bottom:18px">
+        <div style="display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start">
+          <div style="background:var(--bg);border:1px solid var(--b);border-radius:10px;padding:14px"><div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--mu);margin-bottom:10px">Items Distribution</div><div style="position:relative;height:200px"><canvas id="repPie"></canvas></div></div>
+          <div id="repActivity" style="background:var(--bg);border:1px solid var(--b);border-radius:10px;padding:14px"><div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--mu);margin-bottom:10px">Activity Summary</div><div id="repActivityBody"></div></div>
+        </div>
+      </div>
       <div id="repBody" style="margin-bottom:14px"></div>
       <button class="btn bdk" onclick="printRep()">🖨 Download as PDF</button>
       <span style="font-size:0.77rem;color:var(--mu);margin-left:10px">Browser print → Save as PDF</span>
@@ -636,6 +666,17 @@ function buildRequests(){
     else nxt=`<span style="font-size:0.75rem;color:var(--mu)">${r['Status']}</span>`;
     return`<tr><td><span class="tid">${r['Request ID']||'—'}</span></td><td>${fd(r['Request Date'])}</td><td style="font-size:0.75rem;color:var(--mu)">${r['Recipient ID']||'—'}</td><td>${r['Item Requested']||'—'}</td><td>${r['Qty Requested']||0}</td><td><span class="pill ${s}">${r['Status']||'Pending'}</span></td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Pending On'])}</td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Approved On'])}</td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Delivered On'])}</td><td>${nxt}</td></tr>`;
   }).join()||'<tr><td colspan="10" class="no-data">No requests</td></tr>';
+  // Pagination for requests table
+  paginateTable('allRB2','reqPgn',req,10,(r,idx)=>{
+    const s=(r['Status']||'pending').toLowerCase().replace(/ /g,'-');
+    let nxt='';
+    const bal2=invMap2[r['Item Requested']]??null;const oos=bal2!==null&&bal2<1;
+    if(s==='pending'){const ab=oos?`<button class="btn bsm" style="background:#e0e0e0;color:#aaa;cursor:not-allowed" disabled>Approve</button>`:`<button class="btn bg bsm" onclick="rAct(${idx},'approve')">Approve</button>`;nxt=ab+` <button class="btn br bsm" onclick="rAct(${idx},'reject')">Reject</button>`;}
+    else if(s==='approved') nxt=`<button class="btn bbl bsm" onclick="rAct(${idx},'dp')">→ Delivery Pending</button>`;
+    else if(s==='delivery-pending') nxt=`<button class="btn bg bsm" onclick="rAct(${idx},'deliver')">Mark Delivered</button>`;
+    else nxt=`<span style="font-size:0.75rem;color:var(--mu)">${r['Status']}</span>`;
+    return`<tr><td><span class="tid">${r['Request ID']||'—'}</span></td><td>${fd(r['Request Date'])}</td><td style="font-size:0.75rem;color:var(--mu)">${r['Recipient ID']||'—'}</td><td>${r['Item Requested']||'—'}</td><td>${r['Qty Requested']||0}</td><td><span class="pill ${s}">${r['Status']||'Pending'}</span></td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Pending On'])}</td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Approved On'])}</td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Delivered On'])}</td><td>${nxt}</td></tr>`;
+  });
 }
 
 // ── STATUS UPDATES — instant refresh from server response ──
@@ -717,8 +758,86 @@ function buildHistory(){
   document.getElementById('allRB3').innerHTML=rec.map((r,i)=>{const s=rm[r['Recipient ID']]||{tot:0,del:0,units:0};return`<tr><td style="color:var(--mu);font-size:0.75rem">${r['Recipient ID']}</td><td><span class="ava av${(i+1)%4}">${ini(r['Recipient Name'])}</span>${r['Recipient Name']||'—'}</td><td style="font-size:0.77rem;color:var(--mu)">${r['Email']||'—'}</td><td style="font-size:0.77rem;color:var(--mu)">${r['Phone']||'—'}</td><td style="font-size:0.74rem;color:var(--mu);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r['Address']||'—'}</td><td>${s.tot}</td><td>${s.del}</td><td><strong>${s.units}</strong></td></tr>`;}).join()||'<tr><td colspan="8" class="no-data">No recipients</td></tr>';
   renderLog(LD.history||[]);
 }
-function renderLog(h){document.getElementById('logCnt').textContent=h.length+' entries';document.getElementById('logBody').innerHTML=[...h].reverse().map(r=>`<tr><td style="color:var(--mu);font-size:0.74rem;white-space:nowrap">${r['Timestamp']||'—'}</td><td><span class="pill ${pCls(r['Type'])}" style="font-size:0.62rem">${r['Type']||'—'}</span></td><td><span class="tid">${r['Transaction ID']||'—'}</span></td><td style="color:var(--mu);font-size:0.78rem">${r['Person ID']||'—'}</td><td>${r['Item']||'—'}</td><td>${r['Quantity']||0}</td><td style="font-size:0.78rem;color:var(--mu)">${r['Status']||''}</td></tr>`).join()||'<tr><td colspan="7" class="no-data">No activity yet</td></tr>';}
-function filtAct(){if(!LD)return;const q=document.getElementById('actS').value.toLowerCase();renderLog((LD.history||[]).filter(h=>JSON.stringify(h).toLowerCase().includes(q)));}
+let _logAll=[],_logPage=0;const LOG_PER=15;
+function renderLog(h){
+  _logAll=[...h].reverse();_logPage=0;
+  document.getElementById('logCnt').textContent=_logAll.length+' entries';
+  renderLogPage();
+}
+function renderLogPage(){
+  const start=_logPage*LOG_PER,slice=_logAll.slice(start,start+LOG_PER);
+  document.getElementById('logBody').innerHTML=slice.map(r=>{
+    const tid=r['Transaction ID']||'';
+    const tidHtml=tid?`<span class="tid" style="cursor:pointer;text-decoration:underline;color:var(--bl)" onclick="drillTxn('${tid}')" title="Click to drill down">${tid}</span>`:'—';
+    return`<tr><td style="color:var(--mu);font-size:0.74rem;white-space:nowrap">${r['Timestamp']||'—'}</td><td><span class="pill ${pCls(r['Type'])}" style="font-size:0.62rem">${r['Type']||'—'}</span></td><td>${tidHtml}</td><td style="color:var(--mu);font-size:0.78rem">${r['Person ID']||'—'}</td><td>${r['Item']||'—'}</td><td>${r['Quantity']||0}</td><td style="font-size:0.78rem;color:var(--mu)">${r['Status']||''}</td></tr>`;
+  }).join()||'<tr><td colspan="7" class="no-data">No activity yet</td></tr>';
+  // Pagination
+  const totalPages=Math.ceil(_logAll.length/LOG_PER);
+  if(totalPages<=1){document.getElementById('logPgn').innerHTML='';return;}
+  let pgHtml=`<button class="pgn-btn" onclick="logGoPage(${_logPage-1})" ${_logPage===0?'disabled':''}>‹ Prev</button>`;
+  const start2=Math.max(0,_logPage-2),end2=Math.min(totalPages,start2+5);
+  for(let i=start2;i<end2;i++) pgHtml+=`<button class="pgn-btn ${i===_logPage?'on':''}" onclick="logGoPage(${i})">${i+1}</button>`;
+  pgHtml+=`<button class="pgn-btn" onclick="logGoPage(${_logPage+1})" ${_logPage>=totalPages-1?'disabled':''}>Next ›</button>`;
+  pgHtml+=`<span class="pgn-info">Page ${_logPage+1} of ${totalPages} · ${_logAll.length} entries</span>`;
+  document.getElementById('logPgn').innerHTML=pgHtml;
+}
+function logGoPage(p){_logPage=p;renderLogPage();}
+
+function drillTxn(tid){
+  if(!LD)return;
+  document.getElementById('drillId').textContent=tid;
+  const history=(LD.history||[]).filter(r=>r['Transaction ID']===tid);
+  // Find the source record
+  const isDon=tid.includes('_D');
+  const isReq=tid.includes('_R');
+  let extraHtml='';
+  if(isDon){
+    const don=(LD.donations||[]).find(r=>r['Donation ID']===tid);
+    if(don){
+      const donor=(LD.donors||[]).find(d=>d['Donor ID']===don['Donor ID']);
+      extraHtml=`<div style="background:white;border-radius:9px;padding:12px;margin-bottom:10px;font-size:0.83rem;line-height:1.7">
+        <strong>Donation Record</strong><br>
+        Item: <strong>${don['Item']||'—'}</strong> · Qty: ${don['Quantity']||0}<br>
+        Donor: ${don['Donor ID']||'—'}${donor?' ('+donor['Donor Name']+')':''}<br>
+        Status: <span class="pill ${(don['Status']||'submitted').toLowerCase()}">${don['Status']||'Submitted'}</span><br>
+        Submitted: ${fd(don['Submitted On']||don['Date'])} ${don['Collected On']?'· Collected: '+fd(don['Collected On']):''}
+        ${don['Rejection Comment']?'<br><span style="color:var(--re)">Rejection: '+don['Rejection Comment']+'</span>':''}
+      </div>`;
+    }
+  } else if(isReq){
+    const req=(LD.requests||[]).find(r=>r['Request ID']===tid);
+    if(req){
+      const recip=(LD.recipients||[]).find(r=>r['Recipient ID']===req['Recipient ID']);
+      extraHtml=`<div style="background:white;border-radius:9px;padding:12px;margin-bottom:10px;font-size:0.83rem;line-height:1.7">
+        <strong>Request Record</strong><br>
+        Item: <strong>${req['Item Requested']||'—'}</strong> · Qty: ${req['Qty Requested']||0}<br>
+        Recipient: ${req['Recipient ID']||'—'}${recip?' ('+recip['Recipient Name']+')':''}<br>
+        Status: <span class="pill ${(req['Status']||'pending').toLowerCase().replace(/ /g,'-')}">${req['Status']||'Pending'}</span><br>
+        ${req['Pending On']?'Requested: '+fd(req['Pending On'])+' ':''}${req['Approved On']?'· Approved: '+fd(req['Approved On'])+' ':''}${req['Delivered On']?'· Delivered: '+fd(req['Delivered On']):''}
+        ${req['ETA']?'<br>ETA: '+req['ETA']:''}
+        ${req['Feedback']?'<br><span style="color:var(--ac);font-style:italic">Feedback: "'+req['Feedback']+'"</span>':''}
+      </div>`;
+    }
+  }
+  const logRows=history.map(r=>`<tr><td style="font-size:0.74rem;color:var(--mu);white-space:nowrap">${r['Timestamp']||'—'}</td><td><span class="pill ${pCls(r['Type'])}" style="font-size:0.62rem">${r['Type']||'—'}</span></td><td style="font-size:0.78rem;color:var(--mu)">${r['Item']||'—'}</td><td>${r['Quantity']||0}</td><td style="font-size:0.78rem;color:var(--mu)">${r['Status']||''}</td></tr>`).join()||'<tr><td colspan="5" class="no-data">No log entries</td></tr>';
+  document.getElementById('drillBody').innerHTML=extraHtml+`<table><thead><tr><th>Timestamp</th><th>Type</th><th>Item</th><th>Qty</th><th>Status</th></tr></thead><tbody>${logRows}</tbody></table>`;
+  document.getElementById('drillPanel').style.display='block';
+  document.getElementById('actTxn').value=tid;
+  filtAct();
+}
+function closeDrill(){document.getElementById('drillPanel').style.display='none';document.getElementById('actTxn').value='';filtAct();}
+function clearActFilters(){document.getElementById('actS').value='';document.getElementById('actTxn').value='';closeDrill();renderLog(LD.history||[]);}
+function filtAct(){
+  if(!LD)return;
+  const q=document.getElementById('actS').value.toLowerCase();
+  const txn=document.getElementById('actTxn').value.trim().toLowerCase();
+  const filtered=(LD.history||[]).filter(h=>{
+    const matchQ=!q||JSON.stringify(h).toLowerCase().includes(q);
+    const matchT=!txn||String(h['Transaction ID']||'').toLowerCase().includes(txn);
+    return matchQ&&matchT;
+  });
+  renderLog(filtered);
+}
 function pCls(t){const l=(t||'').toLowerCase();return l.includes('collect')||l.includes('deliver')||l.includes('approv')?'approved':l.includes('submit')||l.includes('pending')?'pending':'submitted';}
 
 // ── Admin typeahead — shows both ID and name ──
@@ -817,9 +936,38 @@ function genRep(){
   }
   document.getElementById('repBody').innerHTML=html;
   document.getElementById('repContent').style.display='block';
+  // Show chart for summary reports
+  const chartTypes=['all-donors','all-recipients','inventory','full'];
+  const chartArea=document.getElementById('repChartArea');
+  chartArea.style.display=chartTypes.includes(type)?'block':'none';
+  if(chartTypes.includes(type)) buildRepChart(type,don,req);
   // Prep print area
   const pa=document.getElementById('pA');
   if(pa) pa.innerHTML=`<div class="ph2">🛒 Grocery Donation Tracker &nbsp;·&nbsp; ${tlabels[type]||'Report'}</div><div class="pm">Generated: ${now}</div>${html}<div class="pf">Grocery Donation Tracker · Admin Report · ${now}</div>`;
+}
+let _repPie=null;
+function buildRepChart(type,don,req){
+  const it={};don.forEach(r=>{const k=r['Item']||'';it[k]=(it[k]||0)+(parseInt(r['Quantity'])||0);});
+  const labels=Object.keys(it),vals=Object.values(it);
+  if(_repPie)_repPie.destroy();
+  if(labels.length){
+    _repPie=new Chart(document.getElementById('repPie').getContext('2d'),{
+      type:'doughnut',data:{labels,datasets:[{data:vals,backgroundColor:PAL.slice(0,labels.length),borderColor:'#fff',borderWidth:3}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'bottom',labels:{font:{family:'DM Sans',size:10},padding:8,boxWidth:9}}}}
+    });
+  }
+  // Activity summary
+  const totalDon=don.length,collected=don.filter(r=>(r['Status']||'').toLowerCase()==='collected').length;
+  const totalReq=req.length,delivered=req.filter(r=>(r['Status']||'').toLowerCase()==='delivered').length;
+  const pending=req.filter(r=>(r['Status']||'').toLowerCase()==='pending').length;
+  const withFb=req.filter(r=>r['Feedback']).length;
+  document.getElementById('repActivityBody').innerHTML=`
+    <div style="font-size:0.83rem;line-height:2">
+      🎁 <strong>${totalDon}</strong> donations · <strong>${collected}</strong> collected<br>
+      🤲 <strong>${totalReq}</strong> requests · <strong>${delivered}</strong> delivered · <strong>${pending}</strong> pending<br>
+      💬 <strong>${withFb}</strong> recipient feedback received<br>
+      📦 <strong>${labels.length}</strong> item types donated
+    </div>`;
 }
 function pH(name,id,email,phone,address){return`<div style="margin-bottom:12px"><strong style="font-size:1rem">${name}</strong> · <code style="font-size:0.82rem">${id}</code>${address?`<br><small style="color:var(--mu)">📍 ${address}</small>`:''}${(email||phone)?`<br><small style="color:var(--mu)">${[email,phone].filter(Boolean).join(' · ')}</small>`:''}</div>`;}
 function pS(items){return`<div class="rstat-row">${items.map(i=>`<div class="rstat"><div class="rstat-val">${i.v}</div><div class="rstat-lbl">${i.l}</div></div>`).join('')}</div>`;}
@@ -955,6 +1103,31 @@ async function confirmCustom(status){
     if(d.success){sa('Custom request '+status+'!',status==='Fulfilled'?'green':'amber');if(d.data){LD=d.data;buildCustom();}else setTimeout(loadData,800);}
     else sa('Error: '+(d.error||'Unknown'),'red');
   }catch(e){sa('Failed: '+e.message,'red');}
+}
+
+
+// ── PAGINATION HELPER ──
+function paginateTable(tbodyId,pgnId,allData,perPage,rowFn){
+  const el=document.getElementById(tbodyId);
+  const pgEl=document.getElementById(pgnId);
+  if(!el||!pgEl)return;
+  if(allData.length<=perPage){pgEl.innerHTML='';return;}
+  // Already rendered first page; add controls
+  const total=Math.ceil(allData.length/perPage);
+  function goPage(p){
+    const s=p*perPage,slice=allData.slice(s,s+perPage);
+    el.innerHTML=slice.map((r,si)=>rowFn(r,allData.indexOf(r))).join()||'<tr><td colspan="20" class="no-data">No data</td></tr>';
+    let pg=`<button class="pgn-btn" onclick="void(0)" id="pgn_prev_${tbodyId}" ${p===0?'disabled':''}>‹ Prev</button>`;
+    const s2=Math.max(0,p-2),e2=Math.min(total,s2+5);
+    for(let i=s2;i<e2;i++) pg+=`<button class="pgn-btn ${i===p?'on':''}" id="pgn_p${i}_${tbodyId}">${i+1}</button>`;
+    pg+=`<button class="pgn-btn" id="pgn_next_${tbodyId}" ${p>=total-1?'disabled':''}>Next ›</button>`;
+    pg+=`<span class="pgn-info">${allData.length} total · page ${p+1}/${total}</span>`;
+    pgEl.innerHTML=pg;
+    document.getElementById('pgn_prev_'+tbodyId)?.addEventListener('click',()=>goPage(p-1));
+    document.getElementById('pgn_next_'+tbodyId)?.addEventListener('click',()=>goPage(p+1));
+    for(let i=s2;i<e2;i++) document.getElementById('pgn_p'+i+'_'+tbodyId)?.addEventListener('click',()=>goPage(i));
+  }
+  goPage(0);
 }
 
 // ── UTILS ──

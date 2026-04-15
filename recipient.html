@@ -363,15 +363,21 @@ function trackRequest(){
   const curIdx=steps.findIndex(s=>s.toLowerCase()===cur.toLowerCase());
   const stepsHtml=steps.map((s,i)=>`${i>0?'<span class="wf-arrow">›</span>':''}<span class="wf-step ${i<curIdx?'done':i===curIdx?'cur':''}">${s}</span>`).join('');
   const etaLine=req['ETA']?`<br>🚚 <strong>Estimated delivery:</strong> ${req['ETA']}`:'';
+  // Show status dates only — NOT Notes (delivery schedule is internal)
   const dates=[
-    req['Pending On']&&('Submitted: '+fd(req['Pending On'])),
-    req['Approved On']&&('Approved: '+fd(req['Approved On'])),
-    req['Delivery Pending On']&&('Out for delivery: '+fd(req['Delivery Pending On'])),
-    req['Delivered On']&&('Delivered: '+fd(req['Delivered On'])),
-  ].filter(Boolean).join(' · ');
+    req['Pending On']&&('📋 Requested: '+fd(req['Pending On'])),
+    req['Approved On']&&('✅ Approved: '+fd(req['Approved On'])),
+    req['Delivery Pending On']&&('🚚 Out for delivery: '+fd(req['Delivery Pending On'])),
+    req['Delivered On']&&('📦 Delivered: '+fd(req['Delivered On'])),
+  ].filter(Boolean).join('<br>');
   const feedbackLine=req['Feedback']?`<div style="margin-top:8px;font-size:0.81rem;background:var(--gl);color:var(--gr);padding:8px 12px;border-radius:8px">✅ Feedback submitted: ${req['Feedback']}</div>`:'';
   const rejComment=req['Rejection Comment']?`<div style="margin-top:8px;font-size:0.81rem;background:var(--rl);color:var(--re);padding:8px 12px;border-radius:8px">Rejection reason: ${req['Rejection Comment']}</div>`:'';
-  document.getElementById('trackResult').innerHTML=`<div class="wf-wrap"><div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:10px">${req['Request ID']} · ${req['Item Requested']} ×${req['Qty Requested']}</div><div class="wf-steps">${stepsHtml}</div><div class="wf-detail">${dates}${etaLine}</div>${feedbackLine}${rejComment}</div>`;
+  document.getElementById('trackResult').innerHTML=`<div class="wf-wrap">
+    <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:10px">${req['Request ID']} · ${req['Item Requested']} ×${req['Qty Requested']}</div>
+    <div class="wf-steps">${stepsHtml}</div>
+    <div class="wf-detail" style="line-height:1.8">${dates}${etaLine}</div>
+    ${feedbackLine}${rejComment}
+  </div>`;
   // Show feedback form if delivered and no feedback yet
   if(cur.toLowerCase()==='delivered'&&!req['Feedback']){
     trackingReqId=req['Request ID'];

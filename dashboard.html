@@ -287,65 +287,51 @@ footer{text-align:center;color:var(--mu);font-size:0.69rem;padding:14px;border-t
     <div class="panel"><div class="pt">📦 Live Inventory</div><div id="invBars"><div class="no-data">—</div></div></div>
   </div>
 
-  <!-- WHAT'S NEEDED + NOTICES + ACTIVITY -->
+  <!-- NOTICE BOARD — full width horizontal animated banner -->
+  <div style="margin-bottom:16px;background:linear-gradient(135deg,var(--ac),#1a3d16);border-radius:var(--ra);overflow:hidden;box-shadow:var(--sh)">
+    <div style="display:flex;align-items:center;gap:0">
+      <!-- Animated label badge -->
+      <div style="background:rgba(255,255,255,0.15);padding:14px 18px;display:flex;align-items:center;gap:8px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.15)">
+        <span style="font-size:1.3rem;animation:noticeWave 2s ease-in-out infinite">📢</span>
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-size:0.8rem;font-weight:800;color:white;letter-spacing:0.05em">NOTICE</div>
+          <div style="font-size:0.62rem;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.06em">Board</div>
+        </div>
+      </div>
+      <!-- Scrolling notices ticker -->
+      <div style="flex:1;overflow:hidden;padding:0 16px">
+        <div id="noticeTicker" style="display:flex;align-items:center;height:52px">
+          <div id="noticeScroll" style="white-space:nowrap;animation:tickerScroll 20s linear infinite;display:inline-block">
+            <span style="font-size:0.84rem;color:rgba(255,255,255,0.5);font-style:italic">Loading notices…</span>
+          </div>
+        </div>
+      </div>
+      <!-- Pulse dot -->
+      <div style="padding:0 16px;flex-shrink:0">
+        <div style="width:8px;height:8px;border-radius:50%;background:#a8e6a0;animation:pulse 2s infinite"></div>
+      </div>
+    </div>
+  </div>
+  <style>
+  @keyframes tickerScroll{0%{transform:translateX(100vw)}100%{transform:translateX(-100%)}}
+  @keyframes noticeWave{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(10deg)}}
+  </style>
+
+  <!-- WHAT'S NEEDED + ACTIVITY + FEEDBACK -->
   <div class="row3" style="margin-bottom:16px">
     <div class="panel"><div class="pt">⚠️ What's Needed</div><div id="needsList"><div class="no-data">—</div></div></div>
-    <div class="panel"><div class="pt">📋 Notice Board</div><div id="noticeBoard"><div class="no-data">No notices yet</div></div></div>
     <div class="panel">
       <div class="pt">📊 Recent Activity</div>
-      <div id="activityList"><div class="no-data">Loading…</div></div>
-      <div style="margin-top:12px;border-top:1px solid var(--b);padding-top:12px">
-        <div class="pt" style="margin-bottom:10px">💬 Community Feedback</div>
-        <div id="feedbackList"><div class="no-data">No feedback yet</div></div>
-      </div>
+      <div id="activityList" style="max-height:340px;overflow-y:auto"><div class="no-data">Loading…</div></div>
+      <div class="pgn" id="actPgn"></div>
+    </div>
+    <div class="panel">
+      <div class="pt">💬 Community Feedback</div>
+      <div id="feedbackList" style="max-height:340px;overflow-y:auto"><div class="no-data">No feedback yet</div></div>
     </div>
   </div>
 
-  <!-- PORTALS + ICON DOWNLOADS -->
-  <div class="row2" style="margin-bottom:16px">
-    <div class="panel">
-      <div class="pt">🚪 Access Portals</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-        <a href="donor.html" class="portal-card green" style="padding:11px 13px">
-          <div class="portal-icon" style="width:34px;height:34px;font-size:1.1rem">🎁</div>
-          <div><div class="portal-name" style="font-size:0.82rem">Donor Portal</div><div class="portal-desc">Register &amp; Donate</div></div>
-        </a>
-        <a href="recipient.html" class="portal-card amber" style="padding:11px 13px">
-          <div class="portal-icon" style="width:34px;height:34px;font-size:1.1rem;background:var(--am)">🤲</div>
-          <div><div class="portal-name" style="font-size:0.82rem">Recipient Portal</div><div class="portal-desc">Register &amp; Request</div></div>
-        </a>
-        <a href="dashboard.html" class="portal-card" style="border-color:#9fc3de;background:var(--bll);padding:11px 13px">
-          <div class="portal-icon" style="width:34px;height:34px;font-size:1.1rem;background:var(--bl)">📊</div>
-          <div><div class="portal-name" style="font-size:0.82rem">Dashboard</div><div class="portal-desc">This page · public</div></div>
-        </a>
-        <a href="admin.html" class="portal-card dark" style="padding:11px 13px">
-          <div class="portal-icon" style="width:34px;height:34px;font-size:1.1rem">🔐</div>
-          <div><div class="portal-name" style="font-size:0.82rem">Admin</div><div class="portal-desc">Admin access only</div></div>
-        </a>
-      </div>
-      <div style="padding:10px 12px;background:var(--bll);border-radius:9px;font-size:0.76rem;color:var(--bl);line-height:1.6">
-        📱 <strong>Add to home screen:</strong> Open portal in Safari/Chrome → Share → "Add to Home Screen"
-      </div>
-    </div>
-    <div class="panel">
-      <div class="pt">📲 Download App Icons</div>
-      <div class="icon-dl-grid" style="margin-bottom:10px">
-        <a href="icon-donor.svg" download="icon-donor.svg" class="icon-dl">
-          <img src="icon-donor.svg" alt="Donor"/><div class="icon-dl-name">Donor</div><div class="icon-dl-hint">↓ Download</div>
-        </a>
-        <a href="icon-recipient.svg" download="icon-recipient.svg" class="icon-dl">
-          <img src="icon-recipient.svg" alt="Recipient"/><div class="icon-dl-name">Recipient</div><div class="icon-dl-hint">↓ Download</div>
-        </a>
-        <a href="icon-dashboard.svg" download="icon-dashboard.svg" class="icon-dl">
-          <img src="icon-dashboard.svg" alt="Dashboard"/><div class="icon-dl-name">Dashboard</div><div class="icon-dl-hint">↓ Download</div>
-        </a>
-        <a href="icon-admin.svg" download="icon-admin.svg" class="icon-dl">
-          <img src="icon-admin.svg" alt="Admin"/><div class="icon-dl-name">Admin</div><div class="icon-dl-hint">↓ Download</div>
-        </a>
-      </div>
-      <div style="font-size:0.74rem;color:var(--mu);line-height:1.6">Save icon → open portal → Share → Add to Home Screen → set saved icon as custom image</div>
-    </div>
-  </div>
+
 </div>
 
 <footer>Community Grocery Donation Drive · Public Dashboard · Data is anonymous — no personal information shown</footer>
@@ -423,7 +409,7 @@ function render(d){
   const needsHtml=[];
   // Custom requests first (priority)
   pendingCR.forEach(r=>{
-    needsHtml.push(`<div class="need-item"><div class="need-icon">🔍</div><div style="flex:1"><div class="need-name">${r['Item Requested']||'—'}</div><div class="need-reason">"${r['Notes']||'No reason given'}"</div></div><span class="need-badge custom">Requested</span></div>`);
+    needsHtml.push(`<div class="need-item"><div class="need-icon">🔍</div><div style="flex:1"><div class="need-name">${r['Item Requested']||'—'}</div><div class="need-reason" style="font-style:italic">Reason: "${r['Notes']||'Not specified'}"</div></div><span class="need-badge custom">Requested</span></div>`);
   });
   // Low inventory items
   lowInv.forEach(i=>{
@@ -444,7 +430,7 @@ function render(d){
   // Recent activity — anonymous, show item + status + dates (no names/IDs)
   const recentDon=don.slice(-8).reverse();
   const recentReq=req.filter(r=>['approved','delivery pending','delivered'].includes((r['Status']||'').toLowerCase())).slice(-6).reverse();
-  const actHtml=[
+  const _unused=[
     ...recentDon.map(r=>{
       const s=(r['Status']||'submitted').toLowerCase();
       const badge=s==='collected'?'<span style="font-size:0.64rem;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--al);color:var(--ac);border:1px solid #b8d9b2">Collected ✓</span>':'<span style="font-size:0.64rem;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--aml);color:var(--am);border:1px solid #e8c87a">Submitted</span>';
@@ -460,7 +446,37 @@ function render(d){
       return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bg)"><span style="font-size:1rem">🤲</span><div style="flex:1"><div style="font-size:0.83rem;font-weight:600">${r['Item Requested']||'—'} ×${r['Qty Requested']||0}${fb}</div><div style="font-size:0.71rem;color:var(--mu)">${d2}</div></div>${badge}</div>`;
     })
   ].slice(0,10).join('')||'<div class="no-data">No activity yet</div>';
-  document.getElementById('activityList').innerHTML=actHtml;
+  // Paginate activity if more than 10
+  const allActItems=[
+    ...recentDon.map(r=>{
+      const s=(r['Status']||'submitted').toLowerCase();
+      const badge=s==='collected'?'<span style="font-size:0.64rem;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--al);color:var(--ac);border:1px solid #b8d9b2">Collected ✓</span>':'<span style="font-size:0.64rem;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--aml);color:var(--am);border:1px solid #e8c87a">Submitted</span>';
+      const dateStr=s==='collected'?fd(r['Collected On']):fd(r['Submitted On']||r['Date']);
+      return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bg)"><span style="font-size:1rem">🎁</span><div style="flex:1"><div style="font-size:0.83rem;font-weight:600">${r['Item']||'—'} ×${r['Quantity']||0}</div><div style="font-size:0.71rem;color:var(--mu)">${dateStr}</div></div>${badge}</div>`;
+    }),
+    ...recentReq.map(r=>{
+      const s=(r['Status']||'').toLowerCase().replace(/ /g,'-');
+      const badgeMap={'approved':'<span style="font-size:0.64rem;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--al);color:var(--ac);border:1px solid #b8d9b2">Approved</span>','delivery-pending':'<span style="font-size:0.64rem;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--bll);color:var(--bl);border:1px solid #9fc3de">On the way</span>','delivered':'<span style="font-size:0.64rem;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--al);color:var(--ac);border:1px solid #b8d9b2">Delivered ✓</span>'};
+      const badge=badgeMap[s]||'';
+      const fb=r['Feedback']?`<span class="info-ico" style="width:18px;height:18px;border-radius:50%;background:var(--bl);color:white;font-size:0.6rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;cursor:help;position:relative;margin-left:4px">ℹ<span style="display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1c1c1c;color:white;font-size:0.74rem;padding:7px 10px;border-radius:8px;white-space:pre-wrap;min-width:160px;max-width:240px;z-index:400;line-height:1.5">"${r['Feedback']}"</span></span>`:'';
+      const d2=s==='delivered'?fd(r['Delivered On']):fd(r['Approved On']||r['Request Date']);
+      return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bg)"><span style="font-size:1rem">🤲</span><div style="flex:1"><div style="font-size:0.83rem;font-weight:600">${r['Item Requested']||'—'} ×${r['Qty Requested']||0}${fb}</div><div style="font-size:0.71rem;color:var(--mu)">${d2}</div></div>${badge}</div>`;
+    })
+  ];
+  const ACT_PER=10;
+  let actPage=0;
+  function renderActPage(){
+    const sl=allActItems.slice(actPage*ACT_PER,(actPage+1)*ACT_PER);
+    document.getElementById('activityList').innerHTML=sl.join('')||'<div class="no-data">No activity yet</div>';
+    document.querySelectorAll('#activityList .info-ico').forEach(el=>{el.addEventListener('mouseenter',()=>el.querySelector('span').style.display='block');el.addEventListener('mouseleave',()=>el.querySelector('span').style.display='none');});
+    const total=Math.ceil(allActItems.length/ACT_PER);
+    const pgEl=document.getElementById('actPgn');
+    if(total<=1){pgEl.innerHTML='';return;}
+    pgEl.innerHTML=`<button style="padding:4px 10px;border:1px solid var(--b);border-radius:6px;background:var(--bg);cursor:pointer;font-size:0.76rem" onclick="actPage=Math.max(0,actPage-1);renderActPage()" ${actPage===0?'disabled':''}>‹</button>`
+      +Array.from({length:total},(_,i)=>`<button style="padding:4px 9px;border:1px solid ${i===actPage?'var(--ac)':'var(--b)'};border-radius:6px;background:${i===actPage?'var(--ac)':'var(--bg)'};color:${i===actPage?'white':'var(--mu)'};cursor:pointer;font-size:0.76rem" onclick="actPage=${i};renderActPage()">${i+1}</button>`).join('')
+      +`<button style="padding:4px 10px;border:1px solid var(--b);border-radius:6px;background:var(--bg);cursor:pointer;font-size:0.76rem" onclick="actPage=Math.min(${total-1},actPage+1);renderActPage()" ${actPage>=total-1?'disabled':''}>›</button>`;
+  }
+  renderActPage();
 
   // Make feedback tooltips work on hover
   document.querySelectorAll('#activityList .info-ico').forEach(el=>{
@@ -468,11 +484,18 @@ function render(d){
     el.addEventListener('mouseleave',()=>el.querySelector('span').style.display='none');
   });
 
-  // Notice board
-  const notices=(d.notices||[]).filter(n=>n['Active']!=='No').slice(-5).reverse();
-  document.getElementById('noticeBoard').innerHTML=notices.length
-    ?notices.map(n=>`<div class="notice-item"><div class="notice-date">${fd(n['Date'])}</div><div class="notice-txt">${n['Notice']||''}</div></div>`).join('')
-    :'<div class="no-data">No notices posted yet</div>';
+  // Notice board ticker — horizontal animated
+  const notices=(d.notices||[]).filter(n=>n['Active']!=='No').reverse();
+  const tickerEl=document.getElementById('noticeScroll');
+  if(tickerEl){
+    if(notices.length){
+      const texts=notices.map(n=>`<span style="margin-right:60px;color:white;font-size:0.84rem">📌 ${n['Notice']||''} <span style="color:rgba(255,255,255,0.4);font-size:0.72rem">[${fd(n['Date'])}]</span></span>`);
+      tickerEl.innerHTML=texts.join('')+texts.join(''); // doubled for seamless loop
+    } else {
+      tickerEl.innerHTML='<span style="color:rgba(255,255,255,0.5);font-size:0.83rem;font-style:italic">No notices posted yet — check back soon</span>';
+      tickerEl.style.animation='none';
+    }
+  }
 
   // Feedback — item name + date only, no recipient info
   const fbs=req.filter(r=>(r['Status']||'').toLowerCase()==='delivered'&&r['Feedback']).slice(-6).reverse();
