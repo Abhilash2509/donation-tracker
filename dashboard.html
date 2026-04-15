@@ -324,17 +324,21 @@ footer{text-align:center;color:var(--mu);font-size:0.69rem;padding:14px;border-t
   @keyframes noticeWave{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(10deg)}}
   </style>
 
-  <!-- WHAT'S NEEDED + ACTIVITY + FEEDBACK -->
-  <div class="row3" style="margin-bottom:16px">
+  <!-- WHAT'S NEEDED + ACTIVITY -->
+  <div class="row2" style="margin-bottom:16px">
     <div class="panel"><div class="pt">⚠️ What's Needed</div><div id="needsList"><div class="no-data">—</div></div></div>
     <div class="panel">
       <div class="pt">📊 Recent Activity</div>
-      <div id="activityList" style="max-height:340px;overflow-y:auto"><div class="no-data">Loading…</div></div>
+      <div id="activityList" style="max-height:320px;overflow-y:auto"><div class="no-data">Loading…</div></div>
       <div class="pgn" id="actPgn"></div>
     </div>
-    <div class="panel">
-      <div class="pt">💬 Community Feedback</div>
-      <div id="feedbackList" style="max-height:340px;overflow-y:auto"><div class="no-data">No feedback yet</div></div>
+  </div>
+
+  <!-- COMMUNITY FEEDBACK — full width horizontal strip -->
+  <div style="margin-bottom:18px;background:var(--s);border:1px solid var(--b);border-radius:var(--ra);padding:18px;box-shadow:var(--sh)">
+    <div class="pt" style="margin-bottom:14px">💬 Community Feedback</div>
+    <div id="feedbackList" style="display:flex;gap:14px;overflow-x:auto;padding-bottom:6px">
+      <div class="no-data" style="min-width:200px">No feedback yet</div>
     </div>
   </div>
 
@@ -402,22 +406,46 @@ function render(d){
   });
 
   // Inventory bars — show all admin items, use collected donations as baseline
+  // Effective balance = actual balance MINUS qty of active (non-delivered/non-rejected) requests
   const invBalMap={};inv.forEach(i=>invBalMap[i.item]=i.balance);
+  // Subtract pending/approved/delivery-pending request quantities from balance
+  req.forEach(r=>{
+    const s=(r['Status']||'').toLowerCase();
+    const item=String(r['Item Requested']||'').trim();
+    if(['pending','approved','delivery pending'].includes(s) && invBalMap.hasOwnProperty(item)){
+      invBalMap[item]=Math.max(0,(invBalMap[item]||0)-(parseInt(r['Qty Requested'])||0));
+    }
+  });
   const allItemNames=(d.items||[]).map(r=>String(r['Item Name']||'').trim()).filter(Boolean);
   // Merge: items in inventory + items in master not yet donated
   const allInvItems=allItemNames.map((name,idx)=>{
     const invEntry=inv.find(i=>i.item===name);
-    return invEntry||{item:name,donated:0,distributed:0,balance:0};
+    if(invEntry){
+      // Use effective balance (adjusted for active requests)
+      return{...invEntry,balance:invBalMap[name]??invEntry.balance};
+    }
+    return{item:name,donated:0,distributed:0,balance:0};
   });
   const maxBal=Math.max(...allInvItems.map(i=>i.donated),1);
+  const maxDon=Math.max(...allInvItems.map(i=>i.donated),1);
   document.getElementById('invBars').innerHTML=allInvItems.length
     ?allInvItems.map((i,idx)=>{
-      const pct=i.donated>0?Math.max(3,Math.round(i.balance/i.donated*100)):0;
-      let badge='', balText=i.balance+' available', itemStyle='', barColor=PAL[idx%PAL.length];
-      if(i.donated===0){badge='<span class="pill-need">Not stocked</span>';balText='No donations yet';itemStyle='color:var(--re)';barColor='#e0e0e0';}
-      else if(i.balance<=0){badge='<span class="pill-need" style="background:#b83232;color:white;border-color:#b83232;font-weight:800">⚠ ZERO STOCK</span>';balText='None available';itemStyle='color:var(--re);font-weight:700';barColor='var(--re)';}
-      else if(i.balance<5){badge='<span class="pill-low">Low</span>';}
-      return`<div class="inv-item" style="${i.balance<=0&&i.donated>0?'background:var(--rl);border:1px solid #f5c0c0;border-radius:8px;padding:8px;margin:-8px;':''}"><div class="inv-top"><span class="inv-name" style="${itemStyle}">${i.item}${badge}</span><span class="inv-nums" style="${i.balance<=0&&i.donated>0?'color:var(--re);font-weight:600':''}">${balText}</span></div><div class="bar-track"><div class="bar-fill" style="width:${pct||3}%;background:${barColor};opacity:${i.donated===0?'0.3':'1'}"></div></div></div>`;
+      const pct=i.donated>0?Math.max(2,Math.round(i.balance/i.donated*100)):0;
+      let badge='',rowBg='',nameCls='',numStyle='',barColor=PAL[idx%PAL.length];
+      if(i.donated===0){
+        badge='<span style="font-size:0.6rem;font-weight:700;padding:1px 7px;border-radius:999px;background:#f0f0f0;color:#999;border:1px solid #ddd;margin-left:5px">Not stocked</span>';
+        barColor='#e8e8e8';
+      } else if(i.balance<=0){
+        badge='<span style="font-size:0.6rem;font-weight:800;padding:2px 8px;border-radius:999px;background:#b83232;color:white;margin-left:5px;animation:badgeFlash 1.2s ease-in-out infinite">⚠ ZERO</span>';
+        rowBg='background:var(--rl);';nameCls='color:var(--re);font-weight:700';numStyle='color:var(--re);font-weight:700';barColor='var(--re)';
+      } else if(i.balance<5){
+        badge='<span style="font-size:0.6rem;font-weight:700;padding:1px 7px;border-radius:999px;background:#fff3cd;color:#856404;border:1px solid #ffc107;margin-left:5px">Low</span>';
+      }
+      const numText=i.donated===0?'—':`<strong style="${numStyle}">${i.balance}</strong> avail · ${i.donated} in · ${i.distributed} out`;
+      return`<div class="inv-item" style="${rowBg}border-radius:8px;padding:6px 4px">
+        <div class="inv-top"><span class="inv-name" style="${nameCls}">${i.item}${badge}</span><span class="inv-nums" style="${numStyle}">${numText}</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+      </div>`;
     }).join('')
     :'<div class="no-data">No items configured yet</div>';
 
@@ -469,12 +497,8 @@ function render(d){
       const s=(r['Status']||'').toLowerCase().replace(/ /g,'-');
       const badgeMap={'approved':'<span style="font-size:0.64rem;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--al);color:var(--ac);border:1px solid #b8d9b2">Approved</span>','delivery-pending':'<span style="font-size:0.64rem;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--bll);color:var(--bl);border:1px solid #9fc3de">On the way</span>','delivered':'<span style="font-size:0.64rem;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--al);color:var(--ac);border:1px solid #b8d9b2">Delivered ✓</span>'};
       const badge=badgeMap[s]||'';
-      // Guard: only show as feedback if it exists and differs from Notes (delivery schedule)
-      const rawFb=r['Feedback']||'';const rawNotes=r['Notes']||'';
-      const realFb=(rawFb&&rawFb!==rawNotes)?rawFb:'';
-      const fb=realFb?`<span class="info-ico" style="width:18px;height:18px;border-radius:50%;background:var(--bl);color:white;font-size:0.6rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;cursor:help;position:relative;margin-left:4px">ℹ<span style="display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1c1c1c;color:white;font-size:0.74rem;padding:7px 10px;border-radius:8px;white-space:pre-wrap;min-width:160px;max-width:240px;z-index:400;line-height:1.5">"${realFb}"</span></span>`:'';
       const d2=s==='delivered'?fd(r['Delivered On']):fd(r['Approved On']||r['Request Date']);
-      return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bg)"><span style="font-size:1rem">🤲</span><div style="flex:1"><div style="font-size:0.83rem;font-weight:600">${r['Item Requested']||'—'} ×${r['Qty Requested']||0}${fb}</div><div style="font-size:0.71rem;color:var(--mu)">${d2}</div></div>${badge}</div>`;
+      return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bg)"><span style="font-size:1rem">🤲</span><div style="flex:1"><div style="font-size:0.83rem;font-weight:600">${r['Item Requested']||'—'} ×${r['Qty Requested']||0}</div><div style="font-size:0.71rem;color:var(--mu)">${d2}</div></div>${badge}</div>`;
     })
   ].slice(0,10).join('')||'<div class="no-data">No activity yet</div>';
   // Paginate activity if more than 10
@@ -489,12 +513,8 @@ function render(d){
       const s=(r['Status']||'').toLowerCase().replace(/ /g,'-');
       const badgeMap={'approved':'<span style="font-size:0.64rem;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--al);color:var(--ac);border:1px solid #b8d9b2">Approved</span>','delivery-pending':'<span style="font-size:0.64rem;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--bll);color:var(--bl);border:1px solid #9fc3de">On the way</span>','delivered':'<span style="font-size:0.64rem;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--al);color:var(--ac);border:1px solid #b8d9b2">Delivered ✓</span>'};
       const badge=badgeMap[s]||'';
-      // Guard: only show as feedback if it exists and differs from Notes (delivery schedule)
-      const rawFb=r['Feedback']||'';const rawNotes=r['Notes']||'';
-      const realFb=(rawFb&&rawFb!==rawNotes)?rawFb:'';
-      const fb=realFb?`<span class="info-ico" style="width:18px;height:18px;border-radius:50%;background:var(--bl);color:white;font-size:0.6rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;cursor:help;position:relative;margin-left:4px">ℹ<span style="display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1c1c1c;color:white;font-size:0.74rem;padding:7px 10px;border-radius:8px;white-space:pre-wrap;min-width:160px;max-width:240px;z-index:400;line-height:1.5">"${realFb}"</span></span>`:'';
       const d2=s==='delivered'?fd(r['Delivered On']):fd(r['Approved On']||r['Request Date']);
-      return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bg)"><span style="font-size:1rem">🤲</span><div style="flex:1"><div style="font-size:0.83rem;font-weight:600">${r['Item Requested']||'—'} ×${r['Qty Requested']||0}${fb}</div><div style="font-size:0.71rem;color:var(--mu)">${d2}</div></div>${badge}</div>`;
+      return`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bg)"><span style="font-size:1rem">🤲</span><div style="flex:1"><div style="font-size:0.83rem;font-weight:600">${r['Item Requested']||'—'} ×${r['Qty Requested']||0}</div><div style="font-size:0.71rem;color:var(--mu)">${d2}</div></div>${badge}</div>`;
     })
   ];
   const ACT_PER=10;
@@ -502,7 +522,7 @@ function render(d){
   function renderActPage(){
     const sl=allActItems.slice(actPage*ACT_PER,(actPage+1)*ACT_PER);
     document.getElementById('activityList').innerHTML=sl.join('')||'<div class="no-data">No activity yet</div>';
-    document.querySelectorAll('#activityList .info-ico').forEach(el=>{el.addEventListener('mouseenter',()=>el.querySelector('span').style.display='block');el.addEventListener('mouseleave',()=>el.querySelector('span').style.display='none');});
+
     const total=Math.ceil(allActItems.length/ACT_PER);
     const pgEl=document.getElementById('actPgn');
     if(total<=1){pgEl.innerHTML='';return;}
@@ -511,12 +531,6 @@ function render(d){
       +`<button style="padding:4px 10px;border:1px solid var(--b);border-radius:6px;background:var(--bg);cursor:pointer;font-size:0.76rem" onclick="actPage=Math.min(${total-1},actPage+1);renderActPage()" ${actPage>=total-1?'disabled':''}>›</button>`;
   }
   renderActPage();
-
-  // Make feedback tooltips work on hover
-  document.querySelectorAll('#activityList .info-ico').forEach(el=>{
-    el.addEventListener('mouseenter',()=>el.querySelector('span').style.display='block');
-    el.addEventListener('mouseleave',()=>el.querySelector('span').style.display='none');
-  });
 
   // Notice board ticker — horizontal animated
   const notices=(d.notices||[]).filter(n=>n['Active']!=='No').reverse();
@@ -537,11 +551,16 @@ function render(d){
     const s=(r['Status']||'').toLowerCase();
     const fb=String(r['Feedback']||'').trim();
     const notes=String(r['Notes']||'').trim();
-    return s==='delivered' && fb && fb!==notes;
-  }).slice(-6).reverse();
+    // Reject values that look like dates or are same as Notes
+    const looksLikeDate=fb && /^\d{4}-\d{2}-\d{2}|00:00/.test(fb);
+    return s==='delivered' && fb && fb!==notes && !looksLikeDate;
+  }).slice(-8).reverse();
   document.getElementById('feedbackList').innerHTML=fbs.length
-    ?fbs.map(r=>`<div class="fb-item"><div class="fb-quote">"${r['Feedback']}"</div><div class="fb-meta">for ${r['Item Requested']||'an item'} · ${fd(r['Delivered On'])}</div></div>`).join('')
-    :'<div class="no-data">No feedback submitted yet</div>';
+    ?fbs.map(r=>`<div style="flex:0 0 220px;background:var(--al);border:1px solid #b8d9b2;border-radius:10px;padding:13px;display:flex;flex-direction:column;justify-content:space-between">
+        <div style="font-size:0.82rem;font-style:italic;color:var(--tx);line-height:1.5;margin-bottom:8px">"${r['Feedback']}"</div>
+        <div style="font-size:0.7rem;color:var(--mu)">${r['Item Requested']||'an item'} · ${fd(r['Delivered On'])}</div>
+      </div>`).join('')
+    :'<div style="color:var(--mu);font-size:0.82rem;padding:8px 0">No feedback submitted yet — delivered recipients can leave feedback via the Recipient Portal.</div>';
 }
 
 function connectSU(){

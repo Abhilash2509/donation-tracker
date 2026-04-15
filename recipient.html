@@ -285,8 +285,8 @@ function popItems(d){
   const s=document.getElementById('ritem'),c=s.value;
   s.innerHTML='<option value="">Select item…</option>'+adminItems.map(item=>{
     const bal=balMap[item]??null;
-    const suffix=bal===null?'':(bal>0?` (${bal} available)`:' (out of stock)');
-    return`<option value="${item}" ${bal!==null&&bal<=0?'disabled':''}>${item}${suffix}</option>`;
+    // No qty shown in dropdown — just disable if out of stock
+    return`<option value="${item}" ${bal!==null&&bal<=0?'disabled':''}>${item}</option>`;
   }).join('');
   if(c)s.value=c;
 }
@@ -375,12 +375,15 @@ function trackRequest(){
     const rejComment=req['Rejection Comment']?`<div style="margin-top:8px;font-size:0.81rem;background:var(--rl);color:var(--re);padding:8px 12px;border-radius:8px">Rejection reason: ${req['Rejection Comment']}</div>`:'';
     const isDelivered=cur.toLowerCase()==='delivered';
 
-    // Feedback: only show "submitted" confirmation if Feedback field has a value
-    // AND it was explicitly submitted (not the same as delivery Notes)
-    // We check: Feedback field is non-empty AND different from Notes field
+    // Determine if genuine feedback exists:
+    // Must be non-empty, not look like a date/timestamp, and differ from Notes field
     const storedFb=String(req['Feedback']||'').trim();
     const storedNotes=String(req['Notes']||'').trim();
-    const hasFeedback=storedFb.length>0 && storedFb!==storedNotes;
+    // Reject if value looks like a date (contains digits-dash pattern or "00:00")
+    const looksLikeDate=storedFb && /^\d{4}-\d{2}-\d{2}|00:00|^\d{1,2}[\/\-]\d{1,2}/.test(storedFb);
+    const hasFeedback=storedFb.length>3 && storedFb!==storedNotes && !looksLikeDate;
+
+    // Show "Your feedback" only if real feedback confirmed
     const feedbackConfirm=hasFeedback
       ?`<div style="margin-top:10px;padding:10px 13px;background:var(--gl);color:var(--gr);border-radius:8px;font-size:0.82rem">
           💬 <strong>Your feedback:</strong> "${storedFb}"
@@ -394,7 +397,7 @@ function trackRequest(){
       ${rejComment}${feedbackConfirm}
     </div>`;
 
-    // Show feedback input form only when: delivered AND no feedback yet
+    // Show feedback form when: status is Delivered AND no genuine feedback yet
     if(isDelivered && !hasFeedback){
       trackingReqId=req['Request ID'];
       fbSection.style.display='block';
