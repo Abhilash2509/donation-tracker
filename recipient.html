@@ -370,7 +370,12 @@ function trackRequest(){
     req['Delivery Pending On']&&('🚚 Out for delivery: '+fd(req['Delivery Pending On'])),
     req['Delivered On']&&('📦 Delivered: '+fd(req['Delivered On'])),
   ].filter(Boolean).join('<br>');
-  const feedbackLine=req['Feedback']?`<div style="margin-top:8px;font-size:0.81rem;background:var(--gl);color:var(--gr);padding:8px 12px;border-radius:8px">✅ Feedback submitted: ${req['Feedback']}</div>`:'';
+  // Only show Feedback if it exists and is not the same as Notes (delivery schedule)
+  // This guards against column misalignment in the Google Sheet
+  const rawFeedback=req['Feedback']||'';
+  const rawNotes=req['Notes']||'';
+  const realFeedback=(rawFeedback&&rawFeedback!==rawNotes)?rawFeedback:'';
+  const feedbackLine=realFeedback?`<div style="margin-top:8px;font-size:0.81rem;background:var(--gl);color:var(--gr);padding:8px 12px;border-radius:8px">✅ Feedback submitted: ${realFeedback}</div>`:'';
   const rejComment=req['Rejection Comment']?`<div style="margin-top:8px;font-size:0.81rem;background:var(--rl);color:var(--re);padding:8px 12px;border-radius:8px">Rejection reason: ${req['Rejection Comment']}</div>`:'';
   document.getElementById('trackResult').innerHTML=`<div class="wf-wrap">
     <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:10px">${req['Request ID']} · ${req['Item Requested']} ×${req['Qty Requested']}</div>
