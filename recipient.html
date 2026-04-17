@@ -251,6 +251,23 @@ footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-t
   </div>
 </div>
 
+
+<!-- WAITLIST MODAL -->
+<div id="wlOv" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:800;align-items:center;justify-content:center;padding:16px">
+  <div style="background:white;border-radius:16px;max-width:440px;width:100%;padding:26px;box-shadow:0 16px 50px rgba(0,0,0,0.3)">
+    <div style="font-size:1.6rem;text-align:center;margin-bottom:10px">⏳</div>
+    <div style="font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:700;text-align:center;margin-bottom:8px">Item Currently Reserved</div>
+    <div id="wlMsg" style="font-size:0.83rem;color:#666;text-align:center;line-height:1.6;margin-bottom:18px"></div>
+    <div style="background:#e5f0f8;border:1px solid #9fc3de;border-radius:10px;padding:13px;margin-bottom:16px;font-size:0.82rem;color:#1f5f8b;line-height:1.7">
+      📬 <strong>Join the waitlist</strong> and we'll email you as soon as this item becomes available. You'll be first in line.
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button id="wlJoinBtn" onclick="joinWaitlist()" style="flex:1;padding:11px;background:#1f5f8b;color:white;border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.86rem;font-weight:600;cursor:pointer">✅ Join Waitlist</button>
+      <button onclick="document.getElementById('wlOv').style.display='none'" style="flex:1;padding:11px;background:#f4f1eb;color:#666;border:1px solid #e2ddd4;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.86rem;cursor:pointer">Cancel</button>
+    </div>
+    <div id="wlResult" style="margin-top:10px;font-size:0.82rem;text-align:center;display:none"></div>
+  </div>
+</div>
 </div>
 <footer>Recipient Portal · Grocery Donation Tracker · Works on mobile 📱</footer>
 <script>
@@ -312,24 +329,64 @@ function cta(){document.querySelectorAll('.tal').forEach(e=>e.style.display='non
 document.addEventListener('click',e=>{if(!e.target.closest('.taw'))cta();});
 function es(s){return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
 
+let _wlItem='',_wlRid='',_wlNotes='';
 async function subRequest(){
   const rid=document.getElementById('ri').value.trim();
   const item=document.getElementById('ritem').value;
   const notes=document.getElementById('rnotes').value.trim();
   if(!rid){sf('rm2','Please enter your Recipient ID.','err');return;}
   if(!item){sf('rm2','Please select an item.','err');return;}
-  if(!notes){sf('rm2','Please enter your preferred delivery schedule — this helps us arrange delivery at a suitable time.','err');return;}
-  const avail=balMap[item]??null;
-  if(avail!==null&&avail<1){sf('rm2','"'+item+'" is currently out of stock.','err');return;}
+  if(!notes){sf('rm2','Please enter your preferred delivery schedule.','err');return;}
   if(!SU){sf('rm2','System not configured.','err');return;}
   const btn=document.getElementById('rBtn');btn.disabled=true;btn.innerHTML='<span class="sp"></span> Submitting…';
   try{
     const r=await fetch(SU+'?'+new URLSearchParams({action:'addRequest',recipientId:rid,itemRequested:item,qtyRequested:1,notes}));
     const d=await r.json();
-    if(d.success){sf('rm2','✅ Request submitted!\n\nRequest ID: '+d.requestId+'\n\nA confirmation email has been sent to you. Use the Track tab to follow your request.','ok');sa('Request submitted!','amber');['ri','rnotes'].forEach(id=>document.getElementById(id).value='');document.getElementById('ritem').value='';setTimeout(init,1500);}
-    else sf('rm2','❌ '+(d.error||'Error'),'err');
+    if(d.success){
+      sf('rm2','✅ Request submitted!\n\nRequest ID: '+d.requestId+'\n\nA confirmation email has been sent. Use the Track tab to follow your request.','ok');
+      sa('Request submitted!','amber');
+      ['ri','rnotes'].forEach(id=>document.getElementById(id).value='');
+      document.getElementById('ritem').value='';
+      setTimeout(init,1500);
+    } else if(d.waitlistNeeded){
+      // Item is fully reserved — offer waitlist
+      _wlItem=d.item;_wlRid=rid;_wlNotes=notes;
+      document.getElementById('wlMsg').textContent=
+        '"'+d.item+'" is currently reserved for another recipient who requested it before you. '
+        +'Would you like to join the waitlist? You'll get an email the moment it becomes available.';
+      document.getElementById('wlResult').style.display='none';
+      document.getElementById('wlOv').style.display='flex';
+    } else {
+      sf('rm2','❌ '+(d.error||'Error'),'err');
+    }
   }catch(e){sf('rm2','❌ Failed: '+e.message,'err');}
   btn.disabled=false;btn.innerHTML='<span>Submit Request</span>';
+}
+
+async function joinWaitlist(){
+  if(!_wlItem||!_wlRid){return;}
+  const btn=document.getElementById('wlJoinBtn');
+  btn.disabled=true;btn.textContent='Adding…';
+  try{
+    const r=await fetch(SU+'?'+new URLSearchParams({action:'addWaitlist',recipientId:_wlRid,item:_wlItem,notes:_wlNotes}));
+    const d=await r.json();
+    const res=document.getElementById('wlResult');
+    if(d.success){
+      res.style.display='block';
+      res.style.color='var(--gr)';
+      res.textContent='✅ You're on the waitlist! We'll email you when "'+_wlItem+'" is available. (ID: '+d.waitlistId+')';
+      btn.textContent='✅ Added!';
+      setTimeout(()=>{document.getElementById('wlOv').style.display='none';},3000);
+    } else {
+      res.style.display='block';res.style.color='var(--re)';
+      res.textContent='❌ '+(d.error||'Could not join waitlist');
+      btn.disabled=false;btn.textContent='✅ Join Waitlist';
+    }
+  }catch(e){
+    document.getElementById('wlResult').textContent='❌ Failed: '+e.message;
+    document.getElementById('wlResult').style.display='block';
+    btn.disabled=false;btn.textContent='✅ Join Waitlist';
+  }
 }
 
 async function subCustom(){

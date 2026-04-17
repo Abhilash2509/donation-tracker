@@ -254,6 +254,7 @@ footer{text-align:center;color:var(--mu);font-size:0.7rem;padding:14px;border-to
     <button class="ntab" onclick="go('items',this)">🗂 Items</button>
     <button class="ntab" onclick="go('custom',this)">🔍 Custom Requests</button>
     <button class="ntab" onclick="go('notices',this)">📌 Notices</button>
+    <button class="ntab" onclick="go('waitlist',this)">⏳ Waitlist</button>
     <button class="ntab" onclick="go('history',this)">🕓 History</button>
     <button class="ntab" onclick="go('reports',this)">📄 Reports</button>
     <button class="ntab" onclick="go('masters',this)">👥 Masters</button>
@@ -417,6 +418,28 @@ footer{text-align:center;color:var(--mu);font-size:0.7rem;padding:14px;border-to
   <div class="tip">💡 Notices appear on the public dashboard and on the recipient portal. Use this to announce upcoming drives, collection dates, or important updates.</div>
 </div>
 
+
+<!-- WAITLIST -->
+<div class="pg" id="pg-waitlist">
+  <div class="panel">
+    <div class="ph">
+      <div class="pt">⏳ Waitlist <span style="font-size:0.72rem;font-weight:400;color:var(--mu)">— recipients waiting for reserved items</span></div>
+      <div class="pc" id="wlCnt">—</div>
+    </div>
+    <div class="tip" style="margin-bottom:14px">💡 When a request for a waitlisted item is delivered or rejected, the next waiting recipient is <strong>automatically notified by email</strong> to submit their request.</div>
+    <div id="wlList"><div class="no-data">No one on the waitlist</div></div>
+  </div>
+  <div class="panel" style="margin-top:16px">
+    <div class="ph"><div class="pt">📋 All Waitlist Entries</div><div class="pc" id="wlAllCnt">—</div></div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Waitlist ID</th><th>Item</th><th>Recipient</th><th>Date Added</th><th>Delivery Notes</th><th>Status</th><th>Notified On</th></tr></thead>
+        <tbody id="wlAllBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <!-- REPORTS -->
 <div class="pg" id="pg-reports">
   <div class="panel">
@@ -519,6 +542,7 @@ function go(n,b){
   if(n==='items'&&LD)buildItems();
   if(n==='custom'&&LD)buildCustom();
   if(n==='notices'&&LD)buildNotices();
+  if(n==='waitlist'&&LD)buildWaitlist();
   if(n==='collections'&&LD)buildCollections();
   if(n==='requests'&&LD)buildRequests();
 }
@@ -539,6 +563,7 @@ async function loadData(){
     if(ap==='pg-items')buildItems();
     if(ap==='pg-custom')buildCustom();
     if(ap==='pg-notices')buildNotices();
+    if(ap==='pg-waitlist')buildWaitlist();
   }catch(e){setSS('error');sa('Could not reach Google Sheet.','red');console.error(e);}
 }
 setInterval(()=>{if(SU&&sessionStorage.getItem('adm'))loadData();},30000);
@@ -632,11 +657,20 @@ function buildRequests(){
       const notesI=r['Notes']?`<span class="info-ico">ℹ<span class="tip-bubble">${String(r['Notes']).replace(/</g,'&lt;')}</span></span>`:'';
       const bal=invMap2[r['Item Requested']]??null;
       const outOfStock=bal!==null&&bal<1;
-      const stockWarn=outOfStock?`<span style="font-size:0.72rem;color:var(--re);font-weight:600;margin-left:6px">⚠ Out of stock</span>`:'';
+      // Compute effective stock: balance - all active reservations
+      const activeResCount=(LD.requests||[]).filter(r2=>{
+        const s2=(r2['Status']||'').toLowerCase();
+        return['pending','approved','delivery pending'].includes(s2)&&r2['Item Requested']===r['Item Requested']&&r2['Request ID']!==r['Request ID'];
+      }).reduce((s,r2)=>s+(parseInt(r2['Qty Requested'])||0),0);
+      const effectiveBal=Math.max(0,(invMap2[r['Item Requested']]??0)-activeResCount);
+      const waitingCount=(LD.waitlist||[]).filter(w=>(w['Status']||'').toLowerCase()==='waiting'&&w['Item']===r['Item Requested']).length;
+      const wlBadge=waitingCount>0?`<span style="font-size:0.68rem;font-weight:600;padding:1px 7px;border-radius:999px;background:var(--aml);color:var(--am);border:1px solid #e8c87a;margin-left:5px">⏳ ${waitingCount} waiting</span>`:'';
+      const stockWarn=outOfStock?`<span style="font-size:0.72rem;color:var(--re);font-weight:600;margin-left:6px">⚠ Out of stock · Stock: ${invMap2[r['Item Requested']]??0} · Reserved: ${activeResCount}</span>`:
+        effectiveBal===0?`<span style="font-size:0.72rem;color:var(--am);font-weight:600;margin-left:6px">⚠ Fully reserved</span>`:'';
       const appBtn=outOfStock
         ?`<button class="btn bsm" style="background:#e0e0e0;color:#888;cursor:not-allowed" disabled>✓ Approve</button>`
         :`<button class="btn bg bsm" onclick="rAct(${idx},'approve')">✓ Approve</button>`;
-      return`<div class="arow"><div class="ainfo"><span class="tid">${r['Request ID']||'—'}</span>&nbsp;<strong>${rc['Recipient Name']||r['Recipient ID']}</strong>${notesI}${stockWarn}${rc['Address']?`<br><span style="font-size:0.74rem;color:var(--mu)">📍 ${rc['Address']}</span>`:''}<br><span style="font-size:0.74rem;color:var(--mu)">Item: <strong>${r['Item Requested']}</strong> · Qty: <strong>${r['Qty Requested']}</strong> · ${fd(r['Pending On']||r['Request Date'])}</span></div><div class="abtns">${appBtn}<button class="btn br bsm" onclick="rAct(${idx},'reject')">✗ Reject</button></div></div>`;
+      return`<div class="arow"><div class="ainfo"><span class="tid">${r['Request ID']||'—'}</span>&nbsp;<strong>${rc['Recipient Name']||r['Recipient ID']}</strong>${notesI}${wlBadge}${stockWarn}${rc['Address']?`<br><span style="font-size:0.74rem;color:var(--mu)">📍 ${rc['Address']}</span>`:''}<br><span style="font-size:0.74rem;color:var(--mu)">Item: <strong>${r['Item Requested']}</strong> · Qty: <strong>${r['Qty Requested']}</strong> · ${fd(r['Pending On']||r['Request Date'])}</span></div><div class="abtns">${appBtn}<button class="btn br bsm" onclick="rAct(${idx},'reject')">✗ Reject</button></div></div>`;
     }).join('')
     :'<div class="no-data">🎉 No pending requests</div>';
 
@@ -994,6 +1028,67 @@ function buildMasters(){
 }
 
 
+
+
+// ── WAITLIST ──
+function buildWaitlist(){
+  if(!LD)return;
+  const wl=LD.waitlist||[];
+  const rec=LD.recipients||[];
+  const rm={};rec.forEach(r=>rm[r['Recipient ID']]=r);
+  const waiting=wl.filter(r=>(r['Status']||'').toLowerCase()==='waiting');
+  document.getElementById('wlCnt').textContent=waiting.length+' waiting';
+
+  // Group by item
+  const byItem={};
+  waiting.forEach(r=>{
+    const item=r['Item']||'—';
+    if(!byItem[item])byItem[item]=[];
+    byItem[item].push(r);
+  });
+
+  document.getElementById('wlList').innerHTML=Object.keys(byItem).length
+    ?Object.entries(byItem).map(([item,rows])=>{
+      const invEntry=(LD.inventory||[]).find(i=>i.item===item);
+      // Effective available = balance - pending/approved/dp requests
+      const activeReq=(LD.requests||[]).filter(r=>['pending','approved','delivery pending'].includes((r['Status']||'').toLowerCase())&&r['Item Requested']===item);
+      const reserved=activeReq.reduce((s,r)=>s+(parseInt(r['Qty Requested'])||0),0);
+      const balance=invEntry?invEntry.balance:0;
+      const effective=Math.max(0,balance-reserved);
+      const stockBadge=effective>0
+        ?`<span style="font-size:0.7rem;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--al);color:var(--ac);border:1px solid #b8d9b2">✅ ${effective} now available</span>`
+        :`<span style="font-size:0.7rem;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--rl);color:var(--re);border:1px solid #f5c0c0">⚠ Still reserved</span>`;
+      const recipRows=rows.map(r=>{
+        const rc=rm[r['Recipient ID']]||{};
+        return`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bg);gap:8px;flex-wrap:wrap">
+          <div>
+            <span class="tid">${r['Waitlist ID']||'—'}</span>
+            &nbsp;<strong>${rc['Recipient Name']||r['Recipient ID']}</strong>
+            ${rc['Email']?`<br><span style="font-size:0.73rem;color:var(--mu)">${rc['Email']}</span>`:''}
+            ${r['Delivery Notes']?`<br><span style="font-size:0.73rem;color:var(--mu)">📋 ${r['Delivery Notes']}</span>`:''}
+          </div>
+          <span style="font-size:0.72rem;color:var(--mu)">${fd(r['Date Added'])}</span>
+        </div>`;
+      }).join('');
+      return`<div style="border:1px solid var(--b);border-radius:10px;padding:14px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+          <div style="font-family:'Syne',sans-serif;font-weight:700">${item}</div>
+          <div style="display:flex;align-items:center;gap:8px">${stockBadge}<span style="font-size:0.73rem;color:var(--mu)">${rows.length} waiting</span></div>
+        </div>
+        ${recipRows}
+      </div>`;
+    }).join('')
+    :'<div class="no-data">🎉 No one currently on the waitlist</div>';
+
+  // All entries table
+  document.getElementById('wlAllCnt').textContent=wl.length+' total';
+  document.getElementById('wlAllBody').innerHTML=wl.map(r=>{
+    const rc=rm[r['Recipient ID']]||{};
+    const s=(r['Status']||'waiting').toLowerCase();
+    const pill=s==='waiting'?'<span class="pill pending">Waiting</span>':s==='notified'?'<span class="pill approved">Notified</span>':'<span class="pill">'+r['Status']+'</span>';
+    return`<tr><td><span class="tid">${r['Waitlist ID']||'—'}</span></td><td>${r['Item']||'—'}</td><td style="font-size:0.78rem">${rc['Recipient Name']||r['Recipient ID']}</td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Date Added'])}</td><td style="font-size:0.75rem;color:var(--mu)">${r['Delivery Notes']||'—'}</td><td>${pill}</td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Notified On'])||'—'}</td></tr>`;
+  }).join()||'<tr><td colspan="7" class="no-data">No waitlist entries</td></tr>';
+}
 
 // ── APPROVE WITH ETA MODAL ──
 let _appRow=0,_appLabel='';
