@@ -1101,7 +1101,7 @@ function buildWaitlist(){
     :'<div class="no-data">🎉 No one currently on the waitlist</div>';
 
   // All entries table
-  document.getElementById('wlAllCnt').textContent=wl.length+' total');
+  document.getElementById('wlAllCnt').textContent=wl.length+' total';
   // Sort by Date Added ascending (FIFO) for display
   const wlSorted=[...wl].sort((a,b)=>String(a['Date Added']||'').localeCompare(String(b['Date Added']||'')));
   // Assign priority numbers per item (1 = next in line)
