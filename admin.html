@@ -617,13 +617,16 @@ function buildCollections(){
   if(!LD)return;
   const don=LD.donations||[],donors=LD.donors||[];
   const dm={};donors.forEach(d=>dm[d['Donor ID']]=d);
-  const sub=don.filter(r=>(r['Status']||'submitted').toLowerCase()==='submitted');
+  // Sort submitted donations descending by submission date (newest first = act quickly)
+  const sub=don.filter(r=>(r['Status']||'submitted').toLowerCase()==='submitted')
+    .sort((a,b)=>String(b['Submitted On']||b['Date']||'').localeCompare(String(a['Submitted On']||a['Date']||'')));
   document.getElementById('subCnt').textContent=sub.length+' pending';
   document.getElementById('subList').innerHTML=sub.length
     ?sub.map(r=>{const d=dm[r['Donor ID']]||{};const notesIcon=r['Notes']?`<span class="info-ico">ℹ<span class="tip-bubble">${String(r['Notes']).replace(/</g,'&lt;')}</span></span>`:'';return`<div class="arow"><div class="ainfo"><span class="tid">${r['Donation ID']||'—'}</span> &nbsp;<strong>${d['Donor Name']||r['Donor ID']}</strong>${notesIcon}<br>${d['Address']?`<span style="font-size:0.74rem;color:var(--mu)">📍 ${d['Address']}</span><br>`:''}<span style="font-size:0.74rem;color:var(--mu)">${d['Phone']?'📞 '+d['Phone']+' · ':''}<strong>${r['Item']}</strong> · Qty <strong>${r['Quantity']}</strong> · ${fd(r['Submitted On']||r['Date'])}</span></div><div class="abtns"><button class="btn bg bsm" onclick="updD(${r._row},'Collected')">✓ Mark Collected</button><button class="btn br bsm" onclick="openReject('don',${r._row},''+r['Item']+' ('+r['Quantity']+')')">✗ Reject</button></div></div>`;}).join('')
     :'<div class="no-data">🎉 No collections pending</div>';
   document.getElementById('allDC').textContent=don.length+' total';
-  document.getElementById('allDB2').innerHTML=don.map(r=>{
+  const donSorted=[...don].sort((a,b)=>String(b['Submitted On']||b['Date']||'').localeCompare(String(a['Submitted On']||a['Date']||'')));
+  document.getElementById('allDB2').innerHTML=donSorted.map(r=>{
     const s=(r['Status']||'submitted').toLowerCase();
     const notes=r['Notes']?`<span class="info-ico">ℹ<span class="tip-bubble">${String(r['Notes']).replace(/</g,'&lt;')}</span></span>`:'';
     const nxt=s==='submitted'?`<button class="btn bg bsm" onclick="updD(${r._row},'Collected')">Mark Collected</button> <button class="btn br bsm" onclick="openReject('don',${r._row},''+r['Item']+' ('+r['Quantity']+')')">Reject</button>`:`<span style="font-size:0.75rem;color:var(--mu)">${r['Status']}</span>`;
@@ -644,8 +647,11 @@ function buildRequests(){
   const req=LD.requests||[],rec=LD.recipients||[];
   const rm={};rec.forEach(r=>rm[r['Recipient ID']]=r);
   _reqRows=req; // store globally for rAct
-  const pending=req.filter(r=>(r['Status']||'').toLowerCase()==='pending');
-  const dp=req.filter(r=>(r['Status']||'').toLowerCase()==='approved');
+  // Sort pending descending — newest requests first so admin sees latest quickly
+  const pending=req.filter(r=>(r['Status']||'').toLowerCase()==='pending')
+    .sort((a,b)=>String(b['Pending On']||b['Request Date']||'').localeCompare(String(a['Pending On']||a['Request Date']||'')));
+  const dp=req.filter(r=>(r['Status']||'').toLowerCase()==='approved')
+    .sort((a,b)=>String(b['Approved On']||'').localeCompare(String(a['Approved On']||'')));
   const invMap2={};(LD.inventory||[]).forEach(i=>invMap2[i.item]=i.balance);
 
   document.getElementById('pendRC').textContent=pending.length+' pending';
@@ -683,7 +689,8 @@ function buildRequests(){
     :'<div class="no-data">No deliveries pending</div>';
 
   document.getElementById('allRC').textContent=req.length+' total';
-  document.getElementById('allRB2').innerHTML=req.map((r,idx)=>{
+  const reqSorted=[...req].sort((a,b)=>String(b['Pending On']||b['Request Date']||'').localeCompare(String(a['Pending On']||a['Request Date']||'')));
+  document.getElementById('allRB2').innerHTML=reqSorted.map((r,idx)=>{
     const s=(r['Status']||'pending').toLowerCase().replace(/ /g,'-');
     let nxt='';
     if(s==='pending'){
@@ -814,6 +821,38 @@ function renderLogPage(){
 }
 function logGoPage(p){_logPage=p;renderLogPage();}
 
+
+// ── Client-side FIFO donation→request matching ──
+function findFundingDonClient(LD, itemName, requestId){
+  const item=String(itemName||'').trim().toLowerCase();
+  // Collected donations for this item sorted by collected date ascending
+  const dons=(LD.donations||[])
+    .filter(d=>String(d['Item']||'').trim().toLowerCase()===item&&(d['Status']||'').toLowerCase()==='collected')
+    .sort((a,b)=>String(a['Collected On']||a['Date']||'').localeCompare(String(b['Collected On']||b['Date']||'')));
+  // Delivered requests for this item sorted by delivery date ascending
+  const reqs=(LD.requests||[])
+    .filter(r=>String(r['Item Requested']||'').trim().toLowerCase()===item&&(r['Status']||'').toLowerCase()==='delivered')
+    .sort((a,b)=>String(a['Delivered On']||'').localeCompare(String(b['Delivered On']||'')));
+  if(!dons.length)return null;
+  // Walk FIFO: consume donation qty against request qty
+  let donIdx=0,remaining=dons[0]?parseInt(dons[0]['Quantity'])||0:0;
+  let fundingId=dons[0]?dons[0]['Donation ID']:'';
+  for(let i=0;i<reqs.length;i++){
+    let need=parseInt(reqs[i]['Qty Requested'])||0;
+    // Track which donation covers this request
+    let reqFundingId=fundingId;
+    while(need>0&&donIdx<dons.length){
+      const take=Math.min(need,remaining);
+      need-=take;remaining-=take;
+      reqFundingId=dons[donIdx]['Donation ID'];
+      if(remaining<=0){donIdx++;if(donIdx<dons.length)remaining=parseInt(dons[donIdx]['Quantity'])||0;if(donIdx<dons.length)fundingId=dons[donIdx]['Donation ID'];}
+    }
+    // If this is our target request, return its funding donation
+    if(reqs[i]['Request ID']===requestId)return reqFundingId;
+  }
+  return dons[0]?dons[0]['Donation ID']:null;
+}
+
 function drillTxn(tid){
   if(!LD)return;
   document.getElementById('drillId').textContent=tid;
@@ -826,13 +865,12 @@ function drillTxn(tid){
     const don=(LD.donations||[]).find(r=>r['Donation ID']===tid);
     if(don){
       const donor=(LD.donors||[]).find(d=>d['Donor ID']===don['Donor ID']);
-      // Find requests fulfilled from this item (same item, delivered)
-      const linkedReqs=(LD.requests||[]).filter(r=>{
-        const sameItem=String(r['Item Requested']||'').trim().toLowerCase()===String(don['Item']||'').trim().toLowerCase();
-        return sameItem&&(r['Status']||'').toLowerCase()==='delivered';
-      });
+      // Find only requests that THIS specific donation funded (FIFO matching)
+      const allDeliveredReqs=(LD.requests||[])
+        .filter(r=>String(r['Item Requested']||'').trim().toLowerCase()===String(don['Item']||'').trim().toLowerCase()&&(r['Status']||'').toLowerCase()==='delivered');
+      const linkedReqs=allDeliveredReqs.filter(r=>findFundingDonClient(LD,r['Item Requested'],r['Request ID'])===tid);
       const reqLinksHtml=linkedReqs.length
-        ?'<br><span style="font-weight:600">Delivered to requests:</span> '
+        ?'<br><span style="font-weight:600">Delivered to request(s):</span> '
           +linkedReqs.map(r=>`<span class="tid" style="cursor:pointer;text-decoration:underline;color:var(--bl)" onclick="drillTxn('${r['Request ID']}')" title="View request">${r['Request ID']}</span>`).join(', ')
         :'';
       extraHtml=`<div style="background:white;border-radius:9px;padding:12px;margin-bottom:10px;font-size:0.83rem;line-height:1.9">
@@ -849,14 +887,11 @@ function drillTxn(tid){
     const req=(LD.requests||[]).find(r=>r['Request ID']===tid);
     if(req){
       const recip=(LD.recipients||[]).find(r=>r['Recipient ID']===req['Recipient ID']);
-      // Find all donation transactions for the same item (collected)
-      const linkedDons=(LD.donations||[]).filter(d=>{
-        const sameItem=String(d['Item']||'').trim().toLowerCase()===String(req['Item Requested']||'').trim().toLowerCase();
-        return sameItem&&(d['Status']||'').toLowerCase()==='collected';
-      });
-      const donLinksHtml=linkedDons.length
-        ?'<br><span style="font-weight:600">Funded by donations:</span> '
-          +linkedDons.map(d=>`<span class="tid" style="cursor:pointer;text-decoration:underline;color:var(--bl)" onclick="drillTxn('${d['Donation ID']}')" title="View donation">${d['Donation ID']}</span>`).join(', ')
+      // Find the specific donation that funded this request using FIFO consumption
+      const fundingDon=findFundingDonClient(LD, req['Item Requested'], req['Request ID']);
+      const donLinksHtml=fundingDon
+        ?'<br><span style="font-weight:600">Funded by donation:</span> '
+          +`<span class="tid" style="cursor:pointer;text-decoration:underline;color:var(--bl)" onclick="drillTxn('${fundingDon}')" title="View donation">${fundingDon}</span>`
         :'';
       extraHtml=`<div style="background:white;border-radius:9px;padding:12px;margin-bottom:10px;font-size:0.83rem;line-height:1.9">
         <strong>Request Record</strong><br>
@@ -1101,7 +1136,7 @@ function buildWaitlist(){
     :'<div class="no-data">🎉 No one currently on the waitlist</div>';
 
   // All entries table
-  document.getElementById('wlAllCnt').textContent=wl.length+' total';
+  document.getElementById('wlAllCnt').textContent=wl.length+' total');
   // Sort by Date Added ascending (FIFO) for display
   const wlSorted=[...wl].sort((a,b)=>String(a['Date Added']||'').localeCompare(String(b['Date Added']||'')));
   // Assign priority numbers per item (1 = next in line)

@@ -302,8 +302,9 @@ function popItems(d){
   const s=document.getElementById('ritem'),c=s.value;
   s.innerHTML='<option value="">Select item…</option>'+adminItems.map(item=>{
     const bal=balMap[item]??null;
-    // No qty shown in dropdown — just disable if out of stock
-    return`<option value="${item}" ${bal!==null&&bal<=0?'disabled':''}>${item}</option>`;
+    // Out of stock items shown with hint — NOT disabled (waitlist will catch them)
+    const hint=bal!==null&&bal<=0?' (out of stock — join waitlist)':'';
+    return`<option value="${item}">${item}${hint}</option>`;
   }).join('');
   if(c)s.value=c;
 }
@@ -351,9 +352,13 @@ async function subRequest(){
     } else if(d.waitlistNeeded){
       // Item is fully reserved — offer waitlist
       _wlItem=d.item;_wlRid=rid;_wlNotes=notes;
+      const bal=balMap[d.item]??null;
+      const reason=bal!==null&&bal<=0
+        ?'"'+d.item+'" is currently out of stock. '
+        :'"'+d.item+'" is currently reserved for another recipient. ';
       document.getElementById('wlMsg').textContent=
-        '"'+d.item+'" is currently reserved for another recipient who requested it before you. '
-        +'Would you like to join the waitlist? You will get an email the moment it becomes available.';
+        reason+'Join the waitlist and you'll be notified when it becomes available. '
+        +'You'll be served in the order you signed up.';
       document.getElementById('wlResult').style.display='none';
       document.getElementById('wlOv').style.display='flex';
     } else {
@@ -374,7 +379,7 @@ async function joinWaitlist(){
     if(d.success){
       res.style.display='block';
       res.style.color='var(--gr)';
-      res.textContent='✅ You are on the waitlist! We will email you when "'+_wlItem+'" is available. (ID: '+d.waitlistId+')';
+      res.textContent='✅ You're on the waitlist! We'll email you when "'+_wlItem+'" is available. (ID: '+d.waitlistId+')';
       btn.textContent='✅ Added!';
       setTimeout(()=>{document.getElementById('wlOv').style.display='none';},3000);
     } else {
