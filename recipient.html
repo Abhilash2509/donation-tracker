@@ -103,7 +103,7 @@ footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-t
       <div style="background:#f4f1eb;border-radius:10px;padding:12px 14px;margin-bottom:14px">
         <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#888;margin-bottom:8px">Workflows</div>
         <div style="font-size:0.7rem;font-weight:600;color:#c07c2e;margin-bottom:4px">🎁 Donation: Submit → Collected</div>
-        <div style="font-size:0.7rem;font-weight:600;color:#2d5a27;margin-top:8px;margin-bottom:4px">🤲 Request: Pending → Approved → Delivery Pending → Delivered</div>
+        <div style="font-size:0.7rem;font-weight:600;color:#2d5a27;margin-top:8px;margin-bottom:4px">🤲 Request: Pending → Approved → Delivered</div>
         <div style="font-size:0.74rem;color:#6a5030;margin-top:8px;line-height:1.6">📧 Email notifications sent at every stage &nbsp;·&nbsp; 🆔 Save your ID from welcome email &nbsp;·&nbsp; 📱 Works on mobile</div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
@@ -145,7 +145,7 @@ footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-t
 <!-- REQUEST -->
 <div class="pg on" id="pg-request">
   <div class="hero"><h2>🤲 Request Groceries</h2><p>Enter your Recipient ID and select an available item. Delivery will be arranged to your address.</p></div>
-  <div class="infobox">📋 <strong>Workflow:</strong> Pending → Approved → Delivery Pending → Delivered. Email sent at every stage.</div>
+  <div class="infobox">📋 <strong>Workflow:</strong> Pending → Approved → Delivered. Email sent at every stage.</div>
   <div class="panel">
     <div class="ph"><div class="pt">📦 Currently Available</div></div>
     <div id="invBars"><div class="no-data">Loading…</div></div>
@@ -353,7 +353,7 @@ async function subRequest(){
       _wlItem=d.item;_wlRid=rid;_wlNotes=notes;
       document.getElementById('wlMsg').textContent=
         '"'+d.item+'" is currently reserved for another recipient who requested it before you. '
-        +'Would you like to join the waitlist? You will get an email the moment it becomes available.';
+        +'Would you like to join the waitlist? You'll get an email the moment it becomes available.';
       document.getElementById('wlResult').style.display='none';
       document.getElementById('wlOv').style.display='flex';
     } else {
@@ -374,7 +374,7 @@ async function joinWaitlist(){
     if(d.success){
       res.style.display='block';
       res.style.color='var(--gr)';
-      res.textContent='✅ You are on the waitlist! We will email you when "'+_wlItem+'" is available. (ID: '+d.waitlistId+')';
+      res.textContent='✅ You're on the waitlist! We'll email you when "'+_wlItem+'" is available. (ID: '+d.waitlistId+')';
       btn.textContent='✅ Added!';
       setTimeout(()=>{document.getElementById('wlOv').style.display='none';},3000);
     } else {
@@ -418,7 +418,7 @@ function trackRequest(){
   // Check regular requests first
   const req=(LD.requests||[]).find(r=>String(r['Request ID']||'').toUpperCase()===id);
   if(req){
-    const steps=['Pending','Approved','Delivery Pending','Delivered'];
+    const steps=['Pending','Approved','Delivered'];
     const cur=String(req['Status']||'Pending');
     const curIdx=steps.findIndex(s=>s.toLowerCase()===cur.toLowerCase());
     const stepsHtml=steps.map((s,i)=>`${i>0?'<span class="wf-arrow">›</span>':''}<span class="wf-step ${i<curIdx?'done':i===curIdx?'cur':''}">${s}</span>`).join('');
@@ -426,8 +426,7 @@ function trackRequest(){
     const dates=[
       req['Pending On']&&('📋 Requested: '+fd(req['Pending On'])),
       req['Approved On']&&('✅ Approved: '+fd(req['Approved On'])),
-      req['Delivery Pending On']&&('🚚 Out for delivery: '+fd(req['Delivery Pending On'])),
-      req['Delivered On']&&('📦 Delivered: '+fd(req['Delivered On'])),
+        req['Delivered On']&&('📦 Delivered: '+fd(req['Delivered On'])),
     ].filter(Boolean).join('<br>');
     const rejComment=req['Rejection Comment']?`<div style="margin-top:8px;font-size:0.81rem;background:var(--rl);color:var(--re);padding:8px 12px;border-radius:8px">Rejection reason: ${req['Rejection Comment']}</div>`:'';
     const isDelivered=cur.toLowerCase()==='delivered';
