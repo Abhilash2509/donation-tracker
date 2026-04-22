@@ -284,7 +284,9 @@ async function init(){
     document.getElementById('sl').textContent='Live';
   }catch(e){document.getElementById('sd').style.background='#e57373';document.getElementById('sl').textContent='Offline';}
 }
-setInterval(init,30000);init();
+// Auto-refresh every 30s using refreshData (preserves form state)
+setInterval(refreshData,30000);
+init();
 
 function renderInv(d){
   const inv=d.inventory||[];
@@ -299,14 +301,27 @@ function popItems(d){
   const inv=d.inventory||[];
   const adminItems=(d.items||[]).map(r=>r['Item Name']||'').filter(Boolean);
   balMap={};inv.forEach(i=>balMap[i.item]=i.balance);
-  const s=document.getElementById('ritem'),c=s.value;
-  s.innerHTML='<option value="">Select item…</option>'+adminItems.map(item=>{
-    const bal=balMap[item]??null;
-    // Out of stock items shown with hint — NOT disabled (waitlist will catch them)
-    const hint=bal!==null&&bal<=0?' (out of stock — join waitlist)':'';
+  // Compute reservation-aware effective balance
+  const resMap={};
+  (d.requests||[]).forEach(req=>{
+    const s=(req['Status']||'').toLowerCase();
+    if(['pending','approved'].includes(s)){
+      const it=String(req['Item Requested']||'').trim();
+      resMap[it]=(resMap[it]||0)+(parseInt(req['Qty Requested'])||0);
+    }
+  });
+  const sel=document.getElementById('ritem'),c=sel.value;
+  sel.innerHTML='<option value="">Select item…</option>'+adminItems.map(item=>{
+    const rawBal=balMap[item]??null;
+    const reserved=resMap[item]||0;
+    const effectiveBal=rawBal!==null?Math.max(0,rawBal-reserved):null;
+    let hint='';
+    if(effectiveBal===null) hint='';
+    else if(effectiveBal<=0) hint=' (out of stock — join waitlist)';
+    else if(effectiveBal<3) hint=' (only '+effectiveBal+' left)';
     return`<option value="${item}">${item}${hint}</option>`;
   }).join('');
-  if(c)s.value=c;
+  if(c)sel.value=c;
 }
 
 function go(n,b){
@@ -357,8 +372,8 @@ async function subRequest(){
         ?'"'+d.item+'" is currently out of stock. '
         :'"'+d.item+'" is currently reserved for another recipient. ';
       document.getElementById('wlMsg').textContent=
-        reason+'Join the waitlist and you will be notified when it becomes available. '
-        +'You will be served in the order you signed up.';
+        reason+'Join the waitlist and you'll be notified when it becomes available. '
+        +'You'll be served in the order you signed up.';
       document.getElementById('wlResult').style.display='none';
       document.getElementById('wlOv').style.display='flex';
     } else {
@@ -379,7 +394,7 @@ async function joinWaitlist(){
     if(d.success){
       res.style.display='block';
       res.style.color='var(--gr)';
-      res.textContent='✅ You are on the waitlist! We will email you when "'+_wlItem+'" is available. (ID: '+d.waitlistId+')';
+      res.textContent='✅ You're on the waitlist! We'll email you when "'+_wlItem+'" is available. (ID: '+d.waitlistId+')';
       btn.textContent='✅ Added!';
       setTimeout(()=>{document.getElementById('wlOv').style.display='none';},3000);
     } else {

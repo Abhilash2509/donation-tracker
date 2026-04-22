@@ -636,11 +636,11 @@ function buildCollections(){
 // ── REQUESTS ──
 // Store row refs globally to avoid quote escaping in onclick
 let _reqRows=[];
-function rAct(i,action){
-  const r=_reqRows[i];if(!r)return;
-  if(action==='approve')  openApprove(r._row, r['Item Requested']+' ('+r['Qty Requested']+')');
-  if(action==='reject')   openReject('req',r._row, r['Item Requested']+' ('+r['Qty Requested']+')');
-  if(action==='deliver')  updR(r._row,'Delivered');
+// rAct now takes the sheet row number directly (r._row) — avoids index confusion
+function rAct(sheetRow,action,label){
+  if(action==='approve')  openApprove(sheetRow, label||'');
+  if(action==='reject')   openReject('req',sheetRow, label||'');
+  if(action==='deliver')  updR(sheetRow,'Delivered');
 }
 function buildRequests(){
   if(!LD)return;
@@ -672,10 +672,11 @@ function buildRequests(){
       const wlBadge=waitingCount>0?`<span style="font-size:0.68rem;font-weight:600;padding:1px 7px;border-radius:999px;background:var(--aml);color:var(--am);border:1px solid #e8c87a;margin-left:5px">⏳ ${waitingCount} waiting</span>`:'';
       const stockWarn=outOfStock?`<span style="font-size:0.72rem;color:var(--re);font-weight:600;margin-left:6px">⚠ Out of stock · Stock: ${invMap2[r['Item Requested']]??0} · Reserved: ${activeResCount}</span>`:
         effectiveBal===0?`<span style="font-size:0.72rem;color:var(--am);font-weight:600;margin-left:6px">⚠ Fully reserved</span>`:'';
+      const rLabel=r['Item Requested']+'('+r['Qty Requested']+')';
       const appBtn=outOfStock
         ?`<button class="btn bsm" style="background:#e0e0e0;color:#888;cursor:not-allowed" disabled>✓ Approve</button>`
-        :`<button class="btn bg bsm" onclick="rAct(${idx},'approve')">✓ Approve</button>`;
-      return`<div class="arow"><div class="ainfo"><span class="tid">${r['Request ID']||'—'}</span>&nbsp;<strong>${rc['Recipient Name']||r['Recipient ID']}</strong>${notesI}${wlBadge}${stockWarn}${rc['Address']?`<br><span style="font-size:0.74rem;color:var(--mu)">📍 ${rc['Address']}</span>`:''}<br><span style="font-size:0.74rem;color:var(--mu)">Item: <strong>${r['Item Requested']}</strong> · Qty: <strong>${r['Qty Requested']}</strong> · ${fd(r['Pending On']||r['Request Date'])}</span></div><div class="abtns">${appBtn}<button class="btn br bsm" onclick="rAct(${idx},'reject')">✗ Reject</button></div></div>`;
+        :`<button class="btn bg bsm" onclick="rAct(${r._row},'approve','${r['Item Requested'].replace(/'/g,"\\'")} (${r['Qty Requested']})')">✓ Approve</button>`;
+      return`<div class="arow"><div class="ainfo"><span class="tid">${r['Request ID']||'—'}</span>&nbsp;<strong>${rc['Recipient Name']||r['Recipient ID']}</strong>${notesI}${wlBadge}${stockWarn}${rc['Address']?`<br><span style="font-size:0.74rem;color:var(--mu)">📍 ${rc['Address']}</span>`:''}<br><span style="font-size:0.74rem;color:var(--mu)">Item: <strong>${r['Item Requested']}</strong> · Qty: <strong>${r['Qty Requested']}</strong> · ${fd(r['Pending On']||r['Request Date'])}</span></div><div class="abtns">${appBtn}<button class="btn br bsm" onclick="rAct(${r._row},'reject','${r['Item Requested'].replace(/'/g,"\\'")} (${r['Qty Requested']})')">✗ Reject</button></div></div>`;
     }).join('')
     :'<div class="no-data">🎉 No pending requests</div>';
 
@@ -684,7 +685,7 @@ function buildRequests(){
     ?dp.map(r=>{
       const idx=req.indexOf(r);
       const rc=rm[r['Recipient ID']]||{};
-      return`<div class="arow"><div class="ainfo"><span class="tid">${r['Request ID']||'—'}</span>&nbsp;<strong>${rc['Recipient Name']||r['Recipient ID']}</strong>${rc['Address']?`<br><span style="font-size:0.74rem;color:var(--mu)">📍 ${rc['Address']}</span>`:''}<br><span style="font-size:0.74rem;color:var(--mu)">Item: <strong>${r['Item Requested']}</strong> · Qty: <strong>${r['Qty Requested']}</strong>${r['ETA']?' · ETA: '+r['ETA']:''}</span></div><div class="abtns"><button class="btn bg bsm" onclick="rAct(${idx},'deliver')">✓ Mark Delivered</button></div></div>`;
+      return`<div class="arow"><div class="ainfo"><span class="tid">${r['Request ID']||'—'}</span>&nbsp;<strong>${rc['Recipient Name']||r['Recipient ID']}</strong>${rc['Address']?`<br><span style="font-size:0.74rem;color:var(--mu)">📍 ${rc['Address']}</span>`:''}<br><span style="font-size:0.74rem;color:var(--mu)">Item: <strong>${r['Item Requested']}</strong> · Qty: <strong>${r['Qty Requested']}</strong>${r['ETA']?' · ETA: '+r['ETA']:''}</span></div><div class="abtns"><button class="btn bg bsm" onclick="rAct(${r._row},'deliver')">✓ Mark Delivered</button></div></div>`;
     }).join('')
     :'<div class="no-data">No deliveries pending</div>';
 
@@ -698,10 +699,10 @@ function buildRequests(){
       const oos=bal2!==null&&bal2<1;
       const ab=oos
         ?`<button class="btn bsm" style="background:#e0e0e0;color:#aaa;cursor:not-allowed" disabled>Approve</button>`
-        :`<button class="btn bg bsm" onclick="rAct(${idx},'approve')">Approve</button>`;
-      nxt=ab+` <button class="btn br bsm" onclick="rAct(${idx},'reject')">Reject</button>`;
+        :`<button class="btn bg bsm" onclick="rAct(${r._row},'approve','${String(r['Item Requested']).replace(/'/g,"\\'")} (${r['Qty Requested']})')">Approve</button>`;
+      nxt=ab+` <button class="btn br bsm" onclick="rAct(${r._row},'reject','${String(r['Item Requested']).replace(/'/g,"\\'")} (${r['Qty Requested']})')">Reject</button>`;
     }
-    else if(s==='approved')  nxt=`<button class="btn bg bsm" onclick="rAct(${idx},'deliver')">✓ Mark Delivered</button>`;
+    else if(s==='approved')  nxt=`<button class="btn bg bsm" onclick="rAct(${r._row},'deliver')">✓ Mark Delivered</button>`;
     else nxt=`<span style="font-size:0.75rem;color:var(--mu)">${r['Status']}</span>`;
     return`<tr><td><span class="tid">${r['Request ID']||'—'}</span></td><td>${fd(r['Request Date'])}</td><td style="font-size:0.75rem;color:var(--mu)">${r['Recipient ID']||'—'}</td><td>${r['Item Requested']||'—'}</td><td>${r['Qty Requested']||0}</td><td><span class="pill ${s}">${r['Status']||'Pending'}</span></td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Pending On'])}</td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Approved On'])}</td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Delivered On'])}</td><td>${nxt}</td></tr>`;
   }).join()||'<tr><td colspan="10" class="no-data">No requests</td></tr>';
