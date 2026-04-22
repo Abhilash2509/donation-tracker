@@ -178,7 +178,7 @@ footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-t
 <!-- CUSTOM REQUEST -->
 <div class="pg" id="pg-custom">
   <div class="hero"><h2>🔍 Custom Item Request</h2><p>Can't find what you need? Request a specific item not currently in our list.</p></div>
-  <div class="infobox">The admin will review your request and either add the item or explain why it isn't available. You'll be notified by email either way.</div>
+  <div class="infobox">The admin will review your request and either add the item or explain why it isn't available. You will be notified by email either way.</div>
   <div class="panel">
     <div class="g2">
       <div class="fg s2">
@@ -259,7 +259,7 @@ footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-t
     <div style="font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:700;text-align:center;margin-bottom:8px">Item Currently Reserved</div>
     <div id="wlMsg" style="font-size:0.83rem;color:#666;text-align:center;line-height:1.6;margin-bottom:18px"></div>
     <div style="background:#e5f0f8;border:1px solid #9fc3de;border-radius:10px;padding:13px;margin-bottom:16px;font-size:0.82rem;color:#1f5f8b;line-height:1.7">
-      📬 <strong>Join the waitlist</strong> and we'll email you as soon as this item becomes available. You'll be first in line.
+      📬 <strong>Join the waitlist</strong> and we will email you as soon as this item becomes available. You will be first in line.
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button id="wlJoinBtn" onclick="joinWaitlist()" style="flex:1;padding:11px;background:#1f5f8b;color:white;border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.86rem;font-weight:600;cursor:pointer">✅ Join Waitlist</button>
@@ -394,7 +394,7 @@ async function joinWaitlist(){
     if(d.success){
       res.style.display='block';
       res.style.color='var(--gr)';
-      res.textContent='✅ You're on the waitlist! We'll email you when "'+_wlItem+'" is available. (ID: '+d.waitlistId+')';
+      res.textContent='✅ You are on the waitlist! We will email you when "'+_wlItem+'" is available. (ID: '+d.waitlistId+')';
       btn.textContent='✅ Added!';
       setTimeout(()=>{document.getElementById('wlOv').style.display='none';},3000);
     } else {
