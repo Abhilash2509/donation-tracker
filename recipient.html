@@ -285,16 +285,7 @@ async function init(){
   }catch(e){document.getElementById('sd').style.background='#e57373';document.getElementById('sl').textContent='Offline';}
 }
 // Auto-refresh every 30s using refreshData (preserves form state)
-//setInterval(refreshData,30000);
-  setInterval(async () => {
-  if (!document.hidden) {
-    try {
-      await loadItems();
-    } catch (e) {
-      console.error("Refresh failed", e);
-    }
-  }
-}, 15000);
+setInterval(refreshData,30000);
 init();
 
 function renderInv(d){
