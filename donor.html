@@ -299,51 +299,73 @@ function trackDonation(){
   const dates=`<div class="wf-detail">Submitted: ${fd(don['Submitted On']||don['Date'])}${don['Collected On']?' · Collected: '+fd(don['Collected On']):''}</div>`;
   const rejComment=don['Rejection Comment']?`<div style="margin-top:8px;font-size:0.81rem;background:var(--rl);color:var(--re);padding:8px 12px;border-radius:8px">Rejection reason: ${don['Rejection Comment']}</div>`:'';
 
-  // Find recipient requests for the same item — show how qty is being used
+  // FIFO: find exactly which requests THIS donation funded
+  // Sort all collected donations for this item by collection date (oldest first)
+  // Walk through delivered/active requests consuming donation qty sequentially
   const totalQty=parseInt(don['Quantity'])||0;
-  const requests=(LD.requests||[]).filter(r=>{
-    const sameItem=String(r['Item Requested']||'').trim().toLowerCase()===String(don['Item']||'').trim().toLowerCase();
-    const active=['approved','delivery pending','delivered'].includes(String(r['Status']||'').toLowerCase());
-    return sameItem&&active;
-  });
+  const allDons=[...(LD.donations||[])]
+    .filter(d=>String(d['Item']||'').trim().toLowerCase()===String(don['Item']||'').trim().toLowerCase()
+      &&String(d['Status']||'').toLowerCase()==='collected')
+    .sort((a,b)=>String(a['Collected On']||a['Date']||'').localeCompare(String(b['Collected On']||b['Date']||'')));
+
+  const allReqs=[...(LD.requests||[])]
+    .filter(r=>String(r['Item Requested']||'').trim().toLowerCase()===String(don['Item']||'').trim().toLowerCase()
+      &&['approved','delivered'].includes(String(r['Status']||'').toLowerCase()))
+    .sort((a,b)=>String(a['Pending On']||a['Request Date']||'').localeCompare(String(b['Pending On']||b['Request Date']||'')));
+
+  // Map each request to its funding donation via FIFO consumption
+  const reqToDon={};
+  let dIdx=0, remaining=allDons[0]?parseInt(allDons[0]['Quantity'])||0:0;
+  for(const req of allReqs){
+    let need=parseInt(req['Qty Requested'])||0;
+    while(need>0&&dIdx<allDons.length){
+      const take=Math.min(need,remaining);
+      need-=take;remaining-=take;
+      reqToDon[req['Request ID']]=allDons[dIdx]['Donation ID'];
+      if(remaining<=0){dIdx++;if(dIdx<allDons.length)remaining=parseInt(allDons[dIdx]['Quantity'])||0;}
+    }
+  }
+
+  // Only show requests funded by THIS donation
+  const myRequests=allReqs.filter(r=>reqToDon[r['Request ID']]===don['Donation ID']);
 
   let requestsHtml='';
-  if(cur.toLowerCase()==='collected'&&requests.length>0){
-    const reqSteps=['Approved','Delivery Pending','Delivered'];
-    let usedQty=0;
-    const rows=requests.map(r=>{
-      usedQty+=parseInt(r['Qty Requested'])||0;
-      const rs=String(r['Status']||'').toLowerCase();
-      const ri=reqSteps.findIndex(s=>s.toLowerCase()===rs);
-      const rStepsHtml=reqSteps.map((s,i)=>`${i>0?'<span class="wf-arrow" style="font-size:0.6rem">›</span>':''}<span class="wf-step" style="font-size:0.66rem;padding:2px 7px;${i<ri?'background:var(--al);color:var(--ac);border-color:#b8d9b2':i===ri?'background:var(--ac);color:white;border-color:var(--ac)':''}">${s}</span>`).join('');
-      const fb=r['Feedback']?`<div style="font-size:0.76rem;font-style:italic;color:var(--ac);margin-top:4px;padding:5px 8px;background:var(--al);border-radius:6px">"${r['Feedback']}"</div>`:'';
-      return`<div style="padding:10px 0;border-bottom:1px solid var(--bg)">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px;margin-bottom:5px">
-          <span style="font-size:0.79rem;font-weight:600">Request ${r['Request ID']||'—'} · ${r['Item Requested']} ×${r['Qty Requested']}</span>
-          <span style="font-size:0.72rem;color:var(--mu)">${fd(r['Request Date'])}</span>
+  if(cur.toLowerCase()==='collected'){
+    if(myRequests.length>0){
+      const reqSteps=['Approved','Delivered'];
+      let usedQty=0;
+      const rows=myRequests.map(r=>{
+        usedQty+=parseInt(r['Qty Requested'])||0;
+        const rs=String(r['Status']||'').toLowerCase();
+        const ri=reqSteps.findIndex(s=>s.toLowerCase()===rs);
+        const rStepsHtml=reqSteps.map((s,i)=>`${i>0?'<span class="wf-arrow" style="font-size:0.6rem">›</span>':''}<span class="wf-step" style="font-size:0.66rem;padding:2px 7px;${i<ri?'background:var(--al);color:var(--ac);border-color:#b8d9b2':i===ri?'background:var(--ac);color:white;border-color:var(--ac)':''}">${s}</span>`).join('');
+        const fb=r['Feedback']?`<div style="font-size:0.76rem;font-style:italic;color:var(--ac);margin-top:4px;padding:5px 8px;background:var(--al);border-radius:6px">"${r['Feedback']}"</div>`:'';
+        return`<div style="padding:10px 0;border-bottom:1px solid var(--bg)">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px;margin-bottom:5px">
+            <span style="font-size:0.79rem;font-weight:600">Request ${r['Request ID']||'—'} · ${r['Item Requested']} ×${r['Qty Requested']}</span>
+            <span style="font-size:0.72rem;color:var(--mu)">${fd(r['Request Date'])}</span>
+          </div>
+          <div class="wf-steps" style="gap:3px">${rStepsHtml}</div>
+          ${fb}
+        </div>`;
+      });
+      const remaining2=totalQty-usedQty;
+      const usedBar=totalQty>0?Math.round(usedQty/totalQty*100):0;
+      requestsHtml=`<div style="margin-top:14px;padding:14px;background:var(--al);border-radius:10px;border:1px solid #b8d9b2">
+        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ac);margin-bottom:10px">📦 How your donation is being used</div>
+        <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:6px">
+          <span><strong>${usedQty}</strong> of ${totalQty} units from this donation used</span>
+          <span style="color:var(--mu)">${remaining2>0?remaining2+' still available':'Fully allocated'}</span>
         </div>
-        <div class="wf-steps" style="gap:3px">${rStepsHtml}</div>
-        ${fb}
+        <div style="height:8px;background:rgba(255,255,255,0.5);border-radius:4px;overflow:hidden;margin-bottom:12px">
+          <div style="height:100%;width:${usedBar}%;background:var(--ac);border-radius:4px;transition:width .8s"></div>
+        </div>
+        ${rows.join('')}
+        ${remaining2>0?`<div style="margin-top:10px;font-size:0.78rem;color:var(--ac);padding:8px 10px;background:white;border-radius:7px;border:1px dashed #b8d9b2">⏳ ${remaining2} unit(s) from this donation not yet allocated to a recipient</div>`:''}
       </div>`;
-    });
-
-    const remaining=totalQty-usedQty;
-    const usedBar=totalQty>0?Math.round(usedQty/totalQty*100):0;
-
-    requestsHtml=`<div style="margin-top:14px;padding:14px;background:var(--al);border-radius:10px;border:1px solid #b8d9b2">
-      <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ac);margin-bottom:10px">📦 How your donation is being used</div>
-      <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:6px">
-        <span><strong>${usedQty}</strong> of ${totalQty} units requested so far</span>
-        <span style="color:var(--mu)">${remaining>0?remaining+' remaining':'Fully requested'}</span>
-      </div>
-      <div style="height:8px;background:rgba(255,255,255,0.5);border-radius:4px;overflow:hidden;margin-bottom:12px">
-        <div style="height:100%;width:${usedBar}%;background:var(--ac);border-radius:4px;transition:width .8s"></div>
-      </div>
-      ${rows.join('')}
-      ${remaining>0?`<div style="margin-top:10px;font-size:0.78rem;color:var(--ac);padding:8px 10px;background:white;border-radius:7px;border:1px dashed #b8d9b2">⏳ ${remaining} unit(s) not yet requested — available for future recipients</div>`:''}
-    </div>`;
-  } else if(cur.toLowerCase()==='collected'){
-    requestsHtml=`<div style="margin-top:14px;padding:12px 14px;background:var(--al);border-radius:10px;border:1px solid #b8d9b2;font-size:0.82rem;color:var(--ac)">📦 Your donation has been collected and is in inventory. No recipient requests yet for this item.</div>`;
+    } else {
+      requestsHtml=`<div style="margin-top:14px;padding:12px 14px;background:var(--al);border-radius:10px;border:1px solid #b8d9b2;font-size:0.82rem;color:var(--ac)">📦 Collected and in inventory. No recipient requests allocated from this donation yet.</div>`;
+    }
   }
 
   res.innerHTML=`<div class="wf-wrap">

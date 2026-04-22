@@ -705,16 +705,8 @@ function buildRequests(){
     else nxt=`<span style="font-size:0.75rem;color:var(--mu)">${r['Status']}</span>`;
     return`<tr><td><span class="tid">${r['Request ID']||'—'}</span></td><td>${fd(r['Request Date'])}</td><td style="font-size:0.75rem;color:var(--mu)">${r['Recipient ID']||'—'}</td><td>${r['Item Requested']||'—'}</td><td>${r['Qty Requested']||0}</td><td><span class="pill ${s}">${r['Status']||'Pending'}</span></td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Pending On'])}</td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Approved On'])}</td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Delivered On'])}</td><td>${nxt}</td></tr>`;
   }).join()||'<tr><td colspan="10" class="no-data">No requests</td></tr>';
-  // Pagination for requests table
-  paginateTable('allRB2','reqPgn',req,10,(r,idx)=>{
-    const s=(r['Status']||'pending').toLowerCase().replace(/ /g,'-');
-    let nxt='';
-    const bal2=invMap2[r['Item Requested']]??null;const oos=bal2!==null&&bal2<1;
-    if(s==='pending'){const ab=oos?`<button class="btn bsm" style="background:#e0e0e0;color:#aaa;cursor:not-allowed" disabled>Approve</button>`:`<button class="btn bg bsm" onclick="rAct(${idx},'approve')">Approve</button>`;nxt=ab+` <button class="btn br bsm" onclick="rAct(${idx},'reject')">Reject</button>`;}
-    else if(s==='approved') nxt=`<button class="btn bbl bsm" onclick="rAct(${idx},'dp')">→ Delivery Pending</button>`;
-    else nxt=`<span style="font-size:0.75rem;color:var(--mu)">${r['Status']}</span>`;
-    return`<tr><td><span class="tid">${r['Request ID']||'—'}</span></td><td>${fd(r['Request Date'])}</td><td style="font-size:0.75rem;color:var(--mu)">${r['Recipient ID']||'—'}</td><td>${r['Item Requested']||'—'}</td><td>${r['Qty Requested']||0}</td><td><span class="pill ${s}">${r['Status']||'Pending'}</span></td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Pending On'])}</td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Approved On'])}</td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Delivered On'])}</td><td>${nxt}</td></tr>`;
-  });
+  // Note: allRB2 already rendered with reqSorted above. No secondary pagination needed.
+  // paginateTable removed — it was overwriting the sorted table with unsorted data.
 }
 
 // ── STATUS UPDATES — instant refresh from server response ──
@@ -1112,17 +1104,34 @@ function buildWaitlist(){
         :`<span style="font-size:0.7rem;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--rl);color:var(--re);border:1px solid #f5c0c0">⚠ Still reserved</span>`;
       // Sort rows by Date Added (FIFO priority)
       const sortedRows=[...rows].sort((a,b)=>String(a['Date Added']||'').localeCompare(String(b['Date Added']||'')));
+      const sortedItemInv=(LD.inventory||[]).find(i=>i.item===item);
       const recipRows=sortedRows.map((r,pi)=>{
         const rc=rm[r['Recipient ID']]||{};
-        return`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bg);gap:8px;flex-wrap:wrap">
+        const s2=(r['Status']||'').toLowerCase();
+        const isCompleted=s2==='completed';
+        const donId=r['Fulfilled By Donation']?r['Fulfilled By Donation']:'';
+        // Mailto link for admin to manually email recipient when item is available
+        const rcEmail=rc['Email']||'';
+        const mailSubject=encodeURIComponent('Good news — '+item+' is now available for you!');
+        const mailBody=encodeURIComponent('Hi,\n\nThe item you were waiting for is now available: '+item+'\n\nWaitlist ID: '+r['Waitlist ID']+'\n\nPlease visit the Recipient Portal and submit your request now.\n\nGrocery Donation Tracker\n'+ADMIN_EMAIL_CONST);
+        const emailLink=rcEmail&&!isCompleted
+          ?`<a href="mailto:${rcEmail}?subject=${mailSubject}&body=${mailBody}" style="font-size:0.72rem;color:var(--bl);font-weight:600;text-decoration:none;padding:3px 9px;background:var(--bll);border:1px solid #9fc3de;border-radius:6px;white-space:nowrap" title="Send email to ${rcEmail}">✉ Notify</a>`
+          :'';
+        const donLink=isCompleted&&donId
+          ?`<span style="font-size:0.72rem;color:var(--ac)">✓ Fulfilled by <span class="tid" style="cursor:pointer;text-decoration:underline;color:var(--bl)" onclick="drillTxn('${donId}')">${donId}</span></span>`
+          :'';
+        return`<div style="display:flex;align-items:flex-start;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bg);gap:8px;flex-wrap:wrap;${isCompleted?'opacity:0.6':''}">
           <div>
-            <span style="font-size:0.7rem;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--aml);color:var(--am);border:1px solid #e8c87a;margin-right:6px">#${pi+1}</span>
+            <span style="font-size:0.7rem;font-weight:700;padding:1px 7px;border-radius:999px;background:${isCompleted?'var(--al)':'var(--aml)'};color:${isCompleted?'var(--ac)':'var(--am)'};border:1px solid ${isCompleted?'#b8d9b2':'#e8c87a'};margin-right:6px">${isCompleted?'✓':'#'+(pi+1)}</span>
             <span class="tid">${r['Waitlist ID']||'—'}</span>
-            &nbsp;<strong>${rc['Recipient Name']||r['Recipient ID']}</strong>
-            ${rc['Email']?`<br><span style="font-size:0.73rem;color:var(--mu);margin-left:24px">${rc['Email']}</span>`:''}
+            &nbsp;<span style="font-weight:600;font-size:0.84rem">${r['Recipient ID']||'—'}</span>
             ${r['Delivery Notes']?`<br><span style="font-size:0.73rem;color:var(--mu);margin-left:24px">📋 ${r['Delivery Notes']}</span>`:''}
+            ${donLink?`<br><span style="margin-left:24px">${donLink}</span>`:''}
           </div>
-          <span style="font-size:0.72rem;color:var(--mu)">${fd(r['Date Added'])}</span>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span style="font-size:0.72rem;color:var(--mu)">${fd(r['Date Added'])}</span>
+            ${emailLink}
+          </div>
         </div>`;
       }).join('');
       return`<div style="border:1px solid var(--b);border-radius:10px;padding:14px;margin-bottom:12px">

@@ -344,11 +344,11 @@ async function subRequest(){
     const r=await fetch(SU+'?'+new URLSearchParams({action:'addRequest',recipientId:rid,itemRequested:item,qtyRequested:1,notes}));
     const d=await r.json();
     if(d.success){
-      sf('rm2','✅ Request submitted!\n\nRequest ID: '+d.requestId+'\n\nA confirmation email has been sent. Use the Track tab to follow your request.','ok');
-      sa('Request submitted!','amber');
       ['ri','rnotes'].forEach(id=>document.getElementById(id).value='');
       document.getElementById('ritem').value='';
-      setTimeout(init,1500);
+      await init(); // refresh immediately so inventory reflects new request
+      sf('rm2','✅ Request submitted!\n\nRequest ID: '+d.requestId+'\n\nUse the Track tab to follow your request.','ok');
+      sa('Request submitted!','amber');
     } else if(d.waitlistNeeded){
       // Item is fully reserved — offer waitlist
       _wlItem=d.item;_wlRid=rid;_wlNotes=notes;
@@ -357,8 +357,8 @@ async function subRequest(){
         ?'"'+d.item+'" is currently out of stock. '
         :'"'+d.item+'" is currently reserved for another recipient. ';
       document.getElementById('wlMsg').textContent=
-        reason+'Join the waitlist and you will be notified when it becomes available. '
-        +'You will be served in the order you signed up.';
+        reason+'Join the waitlist and you'll be notified when it becomes available. '
+        +'You'll be served in the order you signed up.';
       document.getElementById('wlResult').style.display='none';
       document.getElementById('wlOv').style.display='flex';
     } else {
@@ -379,7 +379,7 @@ async function joinWaitlist(){
     if(d.success){
       res.style.display='block';
       res.style.color='var(--gr)';
-      res.textContent='✅ You are on the waitlist! We will email you when "'+_wlItem+'" is available. (ID: '+d.waitlistId+')';
+      res.textContent='✅ You're on the waitlist! We'll email you when "'+_wlItem+'" is available. (ID: '+d.waitlistId+')';
       btn.textContent='✅ Added!';
       setTimeout(()=>{document.getElementById('wlOv').style.display='none';},3000);
     } else {
