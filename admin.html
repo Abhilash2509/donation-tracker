@@ -1168,7 +1168,7 @@ function buildWaitlist(){
     const item=r['Item']||'';
     if(!seen[item])seen[item]=0;
     if(s==='waiting') seen[item]++;
-    const priority=s==='waiting'?`<span style="font-size:0.68rem;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--aml);color:var(--am);border:1px solid #e8c87a">#${seen[item]}</span>`:''
+    const priority=s==='waiting'?`<span style="font-size:0.68rem;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--aml);color:var(--am);border:1px solid #e8c87a">#${seen[item]}</span>`:'';
     const donTxn=r['Fulfilled By Donation']?`<span class="tid" style="cursor:pointer;text-decoration:underline;color:var(--bl);font-size:0.74rem" onclick="drillTxn('${r['Fulfilled By Donation']}')">${r['Fulfilled By Donation']}</span>`:'—';
     return`<tr><td><span class="tid">${r['Waitlist ID']||'—'}</span></td><td>${r['Item']||'—'} ${priority}</td><td style="font-size:0.78rem">${rc['Recipient Name']||r['Recipient ID']}</td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Date Added'])}</td><td style="font-size:0.75rem;color:var(--mu)">${r['Delivery Notes']||'—'}</td><td>${pill}</td><td style="font-size:0.74rem">${donTxn}</td><td style="font-size:0.74rem;color:var(--mu)">${fd(r['Notified On'])||'—'}</td></tr>`;
   }).join()||'<tr><td colspan="8" class="no-data">No waitlist entries</td></tr>';

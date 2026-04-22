@@ -178,7 +178,7 @@ footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-t
 <!-- CUSTOM REQUEST -->
 <div class="pg" id="pg-custom">
   <div class="hero"><h2>🔍 Custom Item Request</h2><p>Can't find what you need? Request a specific item not currently in our list.</p></div>
-  <div class="infobox">The admin will review your request and either add the item or explain why it isn't available. You will be notified by email either way.</div>
+  <div class="infobox">The admin will review your request and either add the item or explain why it isn't available. You'll be notified by email either way.</div>
   <div class="panel">
     <div class="g2">
       <div class="fg s2">
@@ -259,7 +259,7 @@ footer{text-align:center;color:var(--mu);font-size:0.71rem;padding:16px;border-t
     <div style="font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:700;text-align:center;margin-bottom:8px">Item Currently Reserved</div>
     <div id="wlMsg" style="font-size:0.83rem;color:#666;text-align:center;line-height:1.6;margin-bottom:18px"></div>
     <div style="background:#e5f0f8;border:1px solid #9fc3de;border-radius:10px;padding:13px;margin-bottom:16px;font-size:0.82rem;color:#1f5f8b;line-height:1.7">
-      📬 <strong>Join the waitlist</strong> and we will email you as soon as this item becomes available. You will be first in line.
+      📬 <strong>Join the waitlist</strong> and we'll email you as soon as this item becomes available. You'll be first in line.
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button id="wlJoinBtn" onclick="joinWaitlist()" style="flex:1;padding:11px;background:#1f5f8b;color:white;border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.86rem;font-weight:600;cursor:pointer">✅ Join Waitlist</button>
@@ -284,7 +284,48 @@ async function init(){
     document.getElementById('sl').textContent='Live';
   }catch(e){document.getElementById('sd').style.background='#e57373';document.getElementById('sl').textContent='Offline';}
 }
-// Auto-refresh every 30s using refreshData (preserves form state)
+async function refreshData(){
+  if(!SU)return;
+  try{
+    const r=await fetch(SU+'?action=getData&t='+Date.now());
+    const d=await r.json();
+    if(!d||d.error)return;
+    LD=d;
+    renderInv(d);
+    // Update dropdown without resetting selection
+    const inv=d.inventory||[];
+    const adminItems=(d.items||[]).map(x=>String(x['Item Name']||'')).filter(Boolean);
+    balMap={};
+    inv.forEach(i=>balMap[i.item]=i.balance);
+    // Reservation-aware effective balance
+    const resMap={};
+    (d.requests||[]).forEach(req=>{
+      const s=(req['Status']||'').toLowerCase();
+      if(['pending','approved'].includes(s)){
+        const it=String(req['Item Requested']||'').trim();
+        resMap[it]=(resMap[it]||0)+(parseInt(req['Qty Requested'])||0);
+      }
+    });
+    const sel=document.getElementById('ritem');
+    if(sel){
+      const curVal=sel.value;
+      sel.innerHTML='<option value="">Select item…</option>'+adminItems.map(itm=>{
+        const rawBal=balMap[itm]??null;
+        const eff=rawBal!==null?Math.max(0,rawBal-(resMap[itm]||0)):null;
+        const hint=eff===null?'':eff<=0?' (out of stock — join waitlist)':eff<3?' (only '+eff+' left)':'';
+        return`<option value="${itm}">${itm}${hint}</option>`;
+      }).join('');
+      if(curVal) sel.value=curVal;
+    }
+    document.getElementById('sd').style.background='#a8e6a0';
+    document.getElementById('sl').textContent='Live';
+  }catch(e){
+    document.getElementById('sd').style.background='#e57373';
+    document.getElementById('sl').textContent='Offline';
+  }
+}
+
+// Auto-refresh every 30s preserving form state
 setInterval(refreshData,30000);
 init();
 
@@ -372,8 +413,8 @@ async function subRequest(){
         ?'"'+d.item+'" is currently out of stock. '
         :'"'+d.item+'" is currently reserved for another recipient. ';
       document.getElementById('wlMsg').textContent=
-        reason+'Join the waitlist and you will be notified when it becomes available. '
-        +'You will be served in the order you signed up.';
+        reason+'Join the waitlist and you'll be notified when it becomes available. '
+        +'You'll be served in the order you signed up.';
       document.getElementById('wlResult').style.display='none';
       document.getElementById('wlOv').style.display='flex';
     } else {
@@ -394,7 +435,7 @@ async function joinWaitlist(){
     if(d.success){
       res.style.display='block';
       res.style.color='var(--gr)';
-      res.textContent='✅ You are on the waitlist! We will email you when "'+_wlItem+'" is available. (ID: '+d.waitlistId+')';
+      res.textContent='✅ You're on the waitlist! We'll email you when "'+_wlItem+'" is available. (ID: '+d.waitlistId+')';
       btn.textContent='✅ Added!';
       setTimeout(()=>{document.getElementById('wlOv').style.display='none';},3000);
     } else {
